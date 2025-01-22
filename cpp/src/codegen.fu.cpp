@@ -2498,9 +2498,9 @@ inline bool add_RGTV(Set_2lk9& _, const UserTypeCanon_rNcg& key)
 }
                                 #endif
 
-                                #ifndef DEF___LMOdCOBKrB7
-                                #define DEF___LMOdCOBKrB7
-inline static fu::view<char> _LMOd(const Target_VZrr& member, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF___X87N9dhvwgk
+                                #define DEF___X87N9dhvwgk
+inline static fu::vec_range<char> _X87N(const Target_VZrr& member, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     fu::str _0 {};
     fu::str _1 {};
@@ -2508,12 +2508,12 @@ inline static fu::view<char> _LMOd(const Target_VZrr& member, fu::view<char> id,
 }
                                 #endif
 
-                                #ifndef DEF_each_97qqMmJmXN3
-                                #define DEF_each_97qqMmJmXN3
-inline void each_97qq(fu::vec_range<ScopeItem_xiLD> a, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF_each_p8wCmNJPcE9
+                                #define DEF_each_p8wCmNJPcE9
+inline void each_p8wC(fu::vec_range<ScopeItem_xiLD> a, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     for (int i = 0; i < a.size(); i++)
-        _LMOd(target_z0Qq(a[i]), id, def, outputs, _current_fn, ctx, _here, module, options);
+        _X87N(target_z0Qq(a[i]), id, def, outputs, _current_fn, ctx, _here, module, options);
 
 }
                                 #endif
@@ -2541,9 +2541,9 @@ inline void each_l4xR(fu::vec_range<ScopeItem_xiLD> a, fu::view<char> id, fu::st
 }
                                 #endif
 
-                                #ifndef DEF___TJE0S6TsTOi
-                                #define DEF___TJE0S6TsTOi
-inline static fu::view<char> _TJE0(const Target_VZrr& member, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF___mvUAzqa8633
+                                #define DEF___mvUAzqa8633
+inline static fu::vec_range<char> _mvUA(const Target_VZrr& member, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     fu::str _0 {};
     fu::str _1 {};
@@ -2551,12 +2551,12 @@ inline static fu::view<char> _TJE0(const Target_VZrr& member, fu::view<char> id,
 }
                                 #endif
 
-                                #ifndef DEF_each_so3Yv3q7ocd
-                                #define DEF_each_so3Yv3q7ocd
-inline void each_so3Y(fu::vec_range<ScopeItem_xiLD> a, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF_each_ZmM7F1V6mp2
+                                #define DEF_each_ZmM7F1V6mp2
+inline void each_ZmM7(fu::vec_range<ScopeItem_xiLD> a, fu::view<char> id, fu::vec_range_mut<char> def, Outputs_qcSQ& outputs, cg_CurrentFn_KoHc& _current_fn, const Context_Zsw9& ctx, TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     for (int i = 0; i < a.size(); i++)
-        _TJE0(target_z0Qq(a[i]), id, def, outputs, _current_fn, ctx, _here, module, options);
+        _mvUA(target_z0Qq(a[i]), id, def, outputs, _current_fn, ctx, _here, module, options);
 
 }
                                 #endif
@@ -2569,7 +2569,7 @@ static void declarePrimitive_i4S3(fu::view<char> id, const UserType_lctk& s, Out
     if ((s.kind != Kind_Idfg_enum) || !members)
     {
         outputs._tfwd_src += (((("typedef "_view + basePrim) + " "_view) + id) + ";\n"_view);
-        each_97qq(members, id, def, outputs, _current_fn, ctx, _here, module, options);
+        each_p8wC(members, id, def, outputs, _current_fn, ctx, _here, module, options);
         if (s.kind == Kind_Idfg_flags)
         {
             fu::str mask {};
@@ -2586,7 +2586,7 @@ static void declarePrimitive_i4S3(fu::view<char> id, const UserType_lctk& s, Out
         fu::str header = ((("enum "_view + id) + ": "_view) + basePrim);
         outputs._tfwd_src += (header + ";\n"_view);
         def += (("\n"_view + header) + "\n{"_view);
-        each_so3Y(members, id, def, outputs, _current_fn, ctx, _here, module, options);
+        each_ZmM7(members, id, def, outputs, _current_fn, ctx, _here, module, options);
         def += "\n};"_view;
     };
     def += "\n                                #endif\n"_view;
@@ -5454,17 +5454,17 @@ static bool mayNeedConstCast_cqST(fu::view<SolvedNode_efhg> items, const Context
     return false;
 }
 
-                                #ifndef DEF___Qsbu3JPeMrg
-                                #define DEF___Qsbu3JPeMrg
-inline static bool _Qsbu(const bool isArgIdx, const bool isAlwaysMoveable, const Context_Zsw9& ctx, const TokenIdx_5581& _here)
+                                #ifndef DEF___kpALP99Zdy4
+                                #define DEF___kpALP99Zdy4
+inline static bool _kpAL(const bool isArgIdx, const bool isAlwaysMoveable, const Context_Zsw9& ctx, const TokenIdx_5581& _here)
 {
     return isArgIdx ? isArgIdx : isAlwaysMoveable ? isAlwaysMoveable : BUG_i4S3("About to return mayNeedConstCast, but fn returns non-arg refs."_view, ctx, _here);
 }
                                 #endif
 
-                                #ifndef DEF_Lifetime_each_MrwMvYVUZ71
-                                #define DEF_Lifetime_each_MrwMvYVUZ71
-inline void Lifetime_each_MrwM(const Lifetime_llCF& lifetime, const Context_Zsw9& ctx, const TokenIdx_5581& _here)
+                                #ifndef DEF_Lifetime_each_rQ9rxtysOEf
+                                #define DEF_Lifetime_each_rQ9rxtysOEf
+inline void Lifetime_each_rQ9r(const Lifetime_llCF& lifetime, const Context_Zsw9& ctx, const TokenIdx_5581& _here)
 {
     fu::view<char> chars = lifetime.uni0n;
     int offset = 0;
@@ -5491,7 +5491,7 @@ inline void Lifetime_each_MrwM(const Lifetime_llCF& lifetime, const Context_Zsw9
                 break;
 
         };
-        _Qsbu(((r & 3u) == 3u), ((r == 0b0101u) || (r == 0b1001u)), ctx, _here);
+        _kpAL(((r & 3u) == 3u), ((r == 0b0101u) || (r == 0b1001u)), ctx, _here);
     };
 }
                                 #endif
@@ -5525,7 +5525,7 @@ static bool mayNeedConstCast_i4S3(const SolvedNode_efhg& expr, const Context_Zsw
             if (mayNeedConstCast)
             {
                 sanityCheck_i4S3(expr.type.lifetime, ctx, _here);
-                Lifetime_each_MrwM(t.lifetime, ctx, _here);
+                Lifetime_each_rQ9r(t.lifetime, ctx, _here);
             };
             return mayNeedConstCast;
         };

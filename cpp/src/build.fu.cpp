@@ -1817,40 +1817,40 @@ inline int find_rkz0(fu::view<char> haystack, const char needle, const int start
 }
                                 #endif
 
-                                #ifndef DEF___eQwyLf8GPl6
-                                #define DEF___eQwyLf8GPl6
-inline static fu::view<fu::str> _eQwy(fu::vec_range<char> substr, fu::vec<fu::str>& result)
+                                #ifndef DEF___noLt2WKpl25
+                                #define DEF___noLt2WKpl25
+inline static fu::vec_range<fu::str> _noLt(fu::vec_range<char> substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
                                 #endif
 
-                                #ifndef DEF_split_kfES3Koo5I5
-                                #define DEF_split_kfES3Koo5I5
-inline void split_kfES(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_YSPrA3Muimd
+                                #define DEF_split_YSPrA3Muimd
+inline void split_YSPr(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
     while (((next = find_rkz0(str, sep, last)) >= 0))
     {
-        _eQwy(fu::get_range(str, last, next), result);
+        _noLt(fu::get_range(str, last, next), result);
         last = (next + N);
     };
     if (last)
-        _eQwy(fu::get_range(str, last), result);
+        _noLt(fu::get_range(str, last), result);
     else
-        _eQwy(str, result);
+        _noLt(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_Gbk9Z7dwor4
-                                #define DEF_split_Gbk9Z7dwor4
-inline fu::vec<fu::str> split_Gbk9(fu::vec_range<char> str, const char sep)
+                                #ifndef DEF_split_x5zXWdGGb1k
+                                #define DEF_split_x5zXWdGGb1k
+inline fu::vec<fu::str> split_x5zX(fu::vec_range<char> str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_kfES(str, sep, result);
+    split_YSPr(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1865,7 +1865,7 @@ static int exec_uGHE(fu::vec_range<char> cmd, fu::vec_range_mut<char> stdout)
         err = exec_G82R(cmd_1.destructive_move(), status, stdout);
     }
     else
-        err = spawn_0Hw8(split_Gbk9(cmd, ' '), stdout, stdout, status, false);
+        err = spawn_0Hw8(split_x5zX(cmd, ' '), stdout, stdout, status, false);
 
     int _0;
     return (_0 = int(err)) ? _0 : int(status);
@@ -2604,20 +2604,20 @@ inline fu::vec<BuildError_kI1v> map_oUt7(fu::view_mut<TranslationUnit_8Oo1> arr,
 }
                                 #endif
 
-                                #ifndef DEF___8pSDFOgPRu7
-                                #define DEF___8pSDFOgPRu7
-inline static CacheCleanup_Oz5J _8pSD(TranslationUnit_8Oo1& unit)
+                                #ifndef DEF___Njdc51YRej0
+                                #define DEF___Njdc51YRej0
+inline static CacheCleanup_Oz5J _Njdc(TranslationUnit_8Oo1& unit)
 {
     return (unit.cache_cleanup &= CacheCleanup_Oz5J(~CacheCleanup_Oz5J_Cpp));
 }
                                 #endif
 
-                                #ifndef DEF_each_sm56SANX6J7
-                                #define DEF_each_sm56SANX6J7
-inline void each_sm56(fu::view_mut<TranslationUnit_8Oo1> a)
+                                #ifndef DEF_each_ajLjkwLE6Bi
+                                #define DEF_each_ajLjkwLE6Bi
+inline void each_ajLj(fu::view_mut<TranslationUnit_8Oo1> a)
 {
     for (int i = 0; i < a.size(); i++)
-        _8pSD(a.mutref(i));
+        _Njdc(a.mutref(i));
 
 }
                                 #endif
@@ -2649,27 +2649,27 @@ static void ensureOneEmptyLine_uGHE(fu::str& explain)
 
 }
 
-                                #ifndef DEF___rgROGJ0cmia
-                                #define DEF___rgROGJ0cmia
-inline static fu::view<char> _rgRO(const TranslationUnit_8Oo1& unit, fu::str& explain)
+                                #ifndef DEF___RAoa1woEBij
+                                #define DEF___RAoa1woEBij
+inline static fu::vec_range<char> _RAoa(const TranslationUnit_8Oo1& unit, fu::str& explain)
 {
     return (explain += unit.src);
 }
                                 #endif
 
-                                #ifndef DEF_each_cnRZcVFRbR3
-                                #define DEF_each_cnRZcVFRbR3
-inline void each_cnRZ(fu::view<TranslationUnit_8Oo1> a, fu::str& explain)
+                                #ifndef DEF_each_UORrYFFMH5c
+                                #define DEF_each_UORrYFFMH5c
+inline void each_UORr(fu::view<TranslationUnit_8Oo1> a, fu::str& explain)
 {
     for (int i = 0; i < a.size(); i++)
-        _rgRO(a[i], explain);
+        _RAoa(a[i], explain);
 
 }
                                 #endif
 
 [[noreturn]] static fu::never ERR_uGHE(fu::str&& cpp, fu::view_mut<TranslationUnit_8Oo1> units, const DEV_OnFail_3YLB onfail, const RunMode_n0r3 runmode, const int code, fu::view<char> stdout, const DirWrk_Nlbc& dir_wrk)
 {
-    each_sm56(units);
+    each_ajLj(units);
     if (onfail & DEV_OnFail_3YLB_OnFail_WriteRepro)
     {
         if (!cpp)
@@ -2701,7 +2701,7 @@ inline void each_cnRZ(fu::view<TranslationUnit_8Oo1> a, fu::str& explain)
     {
         ensureOneEmptyLine_uGHE(explain);
         explain += "\tGenerated code:\n\n"_view;
-        each_cnRZ(units, explain);
+        each_UORr(units, explain);
     };
     ensureOneEmptyLine_uGHE(explain);
     explain += x7E_rA00("   EXIT code: "_view, fu::i64dec(code));
@@ -3134,42 +3134,6 @@ static fu::str update_file_uGHE(fu::vec_range<char> fname, fu::view<char> data, 
     return update_file_IpIP(update_file_dest_uGHE(fname, dir_src, dir_cpp), data, dir_cpp, dir_wrk).const_cast_mut().destructive_move();
 }
 
-static fu::view<char> update_file_QLsA(fu::vec_range<char> fname, fu::view<char> data, fu::view<char> dir_cpp, const DirWrk_Nlbc& dir_wrk)
-{
-    fu::str xcheck {};
-    if (read_VWJw(fu::str(fname), xcheck, 0ll) || (xcheck != data))
-    {
-        for (; ; )
-        {
-            const Errno_88RA err = atomic_write_uGHE(fname, data, dir_wrk);
-            if (err)
-            {
-                if (err == ENOENT)
-                {
-                    int last = -1;
-                    for (int i = (dir_cpp.size() + 1); i < fname.size(); i++)
-                    {
-                        if (fname[i] == '/')
-                            last = i;
-
-                    };
-                    if ((last >= 0) && !mkdir_p_5u3x(fu::str(fu::get_range(fname, 0, (last + 1))), RWX_RWX_RWX))
-                        continue;
-
-                };
-                fail_uGHE(x7E_rA00((("Failed to write `"_view + fname) + "`, error: #"_view), fu::i64dec(err)));
-            }
-            else
-            {
-                fu::str x {};
-                fu::println(fu::view<fu::str> {{ (x = ("  WROTE "_view + fname), x).const_cast_mut().destructive_move() }});
-                break;
-            };
-        };
-    };
-    return fname;
-}
-
 static void outputSources_uGHE(fu::view<TranslationUnit_8Oo1> units, fu::view<char> dir_src, fu::vec_range<char> dir_cpp, fu::view<char> unity, const DirWrk_Nlbc& dir_wrk)
 {
     if (dir_cpp && dir_src)
@@ -3196,7 +3160,7 @@ static void outputSources_uGHE(fu::view<TranslationUnit_8Oo1> units, fu::view<ch
 
             };
             data += "\n#ifdef fu_UNITY_FULIB\n#include <fu/_fulib.cpp>\n#endif\n"_view;
-            update_file_QLsA(dest, data, dir_cpp, dir_wrk);
+            update_file_IpIP(dest, data, dir_cpp, dir_wrk);
         };
     };
 }

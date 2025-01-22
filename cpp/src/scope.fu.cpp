@@ -1455,7 +1455,7 @@ inline bool operator==(fu::view<char> a, fu::view<char> b)
 }
                                 #endif
 
-static uint64_t ScopeItem_canSkipRest_set_KHWe(ScopeItem_xiLD& si)
+static uint64_t ScopeItem_canSkipRest_set_FjkY(ScopeItem_xiLD& si)
 {
     return (si._packed |= 0x4000000000000000ull);
 }
@@ -1502,7 +1502,7 @@ Target_VZrr search_z0Qq(fu::view_mut<ScopeItem_xiLD> items, fu::view<char> id, i
             {
                 ScopeItem_xiLD& item = items.mutref(scope_iterator0);
                 if (items[scope_iterator0].id == id)
-                    ScopeItem_canSkipRest_set_KHWe(item);
+                    ScopeItem_canSkipRest_set_FjkY(item);
                 else
                     BUG_u9Gb((((("scope::search WILL_SKIP about to flag item.id("_view + item.id) + ") != search.id("_view) + id) + ")"_view), ctx, _here);
 

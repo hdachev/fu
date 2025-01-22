@@ -4023,9 +4023,9 @@ static fu::str str_FDl5(const Target_VZrr& t, const bool brief, const SolverStat
     return ((prefix ? (qKW_e44U(prefix) + " "_view) : fu::str{}) + ns) + qID_e44U(human_gDsn(o.name, ss, ctx, _here, module, options));
 }
 
-                                #ifndef DEF_x7Ex3D_w1zac9Uldqj
-                                #define DEF_x7Ex3D_w1zac9Uldqj
-inline fu::view<char> x7Ex3D_w1za(fu::vec_range_mut<char> a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_heDOkWur0r5
+                                #define DEF_x7Ex3D_heDOkWur0r5
+inline fu::vec_range<char> x7Ex3D_heDO(fu::vec_range_mut<char> a, fu::view<char> b)
 {
     return (a += b);
 }
@@ -4151,7 +4151,7 @@ static fu::str fail_appendStack_gDsn(/*MOV*/ fu::str&& reason, const SolverState
             SolverPass_zVQ2 _0;
             fu::str pass = (((_0 = pass0, (_0 != (pass0 = (((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here)).pass))) || (callstack == 1)) ? x7E_rA00(str_TMAs((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here)).pass), " "_view) : fu::str{});
             reason += (fu::get_view_start0("\n                "_view, max_BjFA((17 - pass.size()), 1)) + pass);
-            x7Ex3D_w1za(reason, str_FDl5((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here)).target, false, ss, ctx, _here, module, options));
+            x7Ex3D_heDO(reason, str_FDl5((((h.index >= 0) && (h.index < ss._helpers_data.size())) ? ss._helpers_data[h.index] : BUG_u9Gb("Helpers.GET: h.index is oob"_view, ctx, _here)).target, false, ss, ctx, _here, module, options));
             if (ext.args)
             {
                 reason += "("_view;
@@ -7372,7 +7372,7 @@ inline static fu::vec<Target_VZrr> tryConvert_BASR(const Type_OiTm& expect, cons
 }
                                 #endif
 
-static fu::view<char> explain_wyx7(const Type_OiTm& a, const Type_OiTm& b, fu::view<Target_VZrr> chain, fu::vec_range_mut<char> error, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+static fu::vec_range<char> explain_FDl5(const Type_OiTm& a, const Type_OiTm& b, fu::view<Target_VZrr> chain, fu::vec_range_mut<char> error, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     return (error += ((("\n\t"_view + explainTypeDiff_gDsn(a, b, " -> "_view, ss, ctx, _here, module, options)) + ":"_view) + explainConversion_gDsn(chain, fu::view<char>{}, _current_fn, ss, ctx, _here, module, options)));
 }
@@ -9535,8 +9535,8 @@ static Type_OiTm convertToSuperType_gDsn(fu::view<char> topic, SolvedNode_efhg& 
             if (bConv)
             {
                 fu::str error = (topic + ": Type ambiguity, conversions exist both ways:\n"_view);
-                explain_wyx7(a.type, b.type, aConv, error, _current_fn, ss, ctx, _here, module, options);
-                explain_wyx7(b.type, a.type, bConv, error, _current_fn, ss, ctx, _here, module, options);
+                explain_FDl5(a.type, b.type, aConv, error, _current_fn, ss, ctx, _here, module, options);
+                explain_FDl5(b.type, a.type, bConv, error, _current_fn, ss, ctx, _here, module, options);
                 fail_gDsn(error, fu::view<char>{}, TokenIdx_5581(_here), fu::view<TokenIdx_5581>{}, ss, ctx, _here, module, options, _helpers);
             }
             else
@@ -10309,17 +10309,17 @@ inline TypeParam_Lrcu& ref_hn2E(Map_v4nV& _, fu::vec_range<char> key)
 }
                                 #endif
 
-                                #ifndef DEF___Mc7IBGShmgj
-                                #define DEF___Mc7IBGShmgj
-inline static fu::view<Target_VZrr> _Mc7I(const Target_VZrr& target, fu::vec<Target_VZrr>& targets)
+                                #ifndef DEF___9WQQU7p2gb1
+                                #define DEF___9WQQU7p2gb1
+inline static fu::vec_range<Target_VZrr> _9WQQ(const Target_VZrr& target, fu::vec<Target_VZrr>& targets)
 {
     return (targets += Target_VZrr(target));
 }
                                 #endif
 
-                                #ifndef DEF_unpackAddrOfFn_L5tmtimzwK7
-                                #define DEF_unpackAddrOfFn_L5tmtimzwK7
-inline void unpackAddrOfFn_L5tm(fu::view<char> canon, fu::vec<Target_VZrr>& targets)
+                                #ifndef DEF_unpackAddrOfFn_498kHi0spA7
+                                #define DEF_unpackAddrOfFn_498kHi0spA7
+inline void unpackAddrOfFn_498k(fu::view<char> canon, fu::vec<Target_VZrr>& targets)
 {
     if (canon[0] == '@')
     {
@@ -10328,7 +10328,7 @@ inline void unpackAddrOfFn_L5tm(fu::view<char> canon, fu::vec<Target_VZrr>& targ
         {
             const Target_VZrr mi = parseLocalOrGlobal_xQNS(canon, offset);
             unsigned v;
-            _Mc7I(Target_xQNS(int(unsigned(((mi._packed >> 40ull) & 0xfffffull))), int(unsigned(((mi._packed >> 20ull) & 0xfffffull))), (v = unsigned((mi._packed & 0xfffffull)), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))))), targets);
+            _9WQQ(Target_xQNS(int(unsigned(((mi._packed >> 40ull) & 0xfffffull))), int(unsigned(((mi._packed >> 20ull) & 0xfffffull))), (v = unsigned((mi._packed & 0xfffffull)), int(((v >> 1u) ^ ((v & 1u) ? 0xffffffffu : 0x0u))))), targets);
         };
     }
     else
@@ -10731,7 +10731,7 @@ static bool trySolveTypeParams_gDsn(const Node_JjyR& node, /*MOV*/ Type_OiTm&& t
     {
         fu::vec<Target_VZrr> targets {};
         if (node.kind == Kind_Idfg___serialized_addrof_type_fn)
-            unpackAddrOfFn_L5tm(node.value, targets);
+            unpackAddrOfFn_498k(node.value, targets);
         else
             targets = solveAddrOfFn_FDl5(fu::str(node.value), node.token, (node.flags & Flags_Lzg8_F_COMPOUND_ID), ss, ctx, _here, module, options, _helpers);
 
@@ -12335,23 +12335,6 @@ inline bool some_Iddi(fu::view<COWInside_qvly> a, const Target_VZrr& argTarget)
 }
                                 #endif
 
-static const Lifetime_llCF& TEST_Lifetime_FDl5(const Lifetime_llCF& lifetime, const Type_OiTm& type, const bool tempsOK, const bool argPositionsOK, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
-{
-    if (!lifetime)
-    {
-        BUG_gDsn("TEST_Lifetime: empty lifetime"_view, ss, ctx, _here, module, options, _helpers);
-    }
-    else
-    {
-        bool first = true;
-        int lastStatic = 1000000;
-        int lastLocid = 1000000;
-        int lastArgIdx = 1000000;
-        Lifetime_each_UASs(lifetime, type, tempsOK, argPositionsOK, first, lastStatic, lastLocid, lastArgIdx, ss, ctx, _here, module, options, _helpers);
-    };
-    return lifetime;
-}
-
                                 #ifndef DEF_visit_CqcBjEpp40l
                                 #define DEF_visit_CqcBjEpp40l
 inline static void visit_CqcB(const Lifetime_llCF& lifetime, Lifetime_llCF& result, bool& maybeOutOfOrder, fu::view<int> argPos_1b, fu::view_mut<Argument_bbKc> args, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
@@ -12475,17 +12458,17 @@ static bool willPassByValue_gDsn(const Argument_bbKc& arg, const Context_Zsw9& c
 
 }
 
-                                #ifndef DEF___MAggb9cv5u2
-                                #define DEF___MAggb9cv5u2
-inline static bool _MAgg(const bool isArgIdx, const bool isStatic, const Type_OiTm& retval, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
+                                #ifndef DEF___UcdtLHzWBD8
+                                #define DEF___UcdtLHzWBD8
+inline static bool _Ucdt(const bool isArgIdx, const bool isStatic, const Type_OiTm& retval, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
 {
     return isArgIdx ? isArgIdx : isStatic ? isStatic : BUG_gDsn(x7E_rA00("updateScope: Non-static/non-arg leaked:\n\t"_view, str_gDsn(retval.lifetime, false, ss, ctx, _here, module, options)), ss, ctx, _here, module, options, _helpers);
 }
                                 #endif
 
-                                #ifndef DEF_Lifetime_each_U7bxwtXefH6
-                                #define DEF_Lifetime_each_U7bxwtXefH6
-inline void Lifetime_each_U7bx(const Lifetime_llCF& lifetime, const Type_OiTm& retval, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
+                                #ifndef DEF_Lifetime_each_dZx4Uc8HP1h
+                                #define DEF_Lifetime_each_dZx4Uc8HP1h
+inline void Lifetime_each_dZx4(const Lifetime_llCF& lifetime, const Type_OiTm& retval, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
 {
     fu::view<char> chars = lifetime.uni0n;
     int offset = 0;
@@ -12512,7 +12495,7 @@ inline void Lifetime_each_U7bx(const Lifetime_llCF& lifetime, const Type_OiTm& r
                 break;
 
         };
-        _MAgg(((r & 3u) == 3u), ((r & 11u) == 1u), retval, ss, ctx, _here, module, options, _helpers);
+        _Ucdt(((r & 3u) == 3u), ((r & 11u) == 1u), retval, ss, ctx, _here, module, options, _helpers);
     };
 }
                                 #endif
@@ -12860,7 +12843,7 @@ static void doUpdateScope_gDsn(Type_OiTm&& retval, const Target_VZrr& target, co
         {
             if (is_ref_9CJm(retval))
             {
-                TEST_Lifetime_FDl5(retval.lifetime, retval, false, false, ss, ctx, _here, module, options, _helpers);
+                TEST_Lifetime_gDsn(retval.lifetime, retval, false, false, ss, ctx, _here, module, options, _helpers);
             };
             retval.lifetime = Lifetime_process_goPd(retval.lifetime, argPos_1b, args, ss, ctx, _here, module, options, _helpers);
             for (int i_3 = 0; i_3 < args.size(); i_3++)
@@ -12882,12 +12865,12 @@ static void doUpdateScope_gDsn(Type_OiTm&& retval, const Target_VZrr& target, co
                 {
                     retval.lifetime = Lifetime_static_moveable;
                 };
-                TEST_Lifetime_FDl5(retval.lifetime, retval, false, true, ss, ctx, _here, module, options, _helpers);
+                TEST_Lifetime_gDsn(retval.lifetime, retval, false, true, ss, ctx, _here, module, options, _helpers);
             };
             const Type_OiTm& retval_1 = retval;
 
             {
-                Lifetime_each_U7bx(retval_1.lifetime, retval_1, ss, ctx, _here, module, options, _helpers);
+                Lifetime_each_dZx4(retval_1.lifetime, retval_1, ss, ctx, _here, module, options, _helpers);
                 if (isNative && is_Typename_9CJm(retval_1))
                     BUG_gDsn(("updateScope: native retval.is_Typename: "_view + explainType_gDsn(retval_1, false, false, false, false, false, (*(Type_OiTm*)fu::NIL), ss, ctx, _here, module, options)), ss, ctx, _here, module, options, _helpers);
 
@@ -17325,20 +17308,20 @@ static ArgRationale_mffC RESOLVE_byTempCopy_gDsn(SolvedNode_efhg& callsite, cons
     return RESOLVE_byTempCopy_FDl5(arg, target, position, debug, requireVal, pass, _current_fn, ss, ctx, _here, module, options, _helpers);
 }
 
-                                #ifndef DEF___eZTtxF7sGL0
-                                #define DEF___eZTtxF7sGL0
-inline static fu::view<char> _eZTt(const int locid, fu::vec_range_mut<char> err, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF___RNSFLOGHQGg
+                                #define DEF___RNSFLOGHQGg
+inline static fu::vec_range<char> _RNSF(const int locid, fu::vec_range_mut<char> err, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     return (err += ("\n\t    "_view + explainWhichFn_gDsn(nested_FDl5(locid, ss, ctx, _here), fu::view<fu::vec<Target_VZrr>>{}, fu::view<char>{}, CodeFmt_snPx_FullContext, _current_fn, ss, ctx, _here, module, options)));
 }
                                 #endif
 
-                                #ifndef DEF_each_VChJFEtl8j0
-                                #define DEF_each_VChJFEtl8j0
-inline void each_VChJ(fu::vec_range<int> a, fu::vec_range_mut<char> err, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
+                                #ifndef DEF_each_a1XrAfrbd0b
+                                #define DEF_each_a1XrAfrbd0b
+inline void each_a1Xr(fu::vec_range<int> a, fu::vec_range_mut<char> err, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options)
 {
     for (int i = 0; i < a.size(); i++)
-        _eZTt(a[i], err, _current_fn, ss, ctx, _here, module, options);
+        _RNSF(a[i], err, _current_fn, ss, ctx, _here, module, options);
 
 }
                                 #endif
@@ -17419,7 +17402,7 @@ static void validate_gDsn(const int i1, SolvedNode_efhg& callsite, fu::view<Argu
                     {
                         fu::str err = ("At call to "_view + str_FDl5(target_FDl5(callsite), false, ss, ctx, _here, module, options));
                         err += (((host_args.size() == 2) && (GET_gDsn(target_FDl5(callsite), ss, ctx, _here, module).flags & Flags_Lzg8_F_OPERATOR)) ? fu::str(str_oI6kwP1Lao1) : (x7E_rA00((x7E_rA00((x7E_rA00((x7E_rA00(", arguments:\n\n\t    "_view, fu::i64dec((i0 + 1))) + ":\t"_view), str_wyx7(host_arg0, false, _current_fn, ss, ctx, _here, module, options)) + " and\n\t    "_view), fu::i64dec((i1 + 1))) + ":\t"_view), str_wyx7(host_arg1, false, _current_fn, ss, ctx, _here, module, options)) + "\n\n\t    both alias:\n"_view));
-                        each_VChJ(Lifetime_interLocids_7Yz9(unwound0, unwound1, ctx, _here), err, _current_fn, ss, ctx, _here, module, options);
+                        each_a1Xr(Lifetime_interLocids_7Yz9(unwound0, unwound1, ctx, _here), err, _current_fn, ss, ctx, _here, module, options);
                         fu::str noTempCopy0_1 = ArgRationale_explain_gDsn(noTempCopy0, target_FDl5(callsite), arg0, host_arg0, _current_fn, ss, ctx, _here, module, options, _helpers);
                         fu::str noTempCopy1_1 = ArgRationale_explain_gDsn(noTempCopy1, target_FDl5(callsite), arg1, host_arg1, _current_fn, ss, ctx, _here, module, options, _helpers);
                         err += "\n\tCannot resolve aliasing by a temporary copy:"_view;
@@ -17513,17 +17496,17 @@ inline static int _f2qH(const Postdom_Vy5u& _)
 }
                                 #endif
 
-                                #ifndef DEF___AFwnsiU8qn9
-                                #define DEF___AFwnsiU8qn9
-inline static fu::view<int> _AFwn(const int loop_id, fu::vec<int>& loop_ids)
+                                #ifndef DEF___99XztSf4Z44
+                                #define DEF___99XztSf4Z44
+inline static fu::vec_range<int> _99Xz(const int loop_id, fu::vec<int>& loop_ids)
 {
     return (loop_ids += int(loop_id));
 }
                                 #endif
 
-                                #ifndef DEF_eachLoopStart_75oVXngWv5d
-                                #define DEF_eachLoopStart_75oVXngWv5d
-inline static void eachLoopStart_75oV(int search, fu::vec<int>& loop_ids, const SolverState_aGlN& ss)
+                                #ifndef DEF_eachLoopStart_b7enoNaAidb
+                                #define DEF_eachLoopStart_b7enoNaAidb
+inline static void eachLoopStart_b7en(int search, fu::vec<int>& loop_ids, const SolverState_aGlN& ss)
 {
     for (int i = ss._helpers_data.size(); i-- > 0; )
     {
@@ -17531,7 +17514,7 @@ inline static void eachLoopStart_75oV(int search, fu::vec<int>& loop_ids, const 
         if (h.locals_start == search)
         {
             const int parent = _f2qH(h.postdom);
-            _AFwn(search, loop_ids);
+            _99Xz(search, loop_ids);
             search = parent;
         };
     };
@@ -17613,7 +17596,7 @@ inline static SolvedNode_efhg SLOW_find_3P06(const int read, fu::view<int> loop_
 static SolvedNode_efhg SLOW_findByReadID_gDsn(const int read, const int write_loop_start, const SolvedNode_efhg& root, const CurrentFn_QbLp& _current_fn, const SolverState_aGlN& ss, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module, const Options_TBgD& options, fu::view<Helpers_DyqV> _helpers)
 {
     fu::vec<int> loop_ids {};
-    eachLoopStart_75oV(write_loop_start, loop_ids, ss);
+    eachLoopStart_b7en(write_loop_start, loop_ids, ss);
     SolvedNode_efhg _0 {};
     return (_0 = SLOW_find_3P06(read, loop_ids, root, _current_fn, ss, ctx, _here, module)) ? static_cast<SolvedNode_efhg&&>(_0) : BUG_gDsn((x7E_rA00((x7E_rA00("Cannot find read("_view, str_FDl5(nested_FDl5(read, ss, ctx, _here), false, ss, ctx, _here, module, options)) + ") in loop("_view), fu::i64dec(write_loop_start)) + ")."_view), ss, ctx, _here, module, options, _helpers);
 }
@@ -21853,7 +21836,7 @@ static SolvedNode_efhg solveCallIndirect_gDsn(const Node_JjyR& node, CurrentFn_Q
         fu::vec<Target_VZrr> targets {};
         SolvedNode_efhg head = solveCall_gDsn(first_q86q(node.items), fu::view<Target_VZrr>{}, _current_fn, ss, ctx, _here, module, options, _helpers);
         if (isAddrOfFn_9CJm(head.type))
-            unpackAddrOfFn_L5tm(head.type.vtype.canon, targets);
+            unpackAddrOfFn_498k(head.type.vtype.canon, targets);
         else if (is_Typename_9CJm(head.type))
         {
             const UserType_lctk& s = tryLookupUserType_1qjp(head.type.vtype, ctx, _here, module);
@@ -21968,7 +21951,7 @@ static SolvedNode_efhg solveNode_gDsn(const Node_JjyR& node, const Type_OiTm& ty
 
 static void hash_gDsn(TEA_0Daz& hash, const Type_OiTm& type, const Context_Zsw9& ctx, const TokenIdx_5581& _here, const Module_cdtC& module)
 {
-    hash_lweH(hash, TEA_0Daz { unsigned((type.vtype.quals & q_TAGS)), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
+    hash_lweH(hash, TEA_0Daz { (!is_void_9CJm(type.vtype) ? unsigned((type.vtype.quals & q_TAGS)) : 0u), (type.lifetime.uni0n.size() ? unsigned(1) : 0u) });
     hash_qRo1(hash, getShape_1qjp(type.vtype, ctx, _here, module).hash);
 }
 

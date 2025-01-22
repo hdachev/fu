@@ -1852,20 +1852,20 @@ static const fu::str str_OoBdvQrJLb3 fu_INIT_PRIORITY(1013) { "HOTSWAP Could not
 
 #ifndef fu_NO_fdefs
 
-                                #ifndef DEF___svMcvWMpUdj
-                                #define DEF___svMcvWMpUdj
-inline static fu::view<char> _svMc(const TokenIdx_5581& token, const int i, fu::view<TokenIdx_5581> via, fu::str& error, const Context_Zsw9& ctx)
+                                #ifndef DEF___jrV0ZwPxVe4
+                                #define DEF___jrV0ZwPxVe4
+inline static fu::vec_range<char> _jrV0(const TokenIdx_5581& token, const int i, fu::view<TokenIdx_5581> via, fu::str& error, const Context_Zsw9& ctx)
 {
     return (error += FAIL_text_u9Gb(fu::vec<TokenIdx_5581> {{ TokenIdx_5581(token) }}, ((i == (via.size() - 1)) ? "Resulting in an import circle, not currently supported."_view : "Imports:\n"_view), ctx));
 }
                                 #endif
 
-                                #ifndef DEF_each_bIYJcrV8yQ6
-                                #define DEF_each_bIYJcrV8yQ6
-inline void each_bIYJ(fu::vec_range<TokenIdx_5581> a, fu::view<TokenIdx_5581> via, fu::str& error, const Context_Zsw9& ctx)
+                                #ifndef DEF_each_0jge7HfKeXc
+                                #define DEF_each_0jge7HfKeXc
+inline void each_0jge(fu::vec_range<TokenIdx_5581> a, fu::view<TokenIdx_5581> via, fu::str& error, const Context_Zsw9& ctx)
 {
     for (int i = 0; i < a.size(); i++)
-        _svMc(a[i], i, via, error, ctx);
+        _jrV0(a[i], i, via, error, ctx);
 
 }
                                 #endif
@@ -2202,7 +2202,7 @@ ModidAndOrder_itn0 compile_lexParseDeps_Tsi8(fu::vec_range<char> fname, fu::vec_
         else
         {
             /*MOV*/ fu::str error {};
-            each_bIYJ(via, via, error, ctx);
+            each_0jge(via, via, error, ctx);
             fu::fail(static_cast<fu::str&&>(error));
         };
     }

@@ -2205,17 +2205,17 @@ static int unindent_left_3QGL(fu::view<char> src, const int i0)
     return i0;
 }
 
-                                #ifndef DEF___eQwyLf8GPl6
-                                #define DEF___eQwyLf8GPl6
-inline static fu::view<fu::str> _eQwy(fu::vec_range<char> substr, fu::vec<fu::str>& result)
+                                #ifndef DEF___noLt2WKpl25
+                                #define DEF___noLt2WKpl25
+inline static fu::vec_range<fu::str> _noLt(fu::vec_range<char> substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
                                 #endif
 
-                                #ifndef DEF_split_yvvq0ZGoCfa
-                                #define DEF_split_yvvq0ZGoCfa
-inline void split_yvvq(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_Bu6RDtTlxy0
+                                #define DEF_split_Bu6RDtTlxy0
+inline void split_Bu6R(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
@@ -2224,24 +2224,24 @@ inline void split_yvvq(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::
     {
         while (((next = find_BNNw(str, sep, last)) >= 0))
         {
-            _eQwy(fu::get_range(str, last, next), result);
+            _noLt(fu::get_range(str, last, next), result);
             last = (next + N);
         };
     };
     if (last)
-        _eQwy(fu::get_range(str, last), result);
+        _noLt(fu::get_range(str, last), result);
     else
-        _eQwy(str, result);
+        _noLt(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_t3LL2OMc5xa
-                                #define DEF_split_t3LL2OMc5xa
-inline fu::vec<fu::str> split_t3LL(fu::vec_range<char> str, fu::view<char> sep)
+                                #ifndef DEF_split_3se80nvZofj
+                                #define DEF_split_3se80nvZofj
+inline fu::vec<fu::str> split_3se8(fu::vec_range<char> str, fu::view<char> sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_yvvq(str, sep, result);
+    split_Bu6R(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -3138,32 +3138,32 @@ inline bool ends_L30J(fu::view<char> a, const char with)
 }
                                 #endif
 
-                                #ifndef DEF_split_kfES3Koo5I5
-                                #define DEF_split_kfES3Koo5I5
-inline void split_kfES(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_YSPrA3Muimd
+                                #define DEF_split_YSPrA3Muimd
+inline void split_YSPr(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
     while (((next = find_rkz0(str, sep, last)) >= 0))
     {
-        _eQwy(fu::get_range(str, last, next), result);
+        _noLt(fu::get_range(str, last, next), result);
         last = (next + N);
     };
     if (last)
-        _eQwy(fu::get_range(str, last), result);
+        _noLt(fu::get_range(str, last), result);
     else
-        _eQwy(str, result);
+        _noLt(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_Gbk9Z7dwor4
-                                #define DEF_split_Gbk9Z7dwor4
-inline fu::vec<fu::str> split_Gbk9(fu::vec_range<char> str, const char sep)
+                                #ifndef DEF_split_x5zXWdGGb1k
+                                #define DEF_split_x5zXWdGGb1k
+inline fu::vec<fu::str> split_x5zX(fu::vec_range<char> str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_kfES(str, sep, result);
+    split_YSPr(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -3173,7 +3173,7 @@ static bool check_3QGL(fu::vec_range<char> word, fu::view<char> actual)
     const int pipe = find_ZKsG(word, '|');
     if ((pipe > 1) && starts_Sfbf(word, '(') && ends_L30J(word, ')'))
     {
-        fu::vec<fu::str> alternatives = split_Gbk9(fu::get_range(word, 1, (word.size() - 1)), '|');
+        fu::vec<fu::str> alternatives = split_x5zX(fu::get_range(word, 1, (word.size() - 1)), '|');
         for (int i = 0; i < alternatives.size(); i++)
         {
             if (check_3QGL(alternatives[i], actual))
@@ -3266,12 +3266,12 @@ Context_Zsw9 ZERO_3QGL(fu::vec<fu::str>&& sources, Options_TBgD&& options, fu::v
                             end0 = unindent_left_3QGL(src, end0);
                             fu::str prefix = fu::str(fu::get_range(src, 0, start0));
                             fu::str suffix = fu::str(fu::get_range(src, end1, src.size()));
-                            fu::vec<fu::str> split = split_t3LL(fu::get_range(src, start1, end0), "<pass/>"_view);
+                            fu::vec<fu::str> split = split_3se8(fu::get_range(src, start1, end0), "<pass/>"_view);
                             if (split.size() > 1)
                             {
                                 if (split.size() < 3)
                                 {
-                                    fu::vec<fu::str> fails = split_t3LL(split[0], "<fail/>"_view);
+                                    fu::vec<fu::str> fails = split_3se8(split[0], "<fail/>"_view);
                                     split.shift();
                                     fu::view<char> pass = only_OKcL(split);
                                     for (int j = fails.size(); j-- > 0; )
@@ -3327,7 +3327,7 @@ Context_Zsw9 ZERO_3QGL(fu::vec<fu::str>&& sources, Options_TBgD&& options, fu::v
                     end0 = unindent_left_3QGL(src, end0);
                     fu::str prefix = fu::str(fu::get_range(src, 0, start0));
                     fu::str suffix = fu::str(fu::get_range(src, end1, src.size()));
-                    fu::vec<fu::str> split = split_t3LL(fu::get_range(src, start1, end0), "<alt/>"_view);
+                    fu::vec<fu::str> split = split_3se8(fu::get_range(src, start1, end0), "<alt/>"_view);
                     if (split.size() < 2)
                     {
                         split += fu::str{};
@@ -3368,7 +3368,7 @@ Context_Zsw9 ZERO_3QGL(fu::vec<fu::str>&& sources, Options_TBgD&& options, fu::v
                     end0 = unindent_left_3QGL(src, end0);
                     fu::str prefix = fu::str(fu::get_range(src, 0, start0));
                     fu::str suffix = fu::str(fu::get_range(src, end1, src.size()));
-                    fu::vec<fu::str> split = split_t3LL(fu::get_range(src, start1, end0), "<flip/>"_view);
+                    fu::vec<fu::str> split = split_3se8(fu::get_range(src, start1, end0), "<flip/>"_view);
                     if (split.size() != 2)
                         fu::fail(fu::str(str_DQQHz8ffyB4));
                     else

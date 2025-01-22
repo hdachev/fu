@@ -1365,7 +1365,7 @@ Type_OiTm NotSure_9CJm(fu::vec_range<char> canon, const unsigned quals)
     return Type_OiTm { ValueType_JtNg { quals, VFacts_xhRf{}, fu::str(canon) }, Lifetime_llCF{} };
 }
 
-extern const Type_OiTm t_void fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_KiGuEGIuqEg, 0u);
+extern const Type_OiTm t_void fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_KiGuEGIuqEg, q_rx_copy);
 extern const Type_OiTm t_never fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_scsjXZQ1yH3, 0u);
 extern const Type_OiTm t_zeroes fu_INIT_PRIORITY(1009) = NotSure_9CJm(str_8HO0vFfS8Nh, 0u);
 extern const unsigned q_rx_resize;

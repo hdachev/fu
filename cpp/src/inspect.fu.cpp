@@ -1316,9 +1316,9 @@ inline fu::str str_eN8k(const Kind_Idfg n)
 }
                                 #endif
 
-                                #ifndef DEF_x7Ex3D_w1zac9Uldqj
-                                #define DEF_x7Ex3D_w1zac9Uldqj
-inline fu::view<char> x7Ex3D_w1za(fu::vec_range_mut<char> a, fu::view<char> b)
+                                #ifndef DEF_x7Ex3D_heDOkWur0r5
+                                #define DEF_x7Ex3D_heDOkWur0r5
+inline fu::vec_range<char> x7Ex3D_heDO(fu::vec_range_mut<char> a, fu::view<char> b)
 {
     return (a += b);
 }
@@ -1511,7 +1511,7 @@ static void inspect_zVz2(const SolvedNode_efhg& n, fu::view<char> indent, const 
         else if (n.kind == Kind_Idfg_empty)
             src += qBAD_e44U(str_eN8k(n.kind));
         else
-            x7Ex3D_w1za(src, str_eN8k(n.kind));
+            x7Ex3D_heDO(src, str_eN8k(n.kind));
 
         if (n.value)
             src += (" v:"_view + n.value);

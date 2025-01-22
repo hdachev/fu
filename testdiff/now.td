@@ -66,7 +66,7 @@ struct Node_LZ9s
 
 #ifndef fu_NO_fdefs
 
-static /*8:*/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /*15:*/fu::vec_range_mut<char> src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
+static /*14:*/fu::vec_range<char> foreach_kGbb(const int arg, /*F:F*/ /*15:*/fu::vec_range_mut<char> src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
     return (src += cgNode_MbR9(overloads[arg], overloads, args));
 }
@@ -76,7 +76,7 @@ static /*14:*/fu::str cgFn_MbR9(const int target, /*7:7*/ /*8:*/fu::view<Node_LZ
     /*MOV*/ /*14:*/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
     /*8:*/fu::view<int> /*args|static*/ args_1 = args[target];
     for (int i = 0; i < args_1.size(); i++)
-        foreach_GL0m(args_1[i], src, overloads, args);
+        foreach_kGbb(args_1[i], src, overloads, args);
 
     return /*NRVO*/ src;
 }
@@ -145,6 +145,7 @@ int main() { return fu_MAIN(); }
 #include <fu/str.h>
 #include <fu/vec.h>
 #include <fu/view.h>
+#include <fu/vec_range.h>
 #include <fu/vec/concat.h>
 
 struct Node_LZ9s;
@@ -174,7 +175,7 @@ struct Node_LZ9s
 
 #ifndef fu_NO_fdefs
 
-static /*8:*/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /*15:LeftAligned, RightAligned*/fu::str& src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
+static /*14:*/fu::vec_range<char> foreach_kGbb(const int arg, /*F:F*/ /*15:LeftAligned, RightAligned*/fu::str& src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
     return (src += cgNode_MbR9(overloads[arg], overloads, args));
 }
@@ -184,7 +185,7 @@ static /*14:LeftAligned, RightAligned*/fu::str cgFn_MbR9(const int target, /*7:7
     /*MOV*/ /*14:LeftAligned, RightAligned*/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
     /*8:*/fu::view<int> /*args|static*/ args_1 = args[target];
     for (int i = 0; i < args_1.size(); i++)
-        foreach_GL0m(args_1[i], src, overloads, args);
+        foreach_kGbb(args_1[i], src, overloads, args);
 
     return /*NRVO*/ src;
 }

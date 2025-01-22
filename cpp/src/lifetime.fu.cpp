@@ -1877,9 +1877,9 @@ inline static void both_5H3x(fu::view<char> r_both, fu::view<char> sr_left, fu::
 }
                                 #endif
 
-                                #ifndef DEF_either_0yqHbITrVoj
-                                #define DEF_either_0yqHbITrVoj
-inline static fu::view<char> either_0yqH(fu::view<char> raw, Lifetime_llCF& result)
+                                #ifndef DEF_either_DdCMyqQpFZ0
+                                #define DEF_either_DdCMyqQpFZ0
+inline static fu::vec_range<char> either_DdCM(fu::view<char> raw, Lifetime_llCF& result)
 {
     return (result.uni0n += raw);
 }
@@ -2018,7 +2018,7 @@ Lifetime_llCF Lifetime_union_7Yz9(const Lifetime_llCF& a, const Lifetime_llCF& b
                     continue;
                     (void)0;
                 }), fu::unreachable) : ((cmp < 0) ? ((l_dirty = true), fu::get_view(l_chars, l_start, l_offset)) : ((r_dirty = true), fu::get_view(r_chars, r_start, r_offset))));
-                either_0yqH(either_chars, result);
+                either_DdCM(either_chars, result);
             };
           } BL_2:;
             (void)0;

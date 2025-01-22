@@ -1360,7 +1360,7 @@ s_Type NotSure(const fu::str& canon, const unsigned quals)
 
                                 #ifndef DEF_t_void
                                 #define DEF_t_void
-extern const s_Type t_void fu_INIT_PRIORITY(1009) = NotSure("void"_fu, 0u);
+extern const s_Type t_void fu_INIT_PRIORITY(1009) = NotSure("void"_fu, q_rx_copy);
                                 #endif
 
                                 #ifndef DEF_t_never

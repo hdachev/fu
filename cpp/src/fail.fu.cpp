@@ -1398,17 +1398,17 @@ inline int find_BNNw(fu::view<char> haystack, fu::view<char> needle, const int s
 }
                                 #endif
 
-                                #ifndef DEF___eQwyLf8GPl6
-                                #define DEF___eQwyLf8GPl6
-inline static fu::view<fu::str> _eQwy(fu::vec_range<char> substr, fu::vec<fu::str>& result)
+                                #ifndef DEF___noLt2WKpl25
+                                #define DEF___noLt2WKpl25
+inline static fu::vec_range<fu::str> _noLt(fu::vec_range<char> substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
                                 #endif
 
-                                #ifndef DEF_split_yvvq0ZGoCfa
-                                #define DEF_split_yvvq0ZGoCfa
-inline void split_yvvq(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_Bu6RDtTlxy0
+                                #define DEF_split_Bu6RDtTlxy0
+inline void split_Bu6R(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
@@ -1417,24 +1417,24 @@ inline void split_yvvq(fu::vec_range<char> str, fu::view<char> sep, fu::vec<fu::
     {
         while (((next = find_BNNw(str, sep, last)) >= 0))
         {
-            _eQwy(fu::get_range(str, last, next), result);
+            _noLt(fu::get_range(str, last, next), result);
             last = (next + N);
         };
     };
     if (last)
-        _eQwy(fu::get_range(str, last), result);
+        _noLt(fu::get_range(str, last), result);
     else
-        _eQwy(str, result);
+        _noLt(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_t3LL2OMc5xa
-                                #define DEF_split_t3LL2OMc5xa
-inline fu::vec<fu::str> split_t3LL(fu::vec_range<char> str, fu::view<char> sep)
+                                #ifndef DEF_split_3se80nvZofj
+                                #define DEF_split_3se80nvZofj
+inline fu::vec<fu::str> split_3se8(fu::vec_range<char> str, fu::view<char> sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_yvvq(str, sep, result);
+    split_Bu6R(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -1503,7 +1503,7 @@ fu::str formatCodeSnippet_u9Gb(fu::vec_range<char> src, fu::vec<LineColChars_6Ji
     }
     else
     {
-        fu::vec<fu::str> lines = split_t3LL(src, "\n"_view);
+        fu::vec<fu::str> lines = split_3se8(src, "\n"_view);
         const LineColChars_6JiM& start = first_o2sr(highlight);
         const LineColChars_6JiM& end = last_s4ZR(highlight);
         int l_start = (start.line - 1);

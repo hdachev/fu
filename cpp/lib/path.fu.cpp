@@ -84,40 +84,40 @@ inline int find_rkz0(fu::view<char> haystack, const char needle, const int start
 }
                                 #endif
 
-                                #ifndef DEF___eQwyLf8GPl6
-                                #define DEF___eQwyLf8GPl6
-inline static fu::view<fu::str> _eQwy(fu::vec_range<char> substr, fu::vec<fu::str>& result)
+                                #ifndef DEF___noLt2WKpl25
+                                #define DEF___noLt2WKpl25
+inline static fu::vec_range<fu::str> _noLt(fu::vec_range<char> substr, fu::vec<fu::str>& result)
 {
     return (result += fu::str(substr));
 }
                                 #endif
 
-                                #ifndef DEF_split_kfES3Koo5I5
-                                #define DEF_split_kfES3Koo5I5
-inline void split_kfES(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
+                                #ifndef DEF_split_YSPrA3Muimd
+                                #define DEF_split_YSPrA3Muimd
+inline void split_YSPr(fu::vec_range<char> str, const char sep, fu::vec<fu::str>& result)
 {
     int last = 0;
     int next = 0;
     const int N = 1;
     while (((next = find_rkz0(str, sep, last)) >= 0))
     {
-        _eQwy(fu::get_range(str, last, next), result);
+        _noLt(fu::get_range(str, last, next), result);
         last = (next + N);
     };
     if (last)
-        _eQwy(fu::get_range(str, last), result);
+        _noLt(fu::get_range(str, last), result);
     else
-        _eQwy(str, result);
+        _noLt(str, result);
 
 }
                                 #endif
 
-                                #ifndef DEF_split_Gbk9Z7dwor4
-                                #define DEF_split_Gbk9Z7dwor4
-inline fu::vec<fu::str> split_Gbk9(fu::vec_range<char> str, const char sep)
+                                #ifndef DEF_split_x5zXWdGGb1k
+                                #define DEF_split_x5zXWdGGb1k
+inline fu::vec<fu::str> split_x5zX(fu::vec_range<char> str, const char sep)
 {
     /*MOV*/ fu::vec<fu::str> result {};
-    split_kfES(str, sep, result);
+    split_YSPr(str, sep, result);
     return /*NRVO*/ result;
 }
                                 #endif
@@ -217,7 +217,7 @@ inline fu::str join_RGgB(fu::view<fu::str> a, const char sep)
 
 fu::str normalize_qZI0(fu::vec_range<char> p)
 {
-    fu::vec<fu::str> path = split_Gbk9(p, '/');
+    fu::vec<fu::str> path = split_x5zX(p, '/');
     for (int i = path.size(); i-- > 0; )
     {
         fu::view<char> part = path[i];
