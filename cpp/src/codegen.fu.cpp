@@ -2313,6 +2313,44 @@ static const fu::str& annotateZST_i4S3()
     return str_KiGuEGIuqEg;
 }
 
+                                #ifndef DEF_str_pB7BLRNZv8f
+                                #define DEF_str_pB7BLRNZv8f
+inline fu::str str_pB7B(const VFacts_xhRf n)
+{
+    /*MOV*/ fu::str res {};
+
+    {
+        if (n & VFacts_xhRf_AlwaysTrue)
+            res += ("AlwaysTrue"_view + ", "_view);
+
+        if (n & VFacts_xhRf_AlwaysFalse)
+            res += ("AlwaysFalse"_view + ", "_view);
+
+        if (n & VFacts_xhRf_Typename)
+            res += ("Typename"_view + ", "_view);
+
+        if (n & VFacts_xhRf_LeftAligned)
+            res += ("LeftAligned"_view + ", "_view);
+
+        if (n & VFacts_xhRf_RightAligned)
+            res += ("RightAligned"_view + ", "_view);
+
+    };
+    if (res)
+        res.shrink((res.size() - 2));
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+                                #ifndef DEF_x7E_rA003L6Quul
+                                #define DEF_x7E_rA003L6Quul
+inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
+{
+    return a + b;
+}
+                                #endif
+
 extern const Type_OiTm t_byte;
                                 #ifndef DEF_x3Cx3E_Rgh3ARpn2a3
                                 #define DEF_x3Cx3E_Rgh3ARpn2a3
@@ -2702,14 +2740,6 @@ inline fu::str str_eN8k(const Kind_Idfg n)
 }
                                 #endif
 
-                                #ifndef DEF_x7E_rA003L6Quul
-                                #define DEF_x7E_rA003L6Quul
-inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
-{
-    return a + b;
-}
-                                #endif
-
 static fu::str hex64_lower_i4S3(const uint64_t v)
 {
     /*MOV*/ fu::str str {};
@@ -2848,20 +2878,21 @@ static fu::str typeAnnotBase_i4S3(const Type_OiTm& type, const Mode_Z9Je mode, O
         Type_OiTm arrayItem = tryClear_sliceable_1qjp(type.vtype, ctx, _here, module);
         if (arrayItem)
         {
+            fu::str prefix = (DevOptions_QEya((options.dev & DevOptions_QEya_DEV_CG_LifetimeAnnots)) ? (x7E_rA00("/*"_view, str_pB7B(type.vtype.vfacts)) + "*/"_view) : fu::str{});
             if (isIrrelevant_9CJm(arrayItem))
             {
                 include_i4S3(str_Y5VJBd7UsFk, outputs);
-                return fu::str("fu::void_vec"_fu);
+                return prefix + "fu::void_vec"_view;
             }
             else if (ifArray_annotateAsVec_i4S3(type) || (mode & Mode_Z9Je_M_IGNORE_REFERENCE))
             {
                 if (arrayItem == t_byte)
-                    return fu::str(annotateString_i4S3(outputs));
+                    return prefix + annotateString_i4S3(outputs);
                 else
                 {
                     fu::str itemAnnot = typeAnnot_i4S3(arrayItem, Mode_Z9Je{}, outputs, _current_fn, ctx, _here, module, options);
                     include_i4S3(str_NOGxBIraLNl, outputs);
-                    return ("fu::vec<"_view + itemAnnot) + ">"_view;
+                    return ((prefix + "fu::vec<"_view) + itemAnnot) + ">"_view;
                 };
             }
             else
@@ -2873,18 +2904,18 @@ static fu::str typeAnnotBase_i4S3(const Type_OiTm& type, const Mode_Z9Je mode, O
                     {
                         include_i4S3(str_oHp7Y6FTuR1, outputs);
                         if (is_mutref_9CJm(type, ctx, _here) || (mode & Mode_Z9Je_M_MUTVAR))
-                            return ("fu::vec_range_mut<"_view + itemAnnot) + ">"_view;
+                            return ((prefix + "fu::vec_range_mut<"_view) + itemAnnot) + ">"_view;
                         else
-                            return ("fu::vec_range<"_view + itemAnnot) + ">"_view;
+                            return ((prefix + "fu::vec_range<"_view) + itemAnnot) + ">"_view;
 
                     }
                     else if (ifArrayRef_annotateAsSlice_i4S3(type))
                     {
                         include_i4S3(str_mvJDIwjABBc, outputs);
                         if (is_mutref_9CJm(type, ctx, _here) || (mode & Mode_Z9Je_M_MUTVAR))
-                            return ("fu::view_mut<"_view + itemAnnot) + ">"_view;
+                            return ((prefix + "fu::view_mut<"_view) + itemAnnot) + ">"_view;
                         else
-                            return ("fu::view<"_view + itemAnnot) + ">"_view;
+                            return ((prefix + "fu::view<"_view) + itemAnnot) + ">"_view;
 
                     }
                     else

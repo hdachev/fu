@@ -2086,6 +2086,44 @@ static fu::str annotateZST_i4S3ctpP()
     return "void"_fu;
 }
 
+                                #ifndef DEF_str_5sbFsJUspf0
+                                #define DEF_str_5sbFsJUspf0
+inline fu::str str_5sbFsJUs(const s_VFacts n)
+{
+    /*MOV*/ fu::str res {};
+
+    {
+        if (n & s_VFacts_AlwaysTrue)
+            res += ("AlwaysTrue"_fu + ", "_fu);
+
+        if (n & s_VFacts_AlwaysFalse)
+            res += ("AlwaysFalse"_fu + ", "_fu);
+
+        if (n & s_VFacts_Typename)
+            res += ("Typename"_fu + ", "_fu);
+
+        if (n & s_VFacts_LeftAligned)
+            res += ("LeftAligned"_fu + ", "_fu);
+
+        if (n & s_VFacts_RightAligned)
+            res += ("RightAligned"_fu + ", "_fu);
+
+    };
+    if (res)
+        res.shrink((res.size() - 2));
+
+    return /*NRVO*/ res;
+}
+                                #endif
+
+                                #ifndef DEF_x7E_3lDd4lqoIHf
+                                #define DEF_x7E_3lDd4lqoIHf
+inline fu::str x7E_3lDd4lqo(fu::view<char> a, fu::view<char> b)
+{
+    return a + b;
+}
+                                #endif
+
                                 #ifndef DEF_t_byte
                                 #define DEF_t_byte
 extern const s_Type t_byte;
@@ -2482,14 +2520,6 @@ inline fu::str str_WkqQ7QhO(const s_Kind n)
 }
                                 #endif
 
-                                #ifndef DEF_x7E_3lDd4lqoIHf
-                                #define DEF_x7E_3lDd4lqoIHf
-inline fu::str x7E_3lDd4lqo(fu::view<char> a, fu::view<char> b)
-{
-    return a + b;
-}
-                                #endif
-
 static fu::str hex64_lower_i4S3ctpP(const uint64_t v)
 {
     /*MOV*/ fu::str str = ""_fu;
@@ -2625,20 +2655,21 @@ static fu::str typeAnnotBase_i4S3ctpP(const s_Type& type, const s_Mode mode, s_O
         s_Type arrayItem = tryClear_sliceable_1qjplDUo(type.vtype, _here, ctx, module);
         if (arrayItem)
         {
+            fu::str prefix = (s_DevOptions((options.dev & s_DevOptions_DEV_CG_LifetimeAnnots)) ? (x7E_3lDd4lqo("/*"_fu, str_5sbFsJUs(type.vtype.vfacts)) + "*/"_fu) : fu::str{});
             if (isIrrelevant_9CJmuVSD(arrayItem))
             {
                 include_i4S3ctpP("<fu/void_vec.h>"_fu, outputs);
-                return "fu::void_vec"_fu;
+                return prefix + "fu::void_vec"_fu;
             }
             else if (ifArray_annotateAsVec_i4S3ctpP(type) || (mode & s_Mode_M_IGNORE_REFERENCE))
             {
                 if (arrayItem == t_byte)
-                    return annotateString_i4S3ctpP(outputs);
+                    return prefix + annotateString_i4S3ctpP(outputs);
                 else
                 {
                     fu::str itemAnnot = typeAnnot_i4S3ctpP(arrayItem, s_Mode{}, outputs, _current_fn, _here, ctx, module, options);
                     include_i4S3ctpP("<fu/vec.h>"_fu, outputs);
-                    return ("fu::vec<"_fu + itemAnnot) + ">"_fu;
+                    return ((prefix + "fu::vec<"_fu) + itemAnnot) + ">"_fu;
                 };
             }
             else
@@ -2650,18 +2681,18 @@ static fu::str typeAnnotBase_i4S3ctpP(const s_Type& type, const s_Mode mode, s_O
                     {
                         include_i4S3ctpP("<fu/vec_range.h>"_fu, outputs);
                         if (is_mutref_9CJmuVSD(type, _here, ctx) || (mode & s_Mode_M_MUTVAR))
-                            return ("fu::vec_range_mut<"_fu + itemAnnot) + ">"_fu;
+                            return ((prefix + "fu::vec_range_mut<"_fu) + itemAnnot) + ">"_fu;
                         else
-                            return ("fu::vec_range<"_fu + itemAnnot) + ">"_fu;
+                            return ((prefix + "fu::vec_range<"_fu) + itemAnnot) + ">"_fu;
 
                     }
                     else if (ifArrayRef_annotateAsSlice_i4S3ctpP(type))
                     {
                         include_i4S3ctpP("<fu/view.h>"_fu, outputs);
                         if (is_mutref_9CJmuVSD(type, _here, ctx) || (mode & s_Mode_M_MUTVAR))
-                            return ("fu::view_mut<"_fu + itemAnnot) + ">"_fu;
+                            return ((prefix + "fu::view_mut<"_fu) + itemAnnot) + ">"_fu;
                         else
-                            return ("fu::view<"_fu + itemAnnot) + ">"_fu;
+                            return ((prefix + "fu::view<"_fu) + itemAnnot) + ">"_fu;
 
                     }
                     else
