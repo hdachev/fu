@@ -15436,7 +15436,7 @@ pub fn solve(
     {
         hash.hash(
             tea::TEA(
-                (type.quals & q_TAGS).u32,
+                !type.is_void && (type.quals & q_TAGS).u32,
                 type.lifetime.uni0n.len && 1.u32));
 
         hash.hash(
