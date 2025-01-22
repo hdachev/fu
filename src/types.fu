@@ -68,7 +68,7 @@ pub fn propositionOK(type: Type, vfactsOK!?: bool)
 fn NotSure(canon: string, quals?: Quals)
     Type(ValueType(:canon, :quals));
 
-pub let t_void      = NotSure("void");
+pub let t_void      = NotSure("void", quals: q_rx_copy);
 pub let t_never     = NotSure("never");
 pub let t_zeroes    = NotSure("zeroes");
 
