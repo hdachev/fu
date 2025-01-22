@@ -40,7 +40,7 @@
 #include <fu/vec/concat.h>
 
 struct Node_LZ9s;
-static /**/fu::str cgNode_MbR9(const Node_LZ9s&, /**/fu::view<Node_LZ9s>, /**/fu::view</**/fu::vec<int>>);
+static /*14:*/fu::str cgNode_MbR9(const Node_LZ9s&, /*8:*/fu::view<Node_LZ9s>, /*8:*/fu::view</*14:*/fu::vec<int>>);
 
                                 #ifndef DEF_Node_LZ9sXfZwCP5
                                 #define DEF_Node_LZ9sXfZwCP5
@@ -49,7 +49,7 @@ struct Node_LZ9s
                                 // shape_hash:    9426cca71aa9fe34
                                 // non_triv_mask: 0022000000000000
     int target;
-    /**/fu::vec<Node_LZ9s> items;
+    /*14:*/fu::vec<Node_LZ9s> items;
     Node_LZ9s(const Node_LZ9s&) = default;
     Node_LZ9s(Node_LZ9s&&) = default;
     Node_LZ9s& operator=(Node_LZ9s&&) = default;
@@ -66,38 +66,38 @@ struct Node_LZ9s
 
 #ifndef fu_NO_fdefs
 
-static /**/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /**/fu::vec_range_mut<char> src, /*F:F*/ /**/fu::view<Node_LZ9s> overloads, /*F:F*/ /**/fu::view</**/fu::vec<int>> args)
+static /*8:*/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /*15:*/fu::vec_range_mut<char> src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
     return (src += cgNode_MbR9(overloads[arg], overloads, args));
 }
 
-static /**/fu::str cgFn_MbR9(const int target, /*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args)
+static /*14:*/fu::str cgFn_MbR9(const int target, /*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
-    /*MOV*/ /**/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
-    /**/fu::view<int> /*args|static*/ args_1 = args[target];
+    /*MOV*/ /*14:*/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
+    /*8:*/fu::view<int> /*args|static*/ args_1 = args[target];
     for (int i = 0; i < args_1.size(); i++)
         foreach_GL0m(args_1[i], src, overloads, args);
 
     return /*NRVO*/ src;
 }
 
-static /**/fu::str cgNode_MbR9(/*7:7*/ const Node_LZ9s& n, /*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args)
+static /*14:*/fu::str cgNode_MbR9(/*7:7*/ const Node_LZ9s& n, /*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
-    /*MOV*/ /**/fu::str src = fu::str(""_fu);
+    /*MOV*/ /*14:*/fu::str src = fu::str(""_fu);
     for (int i = 0; i < n.items.size(); i++)
         src += cgFn_MbR9(n.items[i].target, overloads, args);
 
     return /*NRVO*/ src;
 }
 
-static /**/fu::str revSpecFewerArgs_MbR9(/*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args, /*7:7*/ const Node_LZ9s& root)
+static /*14:*/fu::str revSpecFewerArgs_MbR9(/*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args, /*7:7*/ const Node_LZ9s& root)
 {
     return cgNode_MbR9(root, overloads, args);
 }
 
 int fu_MAIN()
 {
-    return revSpecFewerArgs_MbR9(fu::view<Node_LZ9s> {{ Node_LZ9s{} }}, fu::view</**/fu::vec<int>> {{ /*AlwaysFalse, LeftAligned, RightAligned*/fu::vec<int>{} }}, Node_LZ9s{}).size();
+    return revSpecFewerArgs_MbR9(fu::view<Node_LZ9s> {{ Node_LZ9s{} }}, fu::view</*14:*/fu::vec<int>> {{ /*14:AlwaysFalse, LeftAligned, RightAligned*/fu::vec<int>{} }}, Node_LZ9s{}).size();
 }
 
 #endif
@@ -148,7 +148,7 @@ int main() { return fu_MAIN(); }
 #include <fu/vec/concat.h>
 
 struct Node_LZ9s;
-static /*LeftAligned, RightAligned*/fu::str cgNode_MbR9(const Node_LZ9s&, /**/fu::view<Node_LZ9s>, /**/fu::view</**/fu::vec<int>>);
+static /*14:LeftAligned, RightAligned*/fu::str cgNode_MbR9(const Node_LZ9s&, /*8:*/fu::view<Node_LZ9s>, /*8:*/fu::view</*14:*/fu::vec<int>>);
 
                                 #ifndef DEF_Node_LZ9sXfZwCP5
                                 #define DEF_Node_LZ9sXfZwCP5
@@ -157,7 +157,7 @@ struct Node_LZ9s
                                 // shape_hash:    9426cca71aa9fe34
                                 // non_triv_mask: 0022000000000000
     int target;
-    /**/fu::vec<Node_LZ9s> items;
+    /*14:*/fu::vec<Node_LZ9s> items;
     Node_LZ9s(const Node_LZ9s&) = default;
     Node_LZ9s(Node_LZ9s&&) = default;
     Node_LZ9s& operator=(Node_LZ9s&&) = default;
@@ -174,38 +174,38 @@ struct Node_LZ9s
 
 #ifndef fu_NO_fdefs
 
-static /**/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /*LeftAligned, RightAligned*/fu::str& src, /*F:F*/ /**/fu::view<Node_LZ9s> overloads, /*F:F*/ /**/fu::view</**/fu::vec<int>> args)
+static /*8:*/fu::view<char> foreach_GL0m(const int arg, /*F:F*/ /*15:LeftAligned, RightAligned*/fu::str& src, /*F:F*/ /*8:*/fu::view<Node_LZ9s> overloads, /*F:F*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
     return (src += cgNode_MbR9(overloads[arg], overloads, args));
 }
 
-static /*LeftAligned, RightAligned*/fu::str cgFn_MbR9(const int target, /*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args)
+static /*14:LeftAligned, RightAligned*/fu::str cgFn_MbR9(const int target, /*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
-    /*MOV*/ /*LeftAligned, RightAligned*/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
-    /**/fu::view<int> /*args|static*/ args_1 = args[target];
+    /*MOV*/ /*14:LeftAligned, RightAligned*/fu::str src = cgNode_MbR9(overloads[target], overloads, args);
+    /*8:*/fu::view<int> /*args|static*/ args_1 = args[target];
     for (int i = 0; i < args_1.size(); i++)
         foreach_GL0m(args_1[i], src, overloads, args);
 
     return /*NRVO*/ src;
 }
 
-static /*LeftAligned, RightAligned*/fu::str cgNode_MbR9(/*7:7*/ const Node_LZ9s& n, /*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args)
+static /*14:LeftAligned, RightAligned*/fu::str cgNode_MbR9(/*7:7*/ const Node_LZ9s& n, /*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args)
 {
-    /*MOV*/ /*LeftAligned, RightAligned*/fu::str src {};
+    /*MOV*/ /*14:LeftAligned, RightAligned*/fu::str src {};
     for (int i = 0; i < n.items.size(); i++)
         src += cgFn_MbR9(n.items[i].target, overloads, args);
 
     return /*NRVO*/ src;
 }
 
-static /*LeftAligned, RightAligned*/fu::str revSpecFewerArgs_MbR9(/*7:7*/ /**/fu::view<Node_LZ9s> overloads, /*7:7*/ /**/fu::view</**/fu::vec<int>> args, /*7:7*/ const Node_LZ9s& root)
+static /*14:LeftAligned, RightAligned*/fu::str revSpecFewerArgs_MbR9(/*7:7*/ /*8:*/fu::view<Node_LZ9s> overloads, /*7:7*/ /*8:*/fu::view</*14:*/fu::vec<int>> args, /*7:7*/ const Node_LZ9s& root)
 {
     return cgNode_MbR9(root, overloads, args);
 }
 
 int fu_MAIN()
 {
-    return revSpecFewerArgs_MbR9(fu::view<Node_LZ9s> {{ Node_LZ9s{} }}, fu::view</**/fu::vec<int>> {{ /*AlwaysFalse, LeftAligned, RightAligned*/fu::vec<int>{} }}, Node_LZ9s{}).size();
+    return revSpecFewerArgs_MbR9(fu::view<Node_LZ9s> {{ Node_LZ9s{} }}, fu::view</*14:*/fu::vec<int>> {{ /*14:AlwaysFalse, LeftAligned, RightAligned*/fu::vec<int>{} }}, Node_LZ9s{}).size();
 }
 
 #endif

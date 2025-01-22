@@ -2086,6 +2086,14 @@ static fu::str annotateZST_i4S3ctpP()
     return "void"_fu;
 }
 
+                                #ifndef DEF_x7E_3lDd4lqoIHf
+                                #define DEF_x7E_3lDd4lqoIHf
+inline fu::str x7E_3lDd4lqo(fu::view<char> a, fu::view<char> b)
+{
+    return a + b;
+}
+                                #endif
+
                                 #ifndef DEF_str_5sbFsJUspf0
                                 #define DEF_str_5sbFsJUspf0
 inline fu::str str_5sbFsJUs(const s_VFacts n)
@@ -2113,14 +2121,6 @@ inline fu::str str_5sbFsJUs(const s_VFacts n)
         res.shrink((res.size() - 2));
 
     return /*NRVO*/ res;
-}
-                                #endif
-
-                                #ifndef DEF_x7E_3lDd4lqoIHf
-                                #define DEF_x7E_3lDd4lqoIHf
-inline fu::str x7E_3lDd4lqo(fu::view<char> a, fu::view<char> b)
-{
-    return a + b;
 }
                                 #endif
 
@@ -2655,7 +2655,7 @@ static fu::str typeAnnotBase_i4S3ctpP(const s_Type& type, const s_Mode mode, s_O
         s_Type arrayItem = tryClear_sliceable_1qjplDUo(type.vtype, _here, ctx, module);
         if (arrayItem)
         {
-            fu::str prefix = (s_DevOptions((options.dev & s_DevOptions_DEV_CG_LifetimeAnnots)) ? (x7E_3lDd4lqo("/*"_fu, str_5sbFsJUs(type.vtype.vfacts)) + "*/"_fu) : fu::str{});
+            fu::str prefix = (s_DevOptions((options.dev & s_DevOptions_DEV_CG_LifetimeAnnots)) ? (x7E_3lDd4lqo((x7E_3lDd4lqo("/*"_fu, fu::u64dec(type.vtype.quals)) + ":"_fu), str_5sbFsJUs(type.vtype.vfacts)) + "*/"_fu) : fu::str{});
             if (isIrrelevant_9CJmuVSD(arrayItem))
             {
                 include_i4S3ctpP("<fu/void_vec.h>"_fu, outputs);
