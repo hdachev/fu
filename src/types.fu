@@ -67,10 +67,10 @@ pub fn propositionOK(type: Type, vfactsOK!?: bool)
 //  if for no other reason than for the fact that we have explicit conversions between primiives,
 //   and we definitely don't want anyone converting from void or never to e.g. an int.
 
-fn NotPrimitive(canon: string, quals?: Quals)
+fn NotPrimitive(canon: string, quals!?: Quals)
     Type(ValueType(:canon, :quals));
 
-pub let t_void      = NotPrimitive("void");
+pub let t_void      = NotPrimitive("void", quals: q_rx_copy);
 pub let t_never     = NotPrimitive("never");
 pub let t_zeroes    = NotPrimitive("zeroes");
 
@@ -87,7 +87,7 @@ pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
 
 //
 
-fn QualsAdd(mut t: Type, quals: Quals) {
+fn QualsAdd(mut t: Type, quals!: Quals) {
     t.quals |= quals;
     return t;
 }
@@ -98,7 +98,7 @@ fn QualsClear(mut t: Type) {
 }
 
 pub let t_AssumeNever_WhileSolvingRecursion =
-    QualsAdd(t_never, q_rx_resize);
+    QualsAdd(t_never, quals: q_rx_resize);
 
 pub fn is_AssumeNever_WhileSolvingRecursion(t: ValueType) =
     t.canon == "never" && t.quals & q_rx_resize;

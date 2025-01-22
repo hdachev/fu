@@ -2076,7 +2076,7 @@ pub extern fn runTests()
 
     // Arrays.
 
-    TODO_zst(currently: "cannot move arr used again 8:22+3", `
+    TODO_zst(currently: "__native [] does nothing: returns void and has no effect 233:18+2", `
                                                     <alt>
         mut arr: i32[] = [1, 2, 3, 4];
         arr.push(5);
@@ -21615,13 +21615,13 @@ pub extern fn runTests()
 
     // Zero-sized types.
 
-    TODO_zst(currently: "Not a struct nor custom primitive: nocopy void 814:5+3", `
+    TODO_zst(currently: "Not a struct nor custom primitive: void 814:5+3", `
         mut nothing = void;
         mut other_nothing = nothing;
         return other_nothing == [] ? 0 : 1;
     `);
 
-    TODO_zst(currently: "Cannot move: mut arr is used again 6:22+3", `
+    TODO_zst(currently: "BUG exit code", `
         mut arr = [void];
         arr ~= arr ~ arr;
         return arr.len - 3;
