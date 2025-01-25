@@ -374,7 +374,20 @@ pub fn createSlice(item: Type, lifetime = Lifetime_temporary): Type
 pub fn createArray(item: Type): Type
 {
     let canon = "[" ~ serializeType(item, debug: "createArray") ~ "]";
-    let quals = (item.quals & q_rx_copy) | q_rx_resize | q_non_compund;
+    let quals = (item.quals & q_rx_copy) | q_rx_resize | q_non_compund
+
+              // Yeah this is not great, but let's roll with it for a moment.
+              //
+              // Ideally, we'd make void copiable and avoid the special-casing here.
+              //  It's a bit worrisome that all of a sudden we'll have to relax all the voids
+              //   all over the place which too is silly.
+              //
+              // Maybe we don't need to relax copy for trivial data?
+              //  Would this speed things up across the board?
+              //   Maybe by avoiding a rev-spec or two?
+              //
+              | (experiments::IDEA_void_empty_struct
+                    && item.is_void && q_rx_copy);
 
     return Type(
         ValueType(:canon, :quals),
