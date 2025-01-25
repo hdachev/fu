@@ -76,4 +76,13 @@ struct void_vec
     }
 };
 
+void_vec operator+(void_vec a, void_vec b) {
+    return void_vec { a._size + b._size };
+}
+
+void_vec& operator+=(void_vec& a, void_vec b) {
+    a._size += b._size;
+    return a;
+}
+
 } // namespace
