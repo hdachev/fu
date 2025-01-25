@@ -80,8 +80,21 @@ void_vec operator+(void_vec a, void_vec b) {
     return void_vec { a._size + b._size };
 }
 
+void_vec operator+(void_vec a, int) {
+    return void_vec { a._size + 1 };
+}
+
+void_vec operator+(int, void_vec b) {
+    return void_vec { 1 + b._size };
+}
+
 void_vec& operator+=(void_vec& a, void_vec b) {
     a._size += b._size;
+    return a;
+}
+
+void_vec& operator+=(void_vec& a, int) {
+    a._size++;
     return a;
 }
 

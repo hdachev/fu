@@ -2467,6 +2467,10 @@ pub fn cpp_codegen(
 
         fn ARG(i: int) item_src[i];
 
+        // Workaround for stuff like void_vec += void
+        fn ARG_orZeroIfVoid(i: int) ARG(:i) || args[i].isIrrelevant && "0"
+                                            || BUG("Non-void empty argument.");
+
 
         //
 
@@ -2490,12 +2494,12 @@ pub fn cpp_codegen(
 
         fn emitPostfixOp(op: string)
         {
-            return unpromote(ARG(0) ~ op);
+            return unpromote(ARG_orZeroIfVoid(0) ~ op);
         }
 
         fn emitPrefixOp(op: string)
         {
-            return unpromote(op ~ ARG(0));
+            return unpromote(op ~ ARG_orZeroIfVoid(0));
         }
 
         fn emitBinaryOp(op: string)
@@ -2503,9 +2507,9 @@ pub fn cpp_codegen(
             args.len == 2 || BUG("args.len != 2");
 
             if (binSkipParens(op, mode) && !ooe_header)
-                return ARG(0) ~ " " ~ op ~ " " ~ ARG(1);
+                return ARG_orZeroIfVoid(0) ~ " " ~ op ~ " " ~ ARG_orZeroIfVoid(1);
 
-            return ooeWrap(unpromote("(" ~ ARG(0) ~ " " ~ op ~ " " ~ ARG(1) ~ ")"));
+            return ooeWrap(unpromote("(" ~ ARG_orZeroIfVoid(0) ~ " " ~ op ~ " " ~ ARG_orZeroIfVoid(1) ~ ")"));
         }
 
         fn emitMethodCall(id: string)
