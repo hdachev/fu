@@ -21627,6 +21627,14 @@ pub extern fn runTests()
         return arr.len - 3;
     `);
 
+    TODO_zst(currently: "BUG exit code", `
+        mut arr = [void()];                                     ;; IrrelevantLiteral
+        arr ~= arr ~ arr;
+        arr ~= arr ~ void();
+        arr ~= void();
+        return arr.len - 8;
+    `);
+
     ZERO(`
         struct Empty {};
 
