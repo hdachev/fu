@@ -14,9 +14,6 @@ import fail;
 import experiments;
 
 
-let BUG_missing_SS_FN_REC   = true;
-
-
 //
 
 let OPTI_autoshadow         = true;
@@ -15489,7 +15486,7 @@ pub fn solve(
                                 let idx = already_hashing.find(target);
                                 if (idx >= 0)
                                 {
-                                    if (SELF_TEST && !BUG_missing_SS_FN_REC)
+                                    if (SELF_TEST)
                                     {
                                         target.status & SS_FN_RECUR     || BUG("computeFnSighash: missing SS_FN_RECUR [1] on " ~ target);
                                         fn_target.status & SS_FN_RECUR  || BUG("computeFnSighash: missing SS_FN_RECUR [2] on " ~ fn_target);
