@@ -1822,7 +1822,7 @@ pub fn solve(
             tryExplainWell(what) || explainType(what, lt: true));
     }
 
-    fn explainNotAssignable(host: Type, guest: Type)
+    fn explainNotAssignable(host: Type, guest: Type, cannot_retype!?: SolvedNode)
     {
         // Special case common problems.
         if (host.is_mutref)
@@ -1831,7 +1831,10 @@ pub fn solve(
                 return explainNotMutref(guest);
         }
 
-        return "expects " ~ explainTypeDiff(host, guest, sep: ", got ");
+        let hint = cannot_retype && tryExplainCannotRetype(
+            cannot_retype, expect: host);
+
+        return "expects " ~ explainTypeDiff(host, guest, sep: ", got ") ~ hint;
     }
 
     fn str(n: SolvedNode)
@@ -2605,7 +2608,8 @@ pub fn solve(
                         }
 
                         // Nope, args fail.
-                        matchFail(host_arg ~ " " ~ explainNotAssignable(host: expect, actual));
+                        matchFail(host_arg ~ " " ~ explainNotAssignable(host: expect, actual,
+                            cannot_retype: args[callsiteIndex]));
                     }
 
                     if (REST_START < N)
@@ -2726,6 +2730,7 @@ pub fn solve(
     fn isNotDefinedHere(id: string)
         id.qID ~ " is not defined here.";
 
+
     //
 
     fn couldRetype(node: SolvedNode): int
@@ -2793,6 +2798,85 @@ pub fn solve(
         }
 
         node.type = retype;
+    }
+
+    fn tryExplainCannotRetype(node: SolvedNode, expect: Type): string
+    {
+        mut hint: string;
+
+        let s = expect.tryLookupUserType();
+        if ((s.kind == "enum" || s.kind == "flags")
+                && isAssignable(host: t_string_literal, node.type))
+        {
+            // In case we want an enum and we got a string -
+            //  try to see what was written in the string literals in the ast,
+            //   might be a typo we can help out with.
+            //
+            mut ok = true;
+
+            struct Suggestion {
+                dist:   int;
+                target: Target;
+            };
+
+            mut suggestions:    Suggestion[];
+            mut token:          TokenIdx;
+
+            fn visit(n: SolvedNode)
+            {
+                if (!ok)
+                    return;
+
+                let k = n.kind;
+                if (k == "str")
+                {
+                    // We don't need to do this more than once.
+                    if (token)
+                        return;
+
+                    // Does it retype? Then it's a match, nothing to suggest.
+                    if (tryRetyping(n, :expect).is_primitive)
+                        return;
+
+                    // This is us here.
+                    for (mut i = 0; i < s.items.len; i++)
+                    {
+                        let member = s.items[i];
+                        let dist = ::levenshtein(n.value, member.id);
+                        if (dist < min(5, n.value.len >> 1))
+                            suggestions ~= Suggestion(:dist, :member.target);
+                    }
+
+                    token = n.token;
+                }
+                else if (k == "if" || k == "or" || k == "and" || k == "block")
+                {
+                    let start = k == "if" ? 1
+                              : k == "or" ? 0
+                              : n.items.len - 1;
+
+                    for (mut i = start; i < n.items.len; i++)
+                        visit(n.items[i]);
+                }
+                else
+                {
+                    ok = false;
+                }
+            }
+
+            visit(node);
+
+            if (ok && token && suggestions)
+            {
+                hint ~= "\n\n\t\tCannot retype the string literal at " ~ token.addr_and_snippet;
+                hint ~= "\n\t\tDid you mean:\n";
+
+                suggestions.each: |.target|
+                    hint ~= "\n\t\t" ~ target.explainWhichFn();
+            }
+        }
+
+        return hint;
     }
 
 

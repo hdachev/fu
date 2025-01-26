@@ -22496,7 +22496,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "FaceCull, got string 2:29+14", [`
+    ZERO([`
         enum FaceCull { Disabled = 0; CullCW; CullCCW }
         pub fn updateFaceCull(v: FaceCull) v.int;
     `,`

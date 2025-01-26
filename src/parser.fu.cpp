@@ -2468,7 +2468,7 @@ static s_Node parseStatement_GzQ8uksl(const int modid, const fu::str& fname, con
                 return parseUnwrap_tkChLXD1(modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
 
         };
-        if ((v == "fn"_fu) && ((peek.kind == s_kind_id) || !_fnDepth))
+        if ((v == "fn"_fu || /*fwd compat*/v == "test"_fu) && ((peek.kind == s_kind_id) || !_fnDepth))
         {
             return parseFnDecl_x0HZ97dk(s_Flags{}, s_Fixity{}, s_DeclAsserts{}, false, modid, fname, src, tokens, _idx, _loc, _col0, _precedence, _fnDepth, _autopub, _TODO_FIX_dollarOk, _numDollars, _expectedTypeParams, _upstreamTypeParams, imports, warnings, options);
         }

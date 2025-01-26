@@ -99,7 +99,7 @@ struct UserType
     name:           string;
 
     target?:        Target;
-    items?:         ScopeItem[];
+    items?:         ScopeItem[];    // TODO items -> members
     implicits?:     ScopeItem[];
     imports?:       flat::Set(i32);
     converts?:      Target[];

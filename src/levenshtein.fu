@@ -1,0 +1,66 @@
+
+// Ported from the single-row variant by Titus Wormer.
+// https://github.com/wooorm/levenshtein.c/blob/main/levenshtein.c
+//
+fn levenshtein_NM(a: byte[..], b: byte[..])
+{
+    if (!a.len) return b.len;
+    if (!b.len) return a.len;
+
+    mut cache   = a.map(|_, i| i + 1);
+    mut result  = 0;
+
+    for (mut ib = 0; ib < b.len; ib++)
+    {
+        let code    = b[ib];
+        mut d0      = ib;
+        result      = d0;
+
+        for (mut ia = 0; ia < a.len; ia++)
+        {
+            let d1      = code == a[ia] ? d0 : d0 + 1;
+            d0          = cache[ia];
+            result      = min(min(result + 1, d0 + 1), d1);
+            cache[ia]   = result;
+        }
+    }
+
+    return result;
+}
+
+pub fn levenshtein(a: byte[..], b: byte[..])
+{
+    // Trim common prefix.
+    mut prefix = 0;
+    let N = min(a.len, b.len);
+    for (; prefix < N; prefix++)
+        if (a[prefix] != b[prefix])
+            break;
+
+    shadow let a = a[prefix ..];
+    shadow let b = b[prefix ..];
+
+    // Trim common suffix.
+    mut a_suffix = a.len;
+    mut b_suffix = b.len;
+
+    for (; a_suffix && b_suffix; { a_suffix--; b_suffix-- })
+        if (a[a_suffix - 1] != b[b_suffix - 1])
+            break;
+
+    shadow let a = a[.. a_suffix];
+    shadow let b = b[.. b_suffix];
+
+    // Run the O(N*M) loops.
+    return levenshtein_NM(a, b);
+}
+
+test basics()
+{
+    assert(levenshtein("kitten", "sitten") == 1);
+    assert(levenshtein("kitten", "") == 6);
+    assert(levenshtein("", "world") == 5);
+    assert(levenshtein("", "") == 0);
+    assert(levenshtein("hello world", "hello, world!") == 2);
+    assert(levenshtein("hello world", "Hello, World!") == 4);
+}
