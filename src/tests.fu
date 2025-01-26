@@ -114,7 +114,6 @@ pub extern fn runTests()
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_ooe        = fn TODO;
-    let TODO_zst        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
@@ -2076,7 +2075,7 @@ pub extern fn runTests()
 
     // Arrays.
 
-    TODO_zst(currently: "__native [] does nothing returns void no effect prelude 233:18+2", `
+    ZERO(`
                                                     <alt>
         mut arr: i32[] = [1, 2, 3, 4];
         arr.push(5);
@@ -2102,7 +2101,7 @@ pub extern fn runTests()
         infix fn += (ref sum: i32, v: i32[]) sum += v.len;
         type T = i32[];
                                                     <alt/>
-        mut arr = [void, void, void, void];
+        mut arr = [void, void, void, void];                     ;; IrrelevantLiteral
         arr.push(void);
         arr ~= arr ~ arr;
         infix fn += (ref sum: i32, v: void) ++sum;
@@ -21645,8 +21644,8 @@ pub extern fn runTests()
         return arr.len - 8;
     `);
 
-    TODO_zst(currently: "[] does nothing 233:18+2", `
-        let arr = [void, void, void, void];
+    ZERO(`
+        let arr = [void, void, void, void];                     ;; IrrelevantLiteral
         infix fn += (ref sum: i32, v: void) ++sum;
         mut sum = 0;
         for (mut i = 0; i < arr.len; i++) sum += arr[i];

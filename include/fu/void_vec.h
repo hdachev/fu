@@ -47,13 +47,26 @@ struct void_vec
         shrink(_size - shift);
     }
 
+    void push() noexcept {
+        _size++;
+    }
+
+    void insert([[maybe_unused]] fu::i idx) noexcept {
+        assert(idx >= 0 && idx <= _size);
+        _size++;
+    }
+
+    void unshift() noexcept {
+        _size++;
+    }
+
     void shift_pop(fu::i shift, fu::i pop) noexcept {
         assert(shift >= 0 && pop >= 0);
         shrink(_size - shift - pop);
     }
 
     void splice([[maybe_unused]] fu::i idx, fu::i del) noexcept {
-        assert(idx >= 0 && idx < _size);
+        assert(idx >= 0 && del >= 0 && idx + del <= _size);
         shrink(_size - del);
     }
 

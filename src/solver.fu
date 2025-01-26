@@ -8029,7 +8029,7 @@ pub fn solve(
 
         if (maybeLast && !mustBecomeInline)
             numArgsWritten || ext.fx_mask
-                || !retval.is_void              // Shouldn't this be any warn on any ZST?
+                || !(retval.is_void && !retval.is_ref) // is_ref check allows for subscripting a void vector
                 || overload.flags & F_LAX
                 || args.some(|a| a.isAddrOfFn // dont require laxing higher-order fns
                               || a.is_zst && a.flags & F_REF && a.flags & F_TEMPLATE) // allow generic pseudo-writes to zsts
