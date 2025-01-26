@@ -8031,7 +8031,8 @@ pub fn solve(
             numArgsWritten || ext.fx_mask
                 || !retval.is_void              // Shouldn't this be any warn on any ZST?
                 || overload.flags & F_LAX
-                || args.some(.type.isAddrOfFn)  // Adding this to avoid the need for laxing higher-order fns.
+                || args.some(|a| a.isAddrOfFn // dont require laxing higher-order fns
+                              || a.is_zst && a.flags & F_REF && a.flags & F_TEMPLATE) // allow generic pseudo-writes to zsts
                 || push(Warning(locid: 0x11110000));
 
         //

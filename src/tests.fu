@@ -21635,7 +21635,7 @@ pub extern fn runTests()
         return arr.len - 8;
     `);
 
-    TODO_zst(currently: "defassign does nothing 5:12+9", `
+    ZERO(`
         fn defassign(ref x) x = [];
 
         mut arr = [void()];                                     ;; IrrelevantLiteral
