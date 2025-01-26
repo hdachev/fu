@@ -21645,6 +21645,14 @@ pub extern fn runTests()
         return arr.len - 8;
     `);
 
+    TODO_zst(currently: "[] does nothing 233:18+2", `
+        let arr = [void, void, void, void];
+        infix fn += (ref sum: i32, v: void) ++sum;
+        mut sum = 0;
+        for (mut i = 0; i < arr.len; i++) sum += arr[i];
+        return sum - 4;
+    `);
+
     ZERO(`
         struct Empty {};
 
