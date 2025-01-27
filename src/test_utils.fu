@@ -147,7 +147,7 @@ fn verify_errmsg(topic: string, e!: string, msg!: string)
     mut actual = e
         .ERR_TRIM
         .ERR_STRIP_ANSI
-        .ERR_STRIP_SNIPPETS
+        .ERR_STRIP_SNIPPETS(append_snippet_counts: msg.has("snippets:"))
         .ascii::lower;
 
     mut BUG_ok = false;
@@ -776,10 +776,19 @@ pub fn ERR_STRIP_ANSI(mut e: string)
     return e;
 }
 
-fn ERR_STRIP_SNIPPETS(mut e: string)
+fn ERR_STRIP_SNIPPETS(mut e: string, append_snippet_counts!?: bool)
 {
     mut i0 = 0;
 
+    // append_snippet_counts:
+    //  Adding these for checking total snippet counts with <fail ... snippets:N:B:S>.
+    //   Helps verify bugs with excessive "A" via "B" via "C" snippet chains getting reported.
+    //
+    mut total_with_ctx      = 0;
+    mut total_without_ctx   = 0;
+    mut curr_snippet_lines  = 0;
+
+    //
     for (mut i = 0; i < e.len; i++)
     {
         shadow let c = e[i];
@@ -803,10 +812,23 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
                     // println(" SPLICE " ~ e[i0 : i - 1]);
                     e.splice(i0, i - i0);
                     i = i0;
+
+                    if (append_snippet_counts)
+                        curr_snippet_lines++;
                 }
                 else
                 {
                     i0 = i;
+
+                    if (curr_snippet_lines)
+                    {
+                        if (curr_snippet_lines > 1)
+                            total_with_ctx++;
+                        else
+                            total_without_ctx++;
+
+                        curr_snippet_lines = 0;
+                    }
                 }
 
                 i--; // revisit
@@ -832,6 +854,9 @@ fn ERR_STRIP_SNIPPETS(mut e: string)
             }
         }
     }
+
+    if (append_snippet_counts)
+        e ~= "\nsnippets:" ~ (total_with_ctx + total_without_ctx) ~ ":" ~ total_with_ctx ~ ":" ~ total_without_ctx;
 
     return e;
 }
