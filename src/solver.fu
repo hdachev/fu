@@ -8718,8 +8718,12 @@ pub fn solve(
                 {
                     ref init    = s.items[i].target.GET_mut.solved;
                     let member  = members[i];
-                    init        = member.items[LET_INIT];
-                    _here       = member.token;
+                    init        = member.items[LET_INIT]; // <-
+                    _here       = member.token;           //
+                                                          //
+                    // TODO FIX should keep the whole let node above, dunno what i was thinking -
+                    //  here without this we misattribute the enumv to the numeric literal.
+                    defer init.token = member.token;
 
                     // Parse & reinit sequence.
                     if (init)

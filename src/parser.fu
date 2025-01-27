@@ -555,10 +555,15 @@ pub fn parse(
 
     fn parseEnumItem(): Node
     {
+        ///////////////////////////////////////////////
+        let idx0    = _idx;
+        ///////////////////////////////////////////////
+
         let id      = consume("id").value;
         let init    = tryParseLetInit();
         softSemi();
 
+        _loc        = idx0;
         return createLet(:id, :init);
     }
 
