@@ -122,7 +122,6 @@ pub extern fn runTests()
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
     let TODO_lint       = fn TODO;
-    let TODO_testing    = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
 
@@ -23243,7 +23242,7 @@ pub extern fn runTests()
 
     // Testing.
 
-    TODO_testing(currently: "<fail> does not throw", [`
+    ZERO([`
         <alt>
         pub </alt>
         struct Hello { v: i32 }
@@ -23257,7 +23256,7 @@ pub extern fn runTests()
         fn main() _0::Hello().v;
     `]);
 
-    TODO_testing(currently: "<fail> does not throw", [`
+    ZERO([`
         struct Hello { v: i32 }
         test a_simple_test() {
             <fail assertion failed !!Hello>

@@ -1439,7 +1439,7 @@ pub fn parse(
 
     fn parseTestcase()
     {
-        return parseFnDecl(flags: F_TESTCASE);
+        return parseFnDecl(flags: F_TESTCASE | F_PUB);
     }
 
     fn tryPopTypeAnnot(allowTypeUnions! = false, allowLegacyRefs! = false): Node
