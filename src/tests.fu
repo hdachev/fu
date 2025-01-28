@@ -21537,13 +21537,14 @@ pub extern fn runTests()
         fn main() TEST_FunctionNarrowing(Type(), Type()) ? 0 : 1;
     `);
 
-    TODO_relaxer(currently: "<fail> does not throw", `
+    ZERO(`
         fn what(arg: int) {
-            lax mut prefix = arg & 1        <fail does nothing X:X><pass/>
+            lax mut prefix = arg & 1        <fail does nothing 2:12+4><pass/>
             return prefix;                  </fail>
         }
 
-        fn main() 0.what;
+        fn adapt(v: int or void) typeof(v) -> int ? v : 0;
+        fn main() adapt(0.what);
     `);
 
     // /Relaxer.
