@@ -4814,6 +4814,23 @@ pub extern fn runTests()
         fn main() either(either("", "World"), "") == "Hello, World!" ? 0 : 1;
     `]);
 
+    ZERO(`
+        struct Hello { v: i32 }; struct World { w: i32 };
+        using fn changes_truthiness(x: Hello) = World(x.v + 70);
+
+        fn test(i: i32) {
+            let condition <fail incompatible operands 7:32+2><pass/>
+                : bool    </fail>
+                    = <alt>Hello(i) || World(i)  // must not convert here -
+                      <alt/>World(i) || Hello(i) //  otherwise must ensure truthiness preserved by conversions
+                      </alt>;                    //   - also potential for inefficiency
+
+            return condition ? 101 : 1;
+        }
+
+        fn main() test(1)*Hello(0).w + test(0) - 7071; // 101*70 + 1
+    `);
+
     // /Logic and selectors.
 
 
