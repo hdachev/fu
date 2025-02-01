@@ -7043,9 +7043,17 @@ pub fn solve(
 
                         let paramType =
                             annot.kind == "typeparam"
-                                ? _typeParams.ref(annot.value).matched
-                                : annot.kind == "call" && !annot.items
-                                    && Scope_lookupType(annot.value, :annot.flags);
+                                ? _typeParams.ref(annot.value).matched :
+
+                            // TODO FIX typeunions & definits strike again, really ill defined ///////
+                            annot.kind == "typeunion" && !(DONT_match_zeroes && inValue.is_zeroes)  //
+                                ? annot.items.first(                                                //
+                                    |item| item.kind == "typeparam"                                 //
+                                        && _typeParams.ref(item.value).matched) :                   //
+                            //////////////////////////////////////////////////////////////////////////
+
+                            annot.kind == "call" && !annot.items
+                                && Scope_lookupType(annot.value, :annot.flags);
 
                         // Ignore literals if possible.
                         if (paramType)
