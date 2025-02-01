@@ -4831,7 +4831,7 @@ pub extern fn runTests()
         fn main() test(1)*Hello(0).w + test(0) - 7071; // 101*70 + 1
     `);
 
-    TODO_litfix(currently: "ambig || incompatible operands 21:26+2", `
+    ZERO(`
         enum Woot {
             DontLitfixNonEmptyStringToZero
                 <fail incompatible operands 21:26+2>
@@ -4852,7 +4852,7 @@ pub extern fn runTests()
         }
 
         fn and_this_is_also_truthy(v: Woot) {
-            let cond = v || "DontLitfixNonEmptyStringToZero";
+            let cond = v || "DontLitfixNonEmptyStringToZero";   ;; !DEV_DontFoldLiterals
             return !!(cond);
         }
 
@@ -14355,8 +14355,8 @@ pub extern fn runTests()
         fn main() = litfix_order(a: 2, b: 0.5) == 7 ? 0 : 1;
     `);
 
-    TODO_litfix(currently: "ambig ||, incompatible operands in non-bool context i16 i32 2:44+2", `
-        fn next_mip(ref s: i16) s = s >> 1 || 1;
+    ZERO(`
+        fn next_mip(ref s: i16) s = s >> 1 || 1;                ;; !DEV_DontFoldLiterals
         fn main() {
             mut v = 3.i16;
             let a = v.next_mip();

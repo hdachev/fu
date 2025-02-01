@@ -11372,12 +11372,41 @@ pub fn solve(
             {
                 ref item = items[i];
                 if (item.type.is_never)
+                {
+                    if (SELF_TEST && i != items.len - 1)
+                        BUG("createOr: item.is_never but i != items.len - 1");
+
                     continue;
+                }
 
                 //
                 if (sumType)
                 {
-                    sumType = type_trySuper(sumType, item.type) ||
+                    sumType = type_trySuper(sumType, item.type)
+                        ||
+                    /////////////////
+                    // Literal fixup - retyping of the last operand -
+                    //  should be the only operand that needs it -
+                    //   putting a literal halfway through a || is not useful -
+                    //    it will usually either eliminate itself or what follows.
+                    //
+                    i == items.len - 2 && items[i + 1].vfacts & AlwaysTrue &&
+                    {
+                        let retype = tryRetyping(
+                            items[i + 1], expect: item.type);
+
+                        retype.vfacts & AlwaysTrue &&
+                        {
+                            shadow let sumType = type_trySuper(retype, item.type);
+                            if (sumType)
+                                applyRetype(items[i + 1], retype);
+
+                            sumType
+                        }
+                    }
+                    //        /LITFIX
+                    /////////////////
+                        ||
                     {
                         // EXPERIMENTAL & doesnt feel really robust:
                         //  Allow incompatible types so long as one of the operands is a bool.
