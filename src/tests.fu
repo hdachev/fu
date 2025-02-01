@@ -4831,6 +4831,44 @@ pub extern fn runTests()
         fn main() test(1)*Hello(0).w + test(0) - 7071; // 101*70 + 1
     `);
 
+    TODO_litfix(currently: "ambig || incompatible operands 21:26+2", `
+        enum Woot {
+            DontLitfixNonEmptyStringToZero
+                <fail incompatible operands 21:26+2>
+                = 0; <pass/>
+                = 1; </fail>
+
+            A; B;
+        }
+
+        fn if_this_is_truthy(v: Woot) {
+            let cond: bool = v || "DontLitfixNonEmptyStringToZero";
+            return cond;
+        }
+
+        fn then_this_is_truthy(v: Woot) {
+            let cond = !!(v || "DontLitfixNonEmptyStringToZero");
+            return cond;
+        }
+
+        fn and_this_is_also_truthy(v: Woot) {
+            let cond = v || "DontLitfixNonEmptyStringToZero";
+            return !!(cond);
+        }
+
+        fn test(v: Woot, expect: bool) {
+            let a = if_this_is_truthy(v);
+            let b = then_this_is_truthy(v);
+            let c = and_this_is_also_truthy(v);
+            return a == b && b == c && c == expect;
+        }
+
+        fn main() test([], !!Woot.DontLitfixNonEmptyStringToZero)
+               && test("DontLitfixNonEmptyStringToZero", !!Woot.DontLitfixNonEmptyStringToZero)
+               && test("A", true)
+               && test("B", true) ? 0 : 1;
+    `);
+
     // /Logic and selectors.
 
 
