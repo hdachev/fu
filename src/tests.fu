@@ -22584,7 +22584,7 @@ pub extern fn runTests()
         fn main() 0.test;
     `]);
 
-    TODO_litfix(currently: "Incompat types for T Token string byte 5:24+3", `
+    ZERO(`
         enum Token { KEY_X }
 
         fn update(ref state: int, tokens: Token[])

@@ -7041,13 +7041,30 @@ pub fn solve(
                             continue;
                         }
 
-                        let paramType =
-                            annot.kind == "typeparam"
-                                ? _typeParams.ref(annot.value).matched
-                                : annot.kind == "call" && !annot.items
-                                    && Scope_lookupType(annot.value, :annot.flags);
+                        fn firstParamType(shadow annot: Node, shallow?: bool)
+                        {
+                            if (annot.kind == "typeparam")
+                                return _typeParams.ref(annot.value).matched;
+                            if (!shallow && annot.kind == "call" && !annot.items)
+                                return Scope_lookupType(annot.value, :annot.flags);
+
+                            // TODO FIX typeunions & definits strike again, really ill defined ///////
+                            if (!shallow && annot.kind == "typeunion"                               //
+                                         && !(DONT_match_zeroes && inValue.is_zeroes))              //
+                            {                                                                       //
+                                for (shadow mut i = 0; i < annot.items.len; i++) {                  //
+                                    let t = firstParamType(annot.items[i], true);                   //
+                                    if (t)                                                          //
+                                        return t;                                                   //
+                                }                                                                   //
+                            }                                                                       //
+                            //////////////////////////////////////////////////////////////////////////
+
+                            return [];
+                        }
 
                         // Ignore literals if possible.
+                        let paramType = firstParamType(:annot);
                         if (paramType)
                         {
                             let retype = tryRetyping(inValue, paramType);
