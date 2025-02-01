@@ -8800,14 +8800,19 @@ pub fn solve(
                 mut last: intlit::Intlit;
                 for (mut i = 0; i < s.items.len; i++)
                 {
-                    ref init    = s.items[i].target.GET_mut.solved;
+                    ref item_o  = s.items[i].target.GET_mut;
+
+                    ref init    = item_o.solved;
                     let member  = members[i];
                     init        = member.items[LET_INIT]; // <-
                     _here       = member.token;           //
                                                           //
                     // TODO FIX should keep the whole let node above, dunno what i was thinking -
                     //  here without this we misattribute the enumv to the numeric literal.
-                    defer init.token = member.token;
+                    defer {
+                        init.token  = member.token;
+                        item_o.type = init.type;
+                    }
 
                     // Parse & reinit sequence.
                     if (init)
@@ -8846,10 +8851,14 @@ pub fn solve(
                     last = next;
 
                     //
-                    if (signed || unsigned)
-                        init = SolvedNode(kind: "int", type: primType, value: (next.negative && "-") ~ next.absval);
-                    else
+                    if !(signed || unsigned)
                         fail("Cannot auto-increment this type: " ~ basePrim);
+
+                    let value = (next.negative && "-") ~ next.absval;
+                    init = SolvedNode(kind: "int", :value, type: solveInt(value, primType));
+
+                    if (SELF_TEST && !(options.dev & options::DEV_DontFoldLiterals))
+                        init.vfacts || BUG("prim variant - solveInt: No vfacts !!!!!!");
                 }
             }
         }
