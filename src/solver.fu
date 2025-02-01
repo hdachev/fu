@@ -7062,17 +7062,6 @@ pub fn solve(
                     //        /LITFIX
                     /////////////////
 
-                    //////////////////////////////////////////////////////////////////////////////////////////////
-                    // TODO FIX type unions can mess up when other args get defered and they get served first.  //
-                    //  I think we should go quantum here, basically figure out everything this could be        //
-                    //   and collapse along the way.                                                            //
-                    if (!pass_retype && annot.kind == "typeunion")
-                    {
-                        retypeIndices.push(RetypeOrder(index: i, retype_score: int.MAX));
-                        continue;
-                    }
-                    //////////////////////////////////////////////////////////////////////////////////////////////
-
                     // Previously this was done in tryMatchCall.
                     if (host_arg.flags.isMutRef && !inType.is_mutref)
                         matchFail(host_arg ~ " " ~ explainNotMutref(inType));
