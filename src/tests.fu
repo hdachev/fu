@@ -23019,6 +23019,14 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_enums(currently: "DOESNT_EXIST does not exist 4:26+12", `
+        enum Woot { No = 0; Yes }
+        fn main() {
+            if (<fail not defined 4:27+12>Woot.Yes<pass/>Woot.No</fail>) DOESNT_EXIST(); ;; !DEV_DontFoldLiterals
+            return 0;
+        }
+    `);
+
     // /StaticEval
 
 
