@@ -7045,8 +7045,14 @@ pub fn solve(
                         {
                             if (annot.kind == "typeparam")
                                 return _typeParams.ref(annot.value).matched;
-                            if (!shallow && annot.kind == "call" && !annot.items)
+
+                            // TODO FIX this is still getting some use,
+                            //  transitioning to __serialized_type fully might speed things up
+                            if (annot.kind == "call" && !annot.items)
                                 return Scope_lookupType(annot.value, :annot.flags);
+
+                            if (annot.kind == "__serialized_type")
+                                return evalTypeAnnot(annot);
 
                             // TODO FIX typeunions & definits strike again, really ill defined ///////
                             if (!shallow && annot.kind == "typeunion"                               //

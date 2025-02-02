@@ -14365,7 +14365,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_litfix(currently: "expects i16, got i32 6:17+6", `
+    ZERO(`
         <alt>
         fn Append(ref arr: <T>[], v:   T or   T[]) <alt/>
         fn Append(ref arr: i16[], v: i16 or i16[]) </alt> arr ~= v;
@@ -18184,7 +18184,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_conv(currently: "Color, ColorFam, got string 5:19+4", `
+    TODO_litfix(currently: "Color, ColorFam, got string 5:36+4", `
         enum Color { Red = 0; Green; Blue; Yellow; Cyan; Magenta };
         enum ColorFam { Primary = 0; Secondary = 3 };
         fn woot(c: Color or ColorFam) c.int;
