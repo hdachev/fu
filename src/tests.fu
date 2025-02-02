@@ -14365,6 +14365,28 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_litfix(currently: "expects i16, got i32 6:17+6", `
+        <alt>
+        fn Append(ref arr: <T>[], v:   T or   T[]) <alt/>
+        fn Append(ref arr: i16[], v: i16 or i16[]) </alt> arr ~= v;
+        fn main() {
+            mut arr: i16[] = [ 1, 2 ];
+            arr.Append(3);
+            return arr.len - 3;
+        }
+    `);
+
+    TODO_litfix(currently: "expects i16[], got i32[] 6:17+6", `
+        <alt>
+        fn Append(ref arr: <T>[], v:   T or   T[]) <alt/>
+        fn Append(ref arr: i16[], v: i16 or i16[]) </alt> arr ~= v;
+        fn main() {
+            mut arr: i16[] = [ 1 ];
+            arr.Append([ 2, 3 ]);
+            return arr.len - 3;
+        }
+    `);
+
     // /Usability of numeric literals.
 
 
