@@ -1993,19 +1993,19 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "BUG recursive function without SS_FN_RECUR 10:25+4", `
+    ZERO(`
         struct Node  { items: Node[] }
         struct Document { root: Node }
 
         fn render(doc: Document) {
-            mut count = 0;
+            mut count = 1;
 
             fn visit(n: Node) {
                 count++;
                 n.items.each: |item| visit(item);
             }
 
-            doc.root.items.each: |item| visit(item);
+            doc.root.items.each: |item| visit(item);            ;; DuplicateFunctions
             return count;
         }
 
@@ -8621,7 +8621,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_recursion(currently: "BUG CODEGEN recur without SS_FN_RECUR 13:24+4", `
+    ZERO(`
         nocopy struct Node { items: Node[]; type: Node[] };
 
         fn append_one(ref items: Node[]) {
@@ -8630,14 +8630,14 @@ pub extern fn runTests()
         }
 
         fn count(ref type: Node[], ref items: Node[]) {
-            mut count = 0;
+            mut count = 1;
             fn visit(n: Node) {
                 count++;
                 n.type.each(.visit);
                 n.items.each(.visit);
             }
 
-            type.each(.visit);
+            type.each(.visit);                                  ;; DuplicateFunctions
             items.each(.visit);
             return count;
         }
@@ -19745,10 +19745,11 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_recursion(currently: "BUG detectRecursion no _helpers entry for SelfRecursive 3:40+1", `
-        nocopy struct NoCopy {};
+    ZERO(`
+        <fail cannot move 13:35+1 mut v used again>
+        nocopy <pass/></fail>
+        struct NoCopy {};
         struct Generic(type V) { vals: V[] }
-
         struct SelfRecursive {
             _scope:             NoCopy;
             _conv_cache:        Generic(SelfRecursive);
@@ -19757,7 +19758,7 @@ pub extern fn runTests()
         fn main() {
             mut v: SelfRecursive;
             v._conv_cache.vals ~= v; // fail
-            return v._conv_cache.vals.len;
+            return v._conv_cache.vals.len - 1;
         }
     `);
 

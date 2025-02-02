@@ -10,8 +10,8 @@ using flags SolverStatus: u16
     SS_FINALIZED
 
     SS_UPDATED
-    SS_TYPE_RECUR
-    SS_FN_RECUR
+    // ...
+    // ...
     SS_FN_OOE_RTL                   // TODO get rid of this, silly
 
     SS_NAME_UNUSED                  // TODO GET RID OF THIS, SS_MATCHED is enough
@@ -187,11 +187,9 @@ let F_TESTCASE      = F_PREDICATE;
 
 using flags SolverNotes: i32
 {
-    N_FnRecursion
     N_FnResolve
     N_FnReopen
 
-    N_TypeRecursion
     N_TypeResolve
     N_TypeReopen
 

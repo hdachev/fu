@@ -483,15 +483,16 @@ pub fn cpp_codegen(
         _tdef_stack ~= StructDecl();
 
         //
-        let recursive = !!(s.target.status & SS_TYPE_RECUR);
+        let t = GET(s.target).type;
+
+        // let recursive = !!(s.target.status & SS_TYPE_RECUR);
+        let recursive = !t.is_trivial; // TODO FIX t.is_recursive !!!
 
         //
         let header  = (recursive && options.dev & "DEV_CG_LifetimeAnnots" && "/*rec*/")
                     ~ s.kind ~ " " ~ id;
 
         _tfwd_src  ~= header ~ ";\n";
-
-        let t = GET(s.target).type;
 
         let dedupe = s.name ~ "_" ~ s.shape.hash.tea::digest62();
 
@@ -533,6 +534,8 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
+
+            // TODO FIX = delete instead of this garb
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "& selfrec) { return *this = " ~ id ~ "(selfrec); }";
         }
 
@@ -1480,8 +1483,8 @@ pub fn cpp_codegen(
             // Add a fwd decl if recursive.
             if (!_fdef_complete.has(target))
             {
-                if !(target.status & SS_FN_RECUR)
-                    BUG("ensureFnDef: Function without SS_FN_RECUR appears to be recursive.");
+                // if !(target.status & SS_FN_RECUR)
+                //     BUG("ensureFnDef: Function without SS_FN_RECUR appears to be recursive.");
 
                 ensureFwdDecl(target);
             }

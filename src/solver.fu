@@ -6508,7 +6508,7 @@ pub fn solve(
             RevSpecOutput(:relaxed_quals, instance_targ: target);
 
         // Schedule lazySolveStart.
-        GET_mut(target).status &= SS_LAZY | SS_FN_RECUR;
+        GET_mut(target).status &= SS_LAZY;
 
         // Enable lazySolveEnd.
         EPH_mut(target).local_of = EPH(original).local_of;
@@ -9254,34 +9254,6 @@ pub fn solve(
 
             lazySolveStart(t);
         }
-    }
-
-    fn detectRecursion(target: Target): void
-    {
-        let overload = GET(target);
-        if (overload.status & (SS_FINALIZED | SS_LAZY) != SS_LAZY)
-            return;
-
-        // TODO FIX Incorrect: fns can use other fns as type annots.
-        //  We need to somehow track who depends on others for type info,
-        //   and who depends on others for actual compute.
-        let note    = overload.kind == "type" ? N_TypeRecursion : N_FnRecursion;
-        let status  = overload.kind == "type" ? SS_TYPE_RECUR   : SS_FN_RECUR;
-
-        for (mut i = _helpers.len; i --> 0; )
-        {
-            let h = _helpers[i];
-            if !(h.isFnOrType)
-                continue;
-
-            GET_mut(h.target).status |= status;
-            makeNote(note);
-
-            if (h.target == target)
-                return;
-        }
-
-        BUG("detectRecursion: no _helpers entry for `" ~ overload.name ~ " (" ~ overload.status ~ ")`.");
     }
 
 
@@ -12662,8 +12634,6 @@ pub fn solve(
                     {
                         EPH_mut(target).callers.incr(_solvingFnort.globid);
                         EPH_mut(_solvingFnort).calls.incr(target.globid);
-
-                        detectRecursion(target);
                     }
                 }
             }
@@ -15639,11 +15609,11 @@ pub fn solve(
                                 let idx = already_hashing.find(target);
                                 if (idx >= 0)
                                 {
-                                    if (SELF_TEST)
-                                    {
-                                        target.status & SS_FN_RECUR     || BUG("computeFnSighash: missing SS_FN_RECUR [1] on " ~ target);
-                                        fn_target.status & SS_FN_RECUR  || BUG("computeFnSighash: missing SS_FN_RECUR [2] on " ~ fn_target);
-                                    }
+                                    // if (SELF_TEST)
+                                    // {
+                                    //     target.status & SS_FN_RECUR     || BUG("computeFnSighash: missing SS_FN_RECUR [1] on " ~ target);
+                                    //     fn_target.status & SS_FN_RECUR  || BUG("computeFnSighash: missing SS_FN_RECUR [2] on " ~ fn_target);
+                                    // }
 
                                     // Dealing with cycles alla Unison,
                                     //  hashing the whole cycle however we can,
