@@ -7041,46 +7041,52 @@ pub fn solve(
                             continue;
                         }
 
-                        fn firstParamType(shadow annot: Node, shallow?: bool)
+                        fn tryRetypeToTypeParams(shadow annot: Node)
                         {
-                            if (annot.kind == "typeparam")
-                                return _typeParams.ref(annot.value).matched;
-
-                            // TODO FIX this is still getting some use,
-                            //  transitioning to __serialized_type fully might speed things up
-                            if (annot.kind == "call" && !annot.items)
-                                return Scope_lookupType(annot.value, :annot.flags);
-
-                            if (annot.kind == "__serialized_type")
-                                return evalTypeAnnot(annot);
-
                             // TODO FIX typeunions & definits strike again, really ill defined ///////
-                            if (!shallow && annot.kind == "typeunion"                               //
-                                         && !(DONT_match_zeroes && inValue.is_zeroes))              //
+                            if (annot.kind == "typeunion"                                           //
+                                    && !(DONT_match_zeroes && inValue.is_zeroes))                   //
                             {                                                                       //
-                                for (shadow mut i = 0; i < annot.items.len; i++) {                  //
-                                    let t = firstParamType(annot.items[i], true);                   //
-                                    if (t)                                                          //
-                                        return t;                                                   //
-                                }                                                                   //
+                                for (shadow mut i = 0; i < annot.items.len; i++)                    //
+                                    if (tryRetypeToTypeParams(annot.items[i]))                      //
+                                        return true;                                                //
+                                                                                                    //
+                                return false;                                                       //
                             }                                                                       //
                             //////////////////////////////////////////////////////////////////////////
 
-                            return [];
+                            let paramType =
+                                annot.kind == "typeparam"
+                                    ? _typeParams.ref(annot.value).matched :
+
+                                // TODO FIX this is still getting some use,
+                                //  transitioning to __serialized_type fully might speed things up
+                                annot.kind == "call" && !annot.items
+                                    ? Scope_lookupType(annot.value, :annot.flags) :
+
+                                annot.kind == "__serialized_type"
+                                    ? evalTypeAnnot(annot) :
+
+                                { return [] };
+
+                            if (paramType)
+                            {
+                                let retype = tryRetyping(inValue, paramType);
+                                if (retype && retype.canon != inType.canon)
+                                {
+                                    inType = retype;
+                                    if (args.len > i)
+                                        args[i] = inType;
+
+                                    return true;
+                                }
+                            }
+
+                            return false;
                         }
 
                         // Ignore literals if possible.
-                        let paramType = firstParamType(:annot);
-                        if (paramType)
-                        {
-                            let retype = tryRetyping(inValue, paramType);
-                            if (retype && retype.canon != inType.canon)
-                            {
-                                inType = retype;
-                                if (args.len > i)
-                                    args[i] = inType;
-                            }
-                        }
+                        tryRetypeToTypeParams(:annot);
                     }
                     //        /LITFIX
                     /////////////////

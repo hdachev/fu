@@ -18184,7 +18184,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_litfix(currently: "Color, ColorFam, got string 5:36+4", `
+    ZERO(`
         enum Color { Red = 0; Green; Blue; Yellow; Cyan; Magenta };
         enum ColorFam { Primary = 0; Secondary = 3 };
         fn woot(c: Color or ColorFam) c.int;
