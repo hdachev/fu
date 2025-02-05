@@ -483,7 +483,12 @@ pub fn cpp_codegen(
         _tdef_stack ~= StructDecl();
 
         //
-        let header  = s.kind ~ " " ~ id;
+        let recursive = !!(s.target.status & SS_TYPE_RECUR);
+
+        //
+        let header  = (recursive && options.dev & "DEV_CG_LifetimeAnnots" && "/*rec*/")
+                    ~ s.kind ~ " " ~ id;
+
         _tfwd_src  ~= header ~ ";\n";
 
         let t = GET(s.target).type;
@@ -523,7 +528,7 @@ pub fn cpp_codegen(
             def ~= "\n    " ~ id ~ "& operator=(const " ~ id ~ "&) = delete;";
             def ~= "\n    " ~ id ~ "& operator=(" ~ id ~ "&&) = default;";
         }
-        else if (s.target.status & SS_TYPE_RECUR)
+        else if (recursive)
         {
             def ~= "\n    " ~ id ~ "(const " ~ id ~ "&) = default;";
             def ~= "\n    " ~ id ~ "(" ~ id ~ "&&) = default;";

@@ -2790,12 +2790,12 @@ pub extern fn runTests()
         <flip>
         struct Ephemeral { // When first, we cg declarations in the wrong order
             id:             i32;
-            scope_skip?:    ScopeSkip;
+            scope_skip?:    ScopeSkip;                          ;; EXPECT /*rec*/struct Ephemeral_
         };
         <flip/>
         struct ScopeSkip { // When first, we complain about recursive types
             left:           Ephemeral[];
-            right:          Ephemeral[];
+            right:          Ephemeral[];                        ;; EXPECT /*rec*/struct ScopeSkip_
         };
         </flip>
 
@@ -3398,20 +3398,20 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct SelfRec { x: SelfRec[]; };
+        struct SelfRec { x: SelfRec[]; };                       ;; EXPECT /*rec*/struct SelfRec_
         fn main() SelfRec( [ SelfRec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
     ZERO(`
-        struct ABRec { x: BARec[]; };
-        struct BARec { x: ABRec[]; };
+        struct ABRec { x: BARec[]; };                           ;; EXPECT /*rec*/struct ABRec_
+        struct BARec { x: ABRec[]; };                           ;; EXPECT /*rec*/struct BARec_
         fn main() ABRec( [ BARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
     ZERO(`
-        struct ABRec { x: BARec[]; y: ABBARec[]; };
-        struct BARec { x: ABRec[]; y: ABBARec[]; };
-        struct ABBARec { x: ABRec[]; y: BARec[]; };
+        struct ABRec { x: BARec[]; y: ABBARec[]; };             ;; EXPECT /*rec*/struct ABRec_
+        struct BARec { x: ABRec[]; y: ABBARec[]; };             ;; EXPECT /*rec*/struct BARec_
+        struct ABBARec { x: ABRec[]; y: BARec[]; };             ;; EXPECT /*rec*/struct ABBARec_
         fn main() ABRec( [ BARec() ], [ ABBARec() ] ).x.len - 1; // <- solved with a dirty selfrec & defctor
     `);
 
@@ -15174,7 +15174,7 @@ pub extern fn runTests()
     // Recursive structs.
 
     ZERO(`
-        struct Node {                   <flip>
+        struct Node {                   <flip>                  ;; EXPECT /*rec*/struct Node_
             items?: Node[];             <flip/>
             stuff?: Node[];             </flip>
         };
@@ -15191,18 +15191,18 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct Confuser {               <flip>
+        struct Confuser {               <flip>                  ;; EXPECT /*rec*/struct Confuser_
             unused0?: A[];              <flip/>
             unused1?: B[];              </flip>
         };
 
-        struct A {                      <flip>
+        struct A {                      <flip>                  ;; EXPECT /*rec*/struct A_
             unused?: Confuser;
             items?: B[];                <flip/>
             stuff?: B[];                </flip>
         };
 
-        struct B {                      <flip>
+        struct B {                      <flip>                  ;; EXPECT /*rec*/struct B_
             unused?: Confuser;          <flip/>
             items?: A[];
             stuff?: A[];                </flip>
@@ -21681,10 +21681,10 @@ pub extern fn runTests()
     `);
 
     ZERO(`
-        struct A { a: X[] };
-        struct B { b: X[] };
-        struct C { c: X[] };
-        struct X { a: A[]; b: B[]; c?: C[]; };
+        struct A { a: X[] };                                    ;; EXPECT /*rec*/struct A_
+        struct B { b: X[] };                                    ;; EXPECT /*rec*/struct B_
+        struct C { c: X[] };                                    ;; EXPECT /*rec*/struct C_
+        struct X { a: A[]; b: B[]; c?: C[]; };                  ;; EXPECT /*rec*/struct X_
 
         fn GET(implicit ref x: X[], idx: int) {
             return x[idx];
