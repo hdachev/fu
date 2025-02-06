@@ -8,16 +8,6 @@ import fail;
 
 //
 
-pub fn lookupUserType_mut(implicit ref module: Module, canon: string)
-{
-    let scp = parseUserTypeCanon(canon);
-    scp.modid == module.modid || BUG("lookupUserType_mut: Not from this module (" ~ module.modid ~ ": " ~ canon ~ ")");
-    return module.out.types[scp.index];
-}
-
-
-//
-
 fn resolveFile(
     implicit ref ctx: Context,
     from: string, name: string): string

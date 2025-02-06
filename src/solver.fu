@@ -8477,6 +8477,13 @@ pub fn solve(
     fn __solveStruct(shadow solve!: bool, node: Node, into!?: Target,
         TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
+        // Previously in context -
+        //  turns out this is the only fn that writes to usertypes! Neat.
+        fn lookupUserType_mut(scp: UserTypeCanon) {
+            scp.modid == module.modid || BUG("lookupUserType_mut: usertype(" ~ scp.modid ~ ":" ~ scp.index ~ ") is not from this module(" ~ module.modid ~ ")");
+            return module.out.types[scp.index];
+        }
+
         PROFILE(.SolveStruct);
 
         let origId      = node.value;
@@ -8568,8 +8575,9 @@ pub fn solve(
             out_target
         };
 
-        let out_Typename = out_target.type;
-        let instType = clear_Typename(out_Typename);
+        let out_Typename    = out_target.type;
+        let instType        = clear_Typename(out_Typename);
+        let own_scp         = parseUserTypeCanon(instType.canon);
 
         // Trying to push this down now.
         if (!solve)
@@ -8630,7 +8638,7 @@ pub fn solve(
 
         // (Re)poplate fields.
         {
-            ref s = lookupUserType_mut(instType.canon);
+            ref s = lookupUserType_mut(own_scp);
             if (!s.items && memberNodes)
             {
                 let isUnscoped = !!(node.flags & F_USING);
@@ -8934,7 +8942,7 @@ pub fn solve(
 
             //
             {
-                ref s       = lookupUserType_mut(instType.canon);
+                ref s       = lookupUserType_mut(own_scp);
                 s.target    = out_target || BUG("solveStruct: No struct/out_target.");
                 s.converts  = structConverts;
                 s.imports   = structImports;
