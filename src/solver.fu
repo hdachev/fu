@@ -8546,6 +8546,9 @@ pub fn solve(
             non_triv_mask:  0,
             hash:           shape_hasher.u64,
 
+            usertypes:      [], // pre-populated with own_scp a little further down
+            recursive:      false,
+
             flatCount:      isPrimDecl && 1,
             // bit_width:      isPrimDecl && parseBasePrimBitWidth(basePrim),
 
@@ -8577,7 +8580,12 @@ pub fn solve(
 
         let out_Typename    = out_target.type;
         let instType        = clear_Typename(out_Typename);
+
+        // RECURSION DETECTOR - need to list self on the usertype ASAP to get it to feed back through any recursive members.
         let own_scp         = parseUserTypeCanon(instType.canon);
+        let own_scp_added   = lookupUserType_mut(own_scp).shape.usertypes.add(own_scp);
+        if (own_scp_added == !!into)
+            BUG("__solveStruct: own_scp_added(" ~ own_scp_added ~ ") == !!into(" ~ !!into ~ ")");
 
         // Trying to push this down now.
         if (!solve)
@@ -8607,6 +8615,7 @@ pub fn solve(
         mut structImports:  flat::Set(i32);
 
         mut non_triv_reason = !instType.is_rx_copy && -1;
+        mut member_usertypes: flat::Set(UserTypeCanon);
 
         // Solve members & check defaults.
         let primType = isPrimDecl && (
@@ -8739,6 +8748,8 @@ pub fn solve(
                         non_triv_reason ||= non_triv_reason = i + 1;
                         shape.non_triv_mask |= member_shape.non_triv_mask;
                     }
+
+                    member_usertypes.add(member_shape.usertypes);
                 }
 
                 //
@@ -8891,6 +8902,11 @@ pub fn solve(
 
         //
         shape.hash = shape_hasher.u64;
+        shape.recursive = member_usertypes.has(own_scp);
+
+        shape.usertypes && BUG("shape.usertypes not empty");
+        swap(shape.usertypes, member_usertypes);
+        shape.usertypes.add(own_scp);
 
         // TODO FIX I need a smarted way to deal with recursive types,
         //  we gotta study Unison's approach to cycle-hashing.

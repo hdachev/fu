@@ -74,6 +74,8 @@ struct ModuleStats
 
 //
 
+struct UserTypeCanon { modid: i32; index: i32 };
+
 struct Shape
 {
     // User primitives have an
@@ -85,12 +87,16 @@ struct Shape
     //  of all the non-trivial types owned inside.
     //   Use this to speed up myPointInto queries.
     //
-    non_triv_mask:  u64;    // contains self if non-triv,
-                            //  else empty.
+    non_triv_mask:  u64;    // has at least one bit (1 << self.hash & 63) if non-triv,
+                            //  else trivial and thus empty.
     hash:           u64;
 
     flatCount:      i32;
     declDepth:      i32;
+
+    //
+    usertypes:      flat::Set(UserTypeCanon);
+    recursive:      bool;
 };
 
 struct UserType

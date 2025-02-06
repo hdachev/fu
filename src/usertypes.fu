@@ -2,8 +2,6 @@ import flags;
 import helpers;
 import module;
 
-pub struct UserTypeCanon { modid: i32; index: i32 };
-
 let ONE_BASED = 1;
 
 pub fn parseUserTypeCanon(canon: string): UserTypeCanon

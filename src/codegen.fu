@@ -486,7 +486,7 @@ pub fn cpp_codegen(
         let t = GET(s.target).type;
 
         // let recursive = !!(s.target.status & SS_TYPE_RECUR);
-        let recursive = !t.is_trivial; // TODO FIX t.is_recursive !!!
+        let recursive = t.is_recursive;
 
         //
         let header  = (recursive && options.dev & "DEV_CG_LifetimeAnnots" && "/*rec*/")

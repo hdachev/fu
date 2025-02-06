@@ -225,6 +225,12 @@ pub fn is_reinterpretable(type: ValueType)
     return type.is_trivial;
 }
 
+pub fn is_recursive(type: ValueType)
+{
+    // TODO FIX currently only works for user types, not e.g. arrays of
+    return lookupUserType(type).shape.recursive;
+}
+
 
 //
 
@@ -282,7 +288,9 @@ pub fn getShape(type: ValueType): Shape
                     (hash <<= 8) |= type.canon[i].u64;
 
                 hash
-            });
+            },
+            usertypes:      [],
+            recursive:      false);
 
     if_sliceable(type): |arrT|
     {
@@ -294,7 +302,9 @@ pub fn getShape(type: ValueType): Shape
             flatCount:  1,
             declDepth:  0,
             :hash,
-            :item_shape.non_triv_mask | (1 << (hash & 63)));
+            :item_shape.non_triv_mask | (1 << (hash & 63)),
+            :item_shape.usertypes,
+            :item_shape.recursive);
     }
 
     // ZST.
