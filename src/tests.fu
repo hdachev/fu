@@ -15174,19 +15174,46 @@ pub extern fn runTests()
     // Recursive structs.
 
     ZERO(`
-        struct Node {
-            items?: Node[];
-            stuff?: Node[];
+        struct Node {                   <flip>
+            items?: Node[];             <flip/>
+            stuff?: Node[];             </flip>
         };
 
-        fn rec_copy(ref a: Node) {
-            // If implemented naively,
-            //  by the time you copy stuff it's no longer there.
-            a = a.items[0];
-        }
+        fn rec_copy(ref a: Node) {      // If implemented naively,
+            a = a.items[0];             //  by the time you copy
+        }                               //   stuff is no longer there.
 
         fn main() {
             mut a = Node(items: [ Node(stuff: [ Node ]) ]);
+            rec_copy(a);
+            return a.stuff.len - 1;
+        }
+    `);
+
+    ZERO(`
+        struct Confuser {               <flip>
+            unused0?: A[];              <flip/>
+            unused1?: B[];              </flip>
+        };
+
+        struct A {                      <flip>
+            unused?: Confuser;
+            items?: B[];                <flip/>
+            stuff?: B[];                </flip>
+        };
+
+        struct B {                      <flip>
+            unused?: Confuser;          <flip/>
+            items?: A[];
+            stuff?: A[];                </flip>
+        };
+
+        fn rec_copy(ref a: A) {         // If implemented naively,
+            a = a.items[0].items[0];    //  by the time you copy
+        }                               //   stuff is no longer there.
+
+        fn main() {
+            mut a = A(items: [ B(items: [ A(stuff: [ B ]) ]) ]);
             rec_copy(a);
             return a.stuff.len - 1;
         }
