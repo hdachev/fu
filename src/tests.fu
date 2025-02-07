@@ -14402,15 +14402,20 @@ pub extern fn runTests()
         fn main() glsl_what.len - 3;
     `);
 
-    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS ? "B " : []) ~ "C";
+    // - having these ambig errors is not great, but they are easy to address;
+    // - any other option makes the language less powerful -
+    // -- considered making ternaries always solve both sides;
+    // -- considered forcing eval of dead-side if other side is literal -
+    // ---- but why? what if you really want "xxxx" : [] ?
+    ZERO(`
+        let USE_MIPMAPS = false; ;; !DEV_DontFoldLiterals
+        let glsl_what = "A " ~ (USE_MIPMAPS ? "B " : <fail ambig ~ 3:30+1>[]<pass/>""</fail>) ~ "C";
         fn main() glsl_what.len - 3;
     `);
 
-    TODO_ambig(currently: "Ambig call to ~ 3:30+1", `
-        let USE_MIPMAPS = false;
-        let glsl_what = "A " ~ (USE_MIPMAPS ? 'B' : []) ~ " C";
+    ZERO(`
+        let USE_MIPMAPS = false; ;; !DEV_DontFoldLiterals
+        let glsl_what = "A " ~ (USE_MIPMAPS ? 'B' : <fail ambig ~ 3:30+1>[]<pass/>'\0'</fail>) ~ " C";
         fn main() glsl_what == "A \\0 C" ? 0 : 1;
     `);
 
