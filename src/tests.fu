@@ -18422,18 +18422,55 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_varargs(currently: "optional argument ambiguity 6:21+10", `
-        fn count_args!T (
-            <alt>
-            inline
-            </alt>
-            v[]: T[]) = v.len;
+    ZERO(`
+        fn va_sum(args[]<fail bad call va_sum 8:19+6><pass/>?</fail>: int[]) {
+            mut res: int;
+            for (mut i = 0; i < args.len; i++) res += args[i];
+            return res;
+        }
+
+        fn main() va_sum();
+    `);
+
+    TODO_varargs(currently: "ambiguity: optional count_args:v not provided 7:21+10", `
+        fn sum(arr: <T>[]) { mut res: T; for (mut i = 0; i < arr.len; i++) res += arr[i]; res }
+
+        fn count_args(                  <alt>
+            inline                      </alt>
+            v[]<fail bad call count_args><pass/>?</fail>: int[]) = sum(v);
+
+        fn main() = count_args(hello?: "ignore me", world?: "ignore me too") == 0 ? 0 : 1;
+    `);
+
+    TODO_varargs(currently: "ambiguity: optional v not provided 7:21+10", `
+        fn sum(arr: <T>[]) { mut res: T; for (mut i = 0; i < arr.len; i++) res += arr[i]; res }
+
+        fn count_args(                  <alt>
+            inline                      </alt>
+            v[]?: <fail res needs tighter type annot 2:34+3>_<pass/>int</fail>[]) = sum(v);
+
+        fn main() = count_args(hello?: "ignore me", world?: "ignore me too") == 0 ? 0 : 1;
+    `);
+
+    TODO_varargs(currently: "ambiguity: optional arg mismatch: no arg hello 11:21+10", `
+        fn sum(arr: <T>[]) {
+            mut res: T;
+            for (mut i = 0; i < arr.len; i++) res += arr[i];
+            return res;
+        }
+
+        fn count_args!T (               <alt>
+            inline                      </alt>
+            v[]<alt>?</alt>: T[]) = sum(v);
 
         fn main() = count_args(
-            hello?: "ignore me",
-            1, 2, 3,
+            hello?: "ignore me",        <alt>
+            0,                          <alt/>
+            -50, +50,                   <alt/>
+            -10, +40, -30,              <alt/>
+            +10, +20, -40, +10,         </alt>
             world?: "ignore me too")
-                == 3 ? 0 : 1;
+                == 0 ? 0 : 1;
     `);
 
     ZERO(`
