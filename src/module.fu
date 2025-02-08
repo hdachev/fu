@@ -353,7 +353,8 @@ struct Extended
     sighash?:       tea::TEA;
 
     //
-    fx_mask?:       effects::FxMask;
+    fx_mask?:       effects::FxMask; // 16
+    rest_1b?:       u16;             // 16
     args_neg?:      i32;
 };
 

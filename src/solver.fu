@@ -2095,16 +2095,9 @@ pub fn solve(
                         ~ "\n\t\tEnsure all optional arguments on either side match to resolve this error.";
     }
 
-    fn findRestStart(ext: Extended)
+    inline fn findRestStart(ext: Extended)
     {
-        for (mut i = ext.args.len; i --> 0; )
-        {
-            let arg = ext.args[i];
-            if  (arg.flags & F_REST_ARG) return i;
-            if !(arg.flags & F_IMPLICIT) break;
-        }
-
-        return ext.args.len;
+        return ext.rest_1b ? ext.rest_1b.int - 1 : ext.args.len;
     }
 
     fn collectNamedArgs(args: Node[..] or SolvedNode[..], ref minArity: int)
@@ -7678,6 +7671,7 @@ pub fn solve(
         let N = items.len + FN_ARGS_BACK;
         mut min = 0;
         mut max = 0;
+        mut rest_1b: u16;
 
         let NativeQualities =
             isNative && hacks::NativeQualities(target.name);
@@ -7949,7 +7943,12 @@ pub fn solve(
             }
 
             if (arg.flags & F_REST_ARG)
+            {
+                rest_1b && BUG("Multiple rest arguments.");
+                rest_1b = args.len.u16 + 1;
+
                 max = 0x7fffffff.i32;
+            }
 
             if (SELF_TEST)
             {
@@ -8100,6 +8099,7 @@ pub fn solve(
         ext.min     = min;
         ext.max     = max;
         ext.args    = args;
+        ext.rest_1b = rest_1b;
 
         if (!isNative)
             ext.fx_mask = _current_fn.fx_mask;
