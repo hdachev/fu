@@ -18452,7 +18452,7 @@ pub extern fn runTests()
         fn main() = count_args(hello?: "ignore me", world?: "ignore me too") == 0 ? 0 : 1;
     `);
 
-    TODO_varargs(currently: "ambiguity: callsite hello discarded 11:21+10", `
+    ZERO(`
         fn sum(arr: <T>[]) {
             mut res: T;
             for (mut i = 0; i < arr.len; i++) res += arr[i];

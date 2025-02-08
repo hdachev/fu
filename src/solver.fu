@@ -2373,14 +2373,6 @@ pub fn solve(
                 else if (!reorderByArgIDs(:reorder, names, optional, host_args, :num_usings))
                     matchFail(ERRMSG_findUnmatchedArgName(:reorder, :names, :host_args));
 
-                // Forbid optional argument ambiguities -
-                //  We should either have all optional args satisfied at the receiver or sender part,
-                //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
-                //
-                if (optional && reorder)
-                    if (reorder.map.len < args.len && reorder.map.len < arity.max)
-                        matchFail(ERRMSG_optionalArgumentAmbiguity(:host_args, :reorder, :names));
-
                 // TODO FIX the two reorder fns don't deal correctly with rest args,
                 //  this seems to fix it but honestly I'm not sure
                 //   if it can deal with the rest of the arg-related stuff.
@@ -2393,6 +2385,15 @@ pub fn solve(
                             if (!optional.has(i) && !reorder.map.has(i))
                                 reorder.map ~= i;
 
+                // Forbid optional argument ambiguities -
+                //  We should either have all optional args satisfied at the receiver or sender part,
+                //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
+                //
+                if (optional && reorder)
+                    if (reorder.map.len < args.len && reorder.map.len < min(arity.max, REST_START + 1))
+                        matchFail(ERRMSG_optionalArgumentAmbiguity(:host_args, :reorder, :names));
+
+                //
                 let N = (reorder ? reorder.map.len : args.len)
                     .max(!isZeroInit && arity.min);
 
