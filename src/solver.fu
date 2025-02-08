@@ -2077,19 +2077,22 @@ pub fn solve(
         host_args.each: |host_arg, i| {
             let callsiteIndex = reorder.map.if(exists: i, else: -1);
             if (callsiteIndex < 0) {
-                error ~= "\n\n\t\tExpected " ~ (host_arg.default && "optional ") ~ host_arg ~ " not provided.";
+                error ~= "\n\n\t\t" ~ (host_arg.default ? "Optional callee " : "Callee ")
+                                    ~ host_arg ~ " not provided"
+                                    ~ (host_arg.default && " and will be defaulted") ~ ".";
                 break;
             }
         }
 
         names.each: |name| {
             if (name && !host_args.some(|a| a.name == name)) {
-                error ~= "\n\n\t\tOptional :named argument mismatch: no " ~ "arg".qBAD_KW ~ " " ~ name.qBAD ~ ".";
+                error ~= "\n\n\t\tOptional callsite " ~ "arg?:".qKW ~ " " ~ name.qID ~ " does not match and will be discarded.";
                 break;
             }
         }
 
-        return error ~= "\n\n\t\tCannot distinguish from a typo.";
+        return error ~= "\n\n\t\tCannot distinguish from a typo."
+                        ~ "\n\t\tEnsure all optional arguments on either side match to resolve this error.";
     }
 
     fn findRestStart(ext: Extended)

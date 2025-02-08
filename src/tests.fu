@@ -15388,7 +15388,7 @@ pub extern fn runTests()
                 + a1o0(a?: 1, b?: 2) *     10   //     10
                 + a2o1(a?: 1, b?: 2) *    100   //    300
                 + a2o2(a?: 1, b?: 2) *   1000   //   3000
-                + a2o1(a : 1, <fail bad call a2o1 10:19+4 b not provided c mismatch>
+                + a2o1(a : 1, <fail bad call a2o1 10:19+4 callee b not provided callsite c discarded>
                               c       <pass/>
                               b       </fail>
                                ?: 2) *  10000   //  30000
@@ -18452,7 +18452,7 @@ pub extern fn runTests()
         fn main() = count_args(hello?: "ignore me", world?: "ignore me too") == 0 ? 0 : 1;
     `);
 
-    TODO_varargs(currently: "ambiguity: optional arg mismatch: no arg hello 11:21+10", `
+    TODO_varargs(currently: "ambiguity: callsite hello discarded 11:21+10", `
         fn sum(arr: <T>[]) {
             mut res: T;
             for (mut i = 0; i < arr.len; i++) res += arr[i];
