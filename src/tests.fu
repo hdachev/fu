@@ -113,7 +113,6 @@ pub extern fn runTests()
     let TODO_licm       = fn TODO;
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
-    let TODO_ooe        = fn TODO;
     let TODO_pub        = fn TODO;
     let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
@@ -11983,7 +11982,7 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_ooe(currently: "N_BckMustSeq not listed", `
+    ZERO(`
         fn +=(ref a: i64, b: bool)  // Doesn't cg c++ operator (illegal, operands all prim),
             a += b ? 100 : 0;       //  which drops the RTL ooe guarantee, solver fails to notice.
 

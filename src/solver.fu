@@ -8166,7 +8166,11 @@ pub fn solve(
         {
             let rtl = args.len == 2
                 && overload.flags & F_OPERATOR
-                && cpp::hasAssignment(overload.name);
+                && cpp::hasAssignment(overload.name)
+
+                // cpp: Can't cg custom operators for primitive types
+                // NOT == __native! must allow RTL templates for OOE of noreturn operands
+                && (kind != "fn" || args.some(|a| a.type && !a.type.is_primitive));
 
             overload.isRTL_set(rtl);
         }
