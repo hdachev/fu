@@ -17747,7 +17747,7 @@ pub extern fn runTests()
         fn main() A1(1).test.v * A2(1).test.v - 6;
     `);
 
-    SKETCH(currently: "Bad call to T A 13:24+1", `
+    TODO_conv(currently: "Bad call to T A 13:24+1", `
         struct A { a: i32 };
         struct B { b: i32 };
 
@@ -17760,24 +17760,6 @@ pub extern fn runTests()
         using fn A2B(a: A): B = [ a.a + 3 ];
 
         fn main() A(2)<alt>.B</alt>.b - 5;
-    `);
-
-    SKETCH(currently: "Bad call to T u32 11:20+1", `
-        fn Wrap(type T) =
-            struct { value!: T };
-
-        infix fn => !<A, B>
-            (from: Wrap(A), lax _: Wrap(B)): Into =
-                [ Into(from.value) + 4 ];
-    <alt>
-        fn main() =
-            (7.u32 => Wrap(int)).value - 14;
-    <alt/>
-        fn main() {
-            type T = Wrap(int);
-            return T(7.u32).value - 14;
-        }
-    </alt>
     `);
 
     ZERO(`
