@@ -18546,6 +18546,31 @@ pub extern fn runTests()
         fn main() A(0).hello + A(0).world;
     `);
 
+    ZERO(`
+        struct Hello { dont_conflict: int };
+        fn autocall(.dont_conflict<alt>: int</alt>) = dont_conflict * 10;
+        fn inner(v<alt>: int</alt>) Hello(v).autocall;
+
+        fn main() {
+            fn dont_conflict(x<alt>: int</alt>) = x * 3;
+            return dont_conflict(inner(1)) - 30;
+        }
+    `);
+
+    ZERO(`
+        fn autocall(.dont_conflict<alt>: int</alt>) = dont_conflict * 10;
+
+        fn inner(v<alt>: int</alt>) {
+            struct Hello { dont_conflict: int };
+            return Hello(v).autocall;
+        }
+
+        fn main() {
+            fn dont_conflict(x<alt>: int</alt>) = x * 3;
+            return dont_conflict(inner(1)) - 30;
+        }
+    `);
+
     // /Autocall, varargs & rest params.
 
 
