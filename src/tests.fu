@@ -18164,6 +18164,16 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_conv(currently: "Incompatible types T for Node <-> OpenBlock 6:63+6", `
+        struct Node         { value: int; };
+        struct OpenBlock    { using node: Node };
+
+        fn Concat(arr: <T>[], v: T) arr ~ v;
+        fn closeOpenBlocks(nodes: Node[], o: OpenBlock) nodes.Concat(o);
+
+        fn main() nodes.closeOpenBlocks(Node[](), OpenBlock(Node(nodes.len))).len - 1;
+    `);
+
     TODO_conv(currently: "Incompatible types T for Node <-> OpenBlock 7:42+2", `
         struct Node         { value: int; items: Node[] };
         struct OpenBlock    { using node: Node };
@@ -18177,20 +18187,9 @@ pub extern fn runTests()
         }
 
         fn main() {
-            mut open_blocks = [
-                OpenBlock(Node(10)),
-                OpenBlock(Node(20)),
-                OpenBlock(Node(30)),
-            ];
-
+            mut open_blocks = [ OpenBlock(Node(10)), OpenBlock(Node(20)), OpenBlock(Node(30)) ];
             let n = closeOpenBlocks(open_blocks);
-
-            fn sum(n: Node) {
-                mut sum = n.value;
-                n.items.each(|item| sum += item.sum());
-                return sum;
-            }
-
+            fn sum(n: Node) { mut sum = n.value; n.items.each(|item| sum += item.sum()); sum }
             return n.sum() == 60 ? 0 : 1;
         }
     `);
