@@ -651,6 +651,49 @@ pub fn solve(
         reorder.map.clear();
     }
 
+    fn LocalScope_union(local: ScopeSkipMemos, eph: Ephemeral)
+    {
+        // What we are trying to do here is to end up with only those ScopeSkips
+        //  that are hidden in BOTH caller (local) and callee (eph) scopes.
+        //
+        fn reveal(shadow local: ScopeSkip[], shadow eph: ScopeSkip[], eph_end: i32)
+        {
+            shadow mut result: ScopeSkip[];
+
+            :NEXT_LOCAL                         // TODO FAILCASE continue :NEXT_LOCAL AFTER THE LOOP
+            for (mut i = 0; i < local.len; i++) // <- here didnt complain but also didnt work right, why did it compile?
+            {
+                shadow mut local = local[i];
+
+                mut last = 0;
+                for (shadow mut i = 0; i <= eph.len; i++)
+                {
+                    shadow let eph = i < eph.len ? eph[i] : ScopeSkip(start: eph_end, end: i32.MAX);
+
+                    if (local.start >= last && local.start < eph.start)
+                        local.start = eph.start;
+
+                    if (local.start >= local.end)
+                        continue :NEXT_LOCAL;
+
+                    last = eph.end;
+                    if (eph.start > local.end)
+                        break;
+                }
+
+                result ~= local;
+            }
+
+            return result;
+        }
+
+        mut result = local;
+        for (fieldname i: ScopeSkipMemos)
+            result.i = reveal(local.i, eph.scope_skip.i, eph.scope_memo.i_len);
+
+        return result;
+    }
+
 
     //
 
@@ -836,9 +879,14 @@ pub fn solve(
         return _scope.extended[globid];
     }
 
+    inline fn couldHaveEPH(target: Target)
+    {
+        return target.modid == module.modid;
+    }
+
     using fn EPH(target: Target)
     {
-        return target.modid == module.modid
+        return target.couldHaveEPH
             && _ephemeral.if(exists: target.globid);
     }
 
@@ -2526,6 +2574,20 @@ pub fn solve(
                                 && "Cannot match " ~ host_arg ~ " autocall " ~ host_arg.autocall.qID ~ ": ";
 
                             PROFILE(.TryMatch_Autocall);
+
+                            // EXPERIMENTAL - union (caller, callee) scopes -
+                            //  which amounts to intersecting caller and callee scope-skip chains
+                            mut ss0: ScopeSkipMemos;
+
+                            let couldHaveEPH = overloadIdx.couldHaveEPH;
+                            if (couldHaveEPH)
+                            {
+                                swap(ss0, _ss);
+                                _ss = LocalScope_union(ss0, eph: overloadIdx.EPH);
+                            }
+
+                            defer if (couldHaveEPH) swap(ss0, _ss);
+                            /////////////////////
 
                             let t = tryMatchCall(
 
