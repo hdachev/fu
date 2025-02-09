@@ -104,7 +104,6 @@ pub extern fn runTests()
     let TODO_move       = fn TODO;
     let TODO_unique     = fn TODO;
     let TODO_inline     = fn TODO;
-    let TODO_varargs    = fn TODO;
     let TODO_conv       = fn TODO;
     let TODO_autocall   = fn TODO;
     let TODO_infer      = fn TODO;
@@ -18432,7 +18431,7 @@ pub extern fn runTests()
         fn main() va_sum();
     `);
 
-    TODO_varargs(currently: "ambiguity: optional count_args:v not provided 7:21+10", `
+    ZERO(`
         fn sum(arr: <T>[]) { mut res: T; for (mut i = 0; i < arr.len; i++) res += arr[i]; res }
 
         fn count_args(                  <alt>
@@ -18442,7 +18441,7 @@ pub extern fn runTests()
         fn main() = count_args(hello?: "ignore me", world?: "ignore me too") == 0 ? 0 : 1;
     `);
 
-    TODO_varargs(currently: "ambiguity: optional v not provided 7:21+10", `
+    ZERO(`
         fn sum(arr: <T>[]) { mut res: T; for (mut i = 0; i < arr.len; i++) res += arr[i]; res }
 
         fn count_args(                  <alt>

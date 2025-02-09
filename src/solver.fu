@@ -2383,8 +2383,16 @@ pub fn solve(
                 //   we shouldn't allow dangling cables on both ends because that's super typo-prone.
                 //
                 if (optional && reorder)
-                    if (reorder.map.len < args.len && reorder.map.len < min(arity.max, REST_START + 1))
+                {
+                    mut REST_MIN = REST_START;
+
+                    // TODO FIX - we want ext.rest_min, or a flag or something, this is messy
+                    if (REST_START < host_args.len && !host_args[REST_START].default)
+                        REST_MIN++;
+
+                    if (reorder.map.len < args.len && reorder.map.len < min(arity.max, REST_MIN))
                         matchFail(ERRMSG_optionalArgumentAmbiguity(:host_args, :reorder, :names));
+                }
 
                 //
                 let N = (reorder ? reorder.map.len : args.len)
