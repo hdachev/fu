@@ -280,13 +280,15 @@ inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
 inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
 inline constexpr s_VFacts s_VFacts_LeftAligned = s_VFacts(8u);
 inline constexpr s_VFacts s_VFacts_RightAligned = s_VFacts(16u);
+inline constexpr s_VFacts s_VFacts_AssumingRecursionNeverReturns = s_VFacts(32u);
 
 inline constexpr s_VFacts MASK_s_VFacts
     = s_VFacts_AlwaysTrue
     | s_VFacts_AlwaysFalse
     | s_VFacts_Typename
     | s_VFacts_LeftAligned
-    | s_VFacts_RightAligned;
+    | s_VFacts_RightAligned
+    | s_VFacts_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_s_SolverStatus

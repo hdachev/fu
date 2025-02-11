@@ -107,13 +107,15 @@ inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysFalse = VFacts_xhRf(2u);
 inline constexpr VFacts_xhRf VFacts_xhRf_Typename = VFacts_xhRf(4u);
 inline constexpr VFacts_xhRf VFacts_xhRf_LeftAligned = VFacts_xhRf(8u);
 inline constexpr VFacts_xhRf VFacts_xhRf_RightAligned = VFacts_xhRf(16u);
+inline constexpr VFacts_xhRf VFacts_xhRf_AssumingRecursionNeverReturns = VFacts_xhRf(32u);
 
 inline constexpr VFacts_xhRf MASK_VFacts_xhRf
     = VFacts_xhRf_AlwaysTrue
     | VFacts_xhRf_AlwaysFalse
     | VFacts_xhRf_Typename
     | VFacts_xhRf_LeftAligned
-    | VFacts_xhRf_RightAligned;
+    | VFacts_xhRf_RightAligned
+    | VFacts_xhRf_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_Lifetime_llCFAn7rdDl
@@ -1397,14 +1399,13 @@ Type_OiTm NotPrimitive_9CJm(fu::vec_range<char> canon, const unsigned quals)
 extern const Type_OiTm t_void fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_KiGuEGIuqEg, 0u);
 extern const Type_OiTm t_never fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_scsjXZQ1yH3, 0u);
 extern const Type_OiTm t_zeroes fu_INIT_PRIORITY(1009) = NotPrimitive_9CJm(str_8HO0vFfS8Nh, 0u);
-extern const unsigned q_rx_resize;
-Type_OiTm QualsAdd_9CJm(/*MOV*/ Type_OiTm&& t, const unsigned quals)
+Type_OiTm VFactsAdd_9CJm(/*MOV*/ Type_OiTm&& t, const VFacts_xhRf vfacts)
 {
-    t.vtype.quals |= quals;
+    t.vtype.vfacts |= vfacts;
     return static_cast<Type_OiTm&&>(t);
 }
 
-extern const Type_OiTm t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = QualsAdd_9CJm(Type_OiTm(t_never), q_rx_resize);
+extern const Type_OiTm t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = VFactsAdd_9CJm(Type_OiTm(t_never), VFacts_xhRf_AssumingRecursionNeverReturns);
 Type_OiTm QualsClear_9CJm(/*MOV*/ Type_OiTm&& t)
 {
     t.vtype.quals = 0u;
@@ -1412,6 +1413,7 @@ Type_OiTm QualsClear_9CJm(/*MOV*/ Type_OiTm&& t)
 }
 
 extern const Type_OiTm t_irrelevant fu_INIT_PRIORITY(1009) = QualsClear_9CJm(Type_OiTm(t_void));
+extern const unsigned q_rx_resize;
                                 #ifndef DEF_x3Cx3E_odNTdyipeEj
                                 #define DEF_x3Cx3E_odNTdyipeEj
 inline int x3Cx3E_odNT(const int a, const int b)
@@ -1488,9 +1490,9 @@ Type_OiTm set_lifetime_9CJm(/*MOV*/ Type_OiTm&& type, const Lifetime_llCF& lifet
 }
 
 extern const Type_OiTm t_string_literal fu_INIT_PRIORITY(1009) = set_lifetime_9CJm(Type_OiTm(t_string), Lifetime_static_immoveable);
-                                #ifndef DEF_str_pB7BLRNZv8f
-                                #define DEF_str_pB7BLRNZv8f
-inline fu::str str_pB7B(const VFacts_xhRf n)
+                                #ifndef DEF_str_tiHhkG02jS7
+                                #define DEF_str_tiHhkG02jS7
+inline fu::str str_tiHh(const VFacts_xhRf n)
 {
     /*MOV*/ fu::str res {};
 
@@ -1509,6 +1511,9 @@ inline fu::str str_pB7B(const VFacts_xhRf n)
 
         if (n & VFacts_xhRf_RightAligned)
             res += ("RightAligned"_view + ", "_view);
+
+        if (n & VFacts_xhRf_AssumingRecursionNeverReturns)
+            res += ("AssumingRecursionNeverReturns"_view + ", "_view);
 
     };
     if (res)
@@ -1529,7 +1534,7 @@ inline fu::str x7E_rA00(fu::view<char> a, fu::view<char> b)
 bool propositionOK_9CJm(const Type_OiTm& type, const bool vfactsOK, const Context_Dujv& ctx, const TokenIdx_5581& _here)
 {
     if (!vfactsOK && type.vtype.vfacts)
-        BUG_u9Gb(x7E_rA00("propositionOK seeing vfacts: "_view, str_pB7B(type.vtype.vfacts)), ctx, _here);
+        BUG_u9Gb(x7E_rA00("propositionOK seeing vfacts: "_view, str_tiHh(type.vtype.vfacts)), ctx, _here);
     else if (!type.lifetime)
         return type.vtype.canon == t_bool.vtype.canon;
     else
@@ -1552,13 +1557,9 @@ bool is_void_or_propositionOK_9CJm(const Type_OiTm& type, const bool vfactsOK, c
     return propositionOK_9CJm(type, vfactsOK, ctx, _here) || is_void_9CJm(type.vtype);
 }
 
-unsigned is_AssumeNever_WhileSolvingRecursion_9CJm(const ValueType_JtNg& t)
+VFacts_xhRf is_AssumeNever_WhileSolvingRecursion_9CJm(const ValueType_JtNg& t)
 {
-    if (t.canon == "never"_view)
-        return t.quals & q_rx_resize;
-    else
-        return 0u;
-
+    return t.vfacts & VFacts_xhRf_AssumingRecursionNeverReturns;
 }
 
 bool is_rx_copy_9CJm(const ValueType_JtNg& t)
@@ -1578,7 +1579,7 @@ bool areVFactsAssignable_9CJm(const VFacts_xhRf host, const VFacts_xhRf guest, c
         const VFacts_xhRf h = VFacts_xhRf((host & VFacts_xhRf(~VFacts_xhRf_Typename)));
         const VFacts_xhRf g = VFacts_xhRf((guest & VFacts_xhRf(~VFacts_xhRf_Typename)));
         if (!(VFacts_xhRf((h & g)) == h))
-            BUG_u9Gb(x7E_rA00((x7E_rA00("areVFactsAssignable: vfacts mismatch: "_view, str_pB7B(host)) + " != "_view), str_pB7B(guest)), ctx, _here);
+            BUG_u9Gb(x7E_rA00((x7E_rA00("areVFactsAssignable: vfacts mismatch: "_view, str_tiHh(host)) + " != "_view), str_tiHh(guest)), ctx, _here);
 
     };
     return VFacts_xhRf((host & guest)) == host;

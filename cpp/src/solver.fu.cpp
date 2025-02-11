@@ -153,7 +153,7 @@ Target_VZrr Scope_create_z0Qq(Scope_2tPQ&, Kind_Idfg, fu::vec_range<char>, const
 void Scope_set_z0Qq(Scope_2tPQ&, fu::vec_range<char>, const Target_VZrr&, bool);
 static SolvedNode_efhg solveNode_gDsn(const Node_JjyR&, const Type_OiTm&, CurrentFn_QbLp&, SolverState_S5oT&, const Context_Dujv&, TokenIdx_5581&, Module_BOS4&, const Options_TBgD&, fu::vec<Helpers_DyqV>&);
 bool is_never_9CJm(const ValueType_JtNg&);
-unsigned is_AssumeNever_WhileSolvingRecursion_9CJm(const ValueType_JtNg&);
+VFacts_xhRf is_AssumeNever_WhileSolvingRecursion_9CJm(const ValueType_JtNg&);
 fu::str qBAD_e44U(fu::view<char>);
 const Token_6M7a& _token_xQNS(const TokenIdx_5581&, const Context_Dujv&);
 [[noreturn]] fu::never BUG_u9Gb(fu::view<char>, const Context_Dujv&, const TokenIdx_5581&);
@@ -633,13 +633,15 @@ inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysFalse = VFacts_xhRf(2u);
 inline constexpr VFacts_xhRf VFacts_xhRf_Typename = VFacts_xhRf(4u);
 inline constexpr VFacts_xhRf VFacts_xhRf_LeftAligned = VFacts_xhRf(8u);
 inline constexpr VFacts_xhRf VFacts_xhRf_RightAligned = VFacts_xhRf(16u);
+inline constexpr VFacts_xhRf VFacts_xhRf_AssumingRecursionNeverReturns = VFacts_xhRf(32u);
 
 inline constexpr VFacts_xhRf MASK_VFacts_xhRf
     = VFacts_xhRf_AlwaysTrue
     | VFacts_xhRf_AlwaysFalse
     | VFacts_xhRf_Typename
     | VFacts_xhRf_LeftAligned
-    | VFacts_xhRf_RightAligned;
+    | VFacts_xhRf_RightAligned
+    | VFacts_xhRf_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_SolverStatus_h9em

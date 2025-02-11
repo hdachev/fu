@@ -154,7 +154,7 @@ s_Target Scope_create_z0QqoZ5t(s_Scope&, s_Kind, const fu::str&, const s_Type&, 
 void Scope_set_z0QqoZ5t(s_Scope&, const fu::str&, const s_Target&, bool);
 static s_SolvedNode solveNode_gDsnGKHT(const s_Node&, const s_Type&, s_CurrentFn&, s_SolverState&, fu::vec<s_Helpers>&, s_TokenIdx&, const s_Context&, s_Module&, const s_Options&);
 bool is_never_9CJmuVSD(const s_ValueType&);
-unsigned is_AssumeNever_WhileSolvingRecursion_9CJmuVSD(const s_ValueType&);
+s_VFacts is_AssumeNever_WhileSolvingRecursion_9CJmuVSD(const s_ValueType&);
 fu::str qBAD_e44UlzzA(const fu::str&);
 const s_Token& _token_xQNS19Zn(const s_TokenIdx&, const s_Context&);
 [[noreturn]] fu::never BUG_u9Gbkniv(fu::str&&, const s_TokenIdx&, const s_Context&);
@@ -519,13 +519,15 @@ inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
 inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
 inline constexpr s_VFacts s_VFacts_LeftAligned = s_VFacts(8u);
 inline constexpr s_VFacts s_VFacts_RightAligned = s_VFacts(16u);
+inline constexpr s_VFacts s_VFacts_AssumingRecursionNeverReturns = s_VFacts(32u);
 
 inline constexpr s_VFacts MASK_s_VFacts
     = s_VFacts_AlwaysTrue
     | s_VFacts_AlwaysFalse
     | s_VFacts_Typename
     | s_VFacts_LeftAligned
-    | s_VFacts_RightAligned;
+    | s_VFacts_RightAligned
+    | s_VFacts_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_s_SolverStatus

@@ -345,13 +345,15 @@ inline constexpr VFacts_xhRf VFacts_xhRf_AlwaysFalse = VFacts_xhRf(2u);
 inline constexpr VFacts_xhRf VFacts_xhRf_Typename = VFacts_xhRf(4u);
 inline constexpr VFacts_xhRf VFacts_xhRf_LeftAligned = VFacts_xhRf(8u);
 inline constexpr VFacts_xhRf VFacts_xhRf_RightAligned = VFacts_xhRf(16u);
+inline constexpr VFacts_xhRf VFacts_xhRf_AssumingRecursionNeverReturns = VFacts_xhRf(32u);
 
 inline constexpr VFacts_xhRf MASK_VFacts_xhRf
     = VFacts_xhRf_AlwaysTrue
     | VFacts_xhRf_AlwaysFalse
     | VFacts_xhRf_Typename
     | VFacts_xhRf_LeftAligned
-    | VFacts_xhRf_RightAligned;
+    | VFacts_xhRf_RightAligned
+    | VFacts_xhRf_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_SolverStatus_h9em

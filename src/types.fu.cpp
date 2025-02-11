@@ -88,13 +88,15 @@ inline constexpr s_VFacts s_VFacts_AlwaysFalse = s_VFacts(2u);
 inline constexpr s_VFacts s_VFacts_Typename = s_VFacts(4u);
 inline constexpr s_VFacts s_VFacts_LeftAligned = s_VFacts(8u);
 inline constexpr s_VFacts s_VFacts_RightAligned = s_VFacts(16u);
+inline constexpr s_VFacts s_VFacts_AssumingRecursionNeverReturns = s_VFacts(32u);
 
 inline constexpr s_VFacts MASK_s_VFacts
     = s_VFacts_AlwaysTrue
     | s_VFacts_AlwaysFalse
     | s_VFacts_Typename
     | s_VFacts_LeftAligned
-    | s_VFacts_RightAligned;
+    | s_VFacts_RightAligned
+    | s_VFacts_AssumingRecursionNeverReturns;
                                 #endif
 
                                 #ifndef DEF_s_Lifetime
@@ -1402,20 +1404,15 @@ extern const s_Type t_never fu_INIT_PRIORITY(1009) = NotPrimitive("never"_fu, 0u
 extern const s_Type t_zeroes fu_INIT_PRIORITY(1009) = NotPrimitive("zeroes"_fu, 0u);
                                 #endif
 
-                                #ifndef DEF_q_rx_resize
-                                #define DEF_q_rx_resize
-extern const unsigned q_rx_resize;
-                                #endif
-
-s_Type QualsAdd(/*MOV*/ s_Type&& t, const unsigned quals)
+s_Type VFactsAdd(/*MOV*/ s_Type&& t, const s_VFacts vfacts)
 {
-    t.vtype.quals |= quals;
+    t.vtype.vfacts |= vfacts;
     return static_cast<s_Type&&>(t);
 }
 
                                 #ifndef DEF_t_AssumeNever_WhileSolvingRecursion
                                 #define DEF_t_AssumeNever_WhileSolvingRecursion
-extern const s_Type t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = QualsAdd(s_Type(t_never), q_rx_resize);
+extern const s_Type t_AssumeNever_WhileSolvingRecursion fu_INIT_PRIORITY(1009) = VFactsAdd(s_Type(t_never), s_VFacts_AssumingRecursionNeverReturns);
                                 #endif
 
 s_Type QualsClear(/*MOV*/ s_Type&& t)
@@ -1432,6 +1429,11 @@ extern const s_Type t_irrelevant fu_INIT_PRIORITY(1009) = QualsClear(s_Type(t_vo
                                 #ifndef DEF_CANNOT_definit_mutrefs
                                 #define DEF_CANNOT_definit_mutrefs
 inline constexpr bool CANNOT_definit_mutrefs = true;
+                                #endif
+
+                                #ifndef DEF_q_rx_resize
+                                #define DEF_q_rx_resize
+extern const unsigned q_rx_resize;
                                 #endif
 
                                 #ifndef DEF_x3Cx3E_XrkW2YUZsRk
@@ -1515,9 +1517,9 @@ s_Type set_lifetime(/*MOV*/ s_Type&& type, const s_Lifetime& lifetime)
 extern const s_Type t_string_literal fu_INIT_PRIORITY(1009) = set_lifetime(s_Type(t_string), Lifetime_static_immoveable);
                                 #endif
 
-                                #ifndef DEF_str_5sbFsJUspf0
-                                #define DEF_str_5sbFsJUspf0
-inline fu::str str_5sbFsJUs(const s_VFacts n)
+                                #ifndef DEF_str_UfXsjPb3o3a
+                                #define DEF_str_UfXsjPb3o3a
+inline fu::str str_UfXsjPb3(const s_VFacts n)
 {
     /*MOV*/ fu::str res {};
 
@@ -1536,6 +1538,9 @@ inline fu::str str_5sbFsJUs(const s_VFacts n)
 
         if (n & s_VFacts_RightAligned)
             res += ("RightAligned"_fu + ", "_fu);
+
+        if (n & s_VFacts_AssumingRecursionNeverReturns)
+            res += ("AssumingRecursionNeverReturns"_fu + ", "_fu);
 
     };
     if (res)
@@ -1556,7 +1561,7 @@ inline fu::str x7E_3lDd4lqo(fu::view<char> a, fu::view<char> b)
 bool propositionOK_9CJmuVSD(const s_Type& type, const bool vfactsOK, const s_TokenIdx& _here, const s_Context& ctx)
 {
     if (!vfactsOK && type.vtype.vfacts)
-        BUG_u9Gbkniv(x7E_3lDd4lqo("propositionOK seeing vfacts: "_fu, str_5sbFsJUs(type.vtype.vfacts)), _here, ctx);
+        BUG_u9Gbkniv(x7E_3lDd4lqo("propositionOK seeing vfacts: "_fu, str_UfXsjPb3(type.vtype.vfacts)), _here, ctx);
     else if (!type.lifetime)
         return type.vtype.canon == t_bool.vtype.canon;
     else
@@ -1579,13 +1584,9 @@ bool is_void_or_propositionOK_9CJmuVSD(const s_Type& type, const bool vfactsOK, 
     return propositionOK_9CJmuVSD(type, vfactsOK, _here, ctx) || is_void_9CJmuVSD(type.vtype);
 }
 
-unsigned is_AssumeNever_WhileSolvingRecursion_9CJmuVSD(const s_ValueType& t)
+s_VFacts is_AssumeNever_WhileSolvingRecursion_9CJmuVSD(const s_ValueType& t)
 {
-    if (t.canon == "never"_fu)
-        return t.quals & q_rx_resize;
-    else
-        return 0u;
-
+    return t.vfacts & s_VFacts_AssumingRecursionNeverReturns;
 }
 
 bool is_rx_copy_9CJmuVSD(const s_ValueType& t)
@@ -1605,7 +1606,7 @@ bool areVFactsAssignable(const s_VFacts host, const s_VFacts guest, const s_Toke
         const s_VFacts h = s_VFacts((host & s_VFacts(~s_VFacts_Typename)));
         const s_VFacts g = s_VFacts((guest & s_VFacts(~s_VFacts_Typename)));
         if (!(s_VFacts((h & g)) == h))
-            BUG_u9Gbkniv(x7E_3lDd4lqo((x7E_3lDd4lqo("areVFactsAssignable: vfacts mismatch: "_fu, str_5sbFsJUs(host)) + " != "_fu), str_5sbFsJUs(guest)), _here, ctx);
+            BUG_u9Gbkniv(x7E_3lDd4lqo((x7E_3lDd4lqo("areVFactsAssignable: vfacts mismatch: "_fu, str_UfXsjPb3(host)) + " != "_fu), str_UfXsjPb3(guest)), _here, ctx);
 
     };
     return s_VFacts((host & guest)) == host;
