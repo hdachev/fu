@@ -11576,6 +11576,7 @@ pub fn solve(
         if (items.len > 1 && !type.is_void_or_propositionOK)
         {
             mut sumType: Type;
+            mut has_AssumeNever_WhileSolvingRecursion: bool;
 
             // Last item type wins -
             //  unless it's never, which we can safely ignore.
@@ -11583,7 +11584,12 @@ pub fn solve(
             {
                 let item = items[i];
                 if (item.type.is_never)
+                {
+                    if (item.type.is_AssumeNever_WhileSolvingRecursion)
+                        has_AssumeNever_WhileSolvingRecursion = true;
+
                     continue;
+                }
 
                 if (sumType)
                 {
@@ -11619,6 +11625,9 @@ pub fn solve(
             {
                 type = sumType;
             }
+
+            if (has_AssumeNever_WhileSolvingRecursion)
+                type = t_zeroes;
         }
         else
         {

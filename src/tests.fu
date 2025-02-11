@@ -3008,7 +3008,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_logic(currently: "if/else no common supertype SolvedNode[] 17:21+1", `
+    ZERO(`
         struct SolvedNode {
             items: SolvedNode[];
         };
