@@ -398,6 +398,12 @@ using flags VFacts
     //
     LeftAligned
     RightAligned
+
+    // Previously we had the is_AssumeNever_WhileSolvingRecursion experiment,
+    //  which basically amounted to a 'never' value with a bogus 'q-is-rx-resize' flag.
+    //   This allows you to tag any value, never or otherwise with this uncertainty bit.
+    //
+    AssumingRecursionNeverReturns
 };
 
 

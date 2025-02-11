@@ -87,8 +87,8 @@ pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
 
 //
 
-fn QualsAdd(mut t: Type, quals: Quals) {
-    t.quals |= quals;
+fn VFactsAdd(mut t: Type, vfacts: VFacts) {
+    t.vfacts |= vfacts;
     return t;
 }
 
@@ -98,10 +98,10 @@ fn QualsClear(mut t: Type) {
 }
 
 pub let t_AssumeNever_WhileSolvingRecursion =
-    QualsAdd(t_never, q_rx_resize);
+    VFactsAdd(t_never, "AssumingRecursionNeverReturns");
 
 pub fn is_AssumeNever_WhileSolvingRecursion(t: ValueType) =
-    t.canon == "never" && t.quals & q_rx_resize;
+    t.vfacts & AssumingRecursionNeverReturns;
 
 
 //
