@@ -1,9 +1,11 @@
+#define TODO_FIX_REMOVE_copying_push
+
 #include <chrono>
 
 
 #ifndef fu_NO_fdefs
 
-double hr_CPFg3qvV()
+double hr_0pZhUWR4()
 {
     double timestamp {};
 
@@ -15,7 +17,7 @@ double hr_CPFg3qvV()
     return timestamp;
 }
 
-double utc_CPFg3qvV()
+double utc_0pZhUWR4()
 {
     double timestamp {};
 
