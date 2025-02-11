@@ -4866,6 +4866,25 @@ pub extern fn runTests()
                && test("B", true) ? 0 : 1;
     `);
 
+    ZERO(`
+        fn selfRecRetMutref(ref a: <T>[]) {
+            if (a.len & 1)                                          <alt>
+                return selfRecRetMutref(a[1 ..]);                   <alt/>
+                return selfRecRetMutref(a[.. a.len/2] && a[1 ..]);  <alt/>
+                return a[.. a.len/2] && selfRecRetMutref(a[1 ..]);  </alt>
+
+            return a[.. a.len/2];
+        }
+
+        fn main() {
+            mut a = [ 1, 2, 3, 4, 5 ];
+            selfRecRetMutref(a) = [ 20, 30 ];
+            mut sum = 0;
+            for (mut i = 0; i < a.len; i++) sum += a[i];
+            return sum - 60;
+        }
+    `);
+
     // /Logic and selectors.
 
 
