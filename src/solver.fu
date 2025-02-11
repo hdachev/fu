@@ -11577,13 +11577,23 @@ pub fn solve(
         {
             mut sumType: Type;
 
+            // Our creative type checking leaves a lot of room for confusion
+            //  when dealing with recursive functions without return type annots,
+            //   this nonsense is meant to help deal with the fallout.
+            mut isAssumingRecursionNeverReturns: bool;
+
             // Last item type wins -
             //  unless it's never, which we can safely ignore.
             for (mut i = items.len; i --> 0; )
             {
                 let item = items[i];
                 if (item.type.is_never)
+                {
+                    if (item.type.vfacts & "AssumingRecursionNeverReturns")
+                        isAssumingRecursionNeverReturns = true;
+
                     continue;
+                }
 
                 if (sumType)
                 {
@@ -11619,6 +11629,9 @@ pub fn solve(
             {
                 type = sumType;
             }
+
+            if (isAssumingRecursionNeverReturns)
+                sumType.vfacts |= "AssumingRecursionNeverReturns";
         }
         else
         {
