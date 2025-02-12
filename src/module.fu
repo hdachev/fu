@@ -398,6 +398,12 @@ using flags VFacts
     //
     LeftAligned
     RightAligned
+
+    // Previously we had the is_AssumeNever_WhileSolvingRecursion experiment,
+    //  which basically amounted to a 'never' value with a bogus 'q_rx_resize' qual.
+    //   This can tag any type, not limited to never.
+    //
+    AssumingInfiniteRecursion
 };
 
 
