@@ -10922,16 +10922,20 @@ pub fn solve(
         return other.out.solve.scope;
     }
 
-    fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
+    inline fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
     {
-        let args = solveNodes(node.items,
+        return solveArgsAndCall(node.items, id: node.value, :node.flags, :targets);
+    }
+
+    fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
+    {
+        shadow let args = solveNodes(args,
 
             // Can't dead code elim naively -
             //  A] Order of eval depends on target right now, can't be assumed here.
             //  B] Fns with inline arguments can sink nevers inside their bodies.
             DeadBreak_Only_WhileSolvingRecursion);
 
-        // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
         if (args) {
             let tail = args.last;
             if (tail.is_never && tail.isAssumingInfiniteRecursion)
@@ -10939,7 +10943,7 @@ pub fn solve(
         }
 
         //
-        return solveCall(id: node.value, args, :node.flags, :targets);
+        return solveCall(:id, args, :flags, :targets);
     }
 
     fn solveCallIndirect(node: Node)
@@ -10964,16 +10968,7 @@ pub fn solve(
                 "Indirect call: expression does not evaluate to an overload set: "
                     ~ explainType(head));
 
-        // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
-        let args = solveNodes(node.items[1 ..], DeadBreak_Only_WhileSolvingRecursion);
-        if (args) {
-            let tail = args.last;
-            if (tail.is_never && tail.isAssumingInfiniteRecursion)
-                return tail;
-        }
-
-        //
-        return solveCall(id: "__indirect", args, :targets);
+        return solveArgsAndCall(node.items[1 ..], id: "__indirect", :targets);
     }
 
     fn solveCall(
