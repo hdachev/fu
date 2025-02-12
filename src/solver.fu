@@ -10922,9 +10922,14 @@ pub fn solve(
         return other.out.solve.scope;
     }
 
-    fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
+    inline fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
     {
-        let args = solveNodes(node.items,
+        return solveArgsAndCall(node.items, id: node.value, :node.flags, :targets);
+    }
+
+    fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
+    {
+        shadow let args = solveNodes(args,
 
             // Can't dead code elim naively -
             //  A] Order of eval depends on target right now, can't be assumed here.
@@ -10935,7 +10940,7 @@ pub fn solve(
             return args.last;
 
         //
-        return solveCall(id: node.value, args, :node.flags, :targets);
+        return solveCall(:id, args, :flags, :targets);
     }
 
     fn solveCallIndirect(node: Node)
@@ -10960,13 +10965,7 @@ pub fn solve(
                 "Indirect call: expression does not evaluate to an overload set: "
                     ~ explainType(head));
 
-        // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
-        let args = solveNodes(node.items[1 ..], DeadBreak_Only_WhileSolvingRecursion);
-        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
-            return args.last;
-
-        //
-        return solveCall(id: "__indirect", args, :targets);
+        return solveArgsAndCall(node.items[1 ..], id: "__indirect", :targets);
     }
 
     fn solveCall(
