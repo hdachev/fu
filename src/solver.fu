@@ -3477,7 +3477,7 @@ pub fn solve(
         if (k == "argid")       return solveArgID(node, :type);
 
         if (k == "let")         return solveLet(node, asArgument: false);
-        if (k == "call")        return solveCall(node);
+        if (k == "call")        return solveCallDirect(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
         if (k == "not")         return solveNot(node);
@@ -10789,7 +10789,7 @@ pub fn solve(
         }
         else if (node.kind == "call")
         {
-            let res = tryAbstractEvalAsBool(solveCall(node));
+            let res = tryAbstractEvalAsBool(solveCallDirect(node));
             if (res == SE_True)  return true;
             if (res == SE_False) return false;
         }
@@ -10922,52 +10922,6 @@ pub fn solve(
         return other.out.solve.scope;
     }
 
-    inline fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
-    {
-        return solveArgsAndCall(node.items, id: node.value, :node.flags, :targets);
-    }
-
-    fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
-    {
-        shadow let args = solveNodes(args,
-
-            // Can't dead code elim naively -
-            //  A] Order of eval depends on target right now, can't be assumed here.
-            //  B] Fns with inline arguments can sink nevers inside their bodies.
-            DeadBreak_Only_WhileSolvingRecursion);
-
-        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
-            return args.last;
-
-        //
-        return solveCall(:id, args, :flags, :targets);
-    }
-
-    fn solveCallIndirect(node: Node)
-    {
-        node.items.len || BUG("solveCallIndirect: No head node, nothing to call.");
-
-        mut targets: Target[];
-
-        let head = solveCall(node.items.first);
-        if (head.isAddrOfFn) {
-            head.type.canon.unpackAddrOfFn: |t|
-                targets ~= t;
-        }
-        else if (head.is_Typename) {
-            let s = head.type.tryLookupUserType();
-            if (s.target)
-                targets ~= s.target;
-        }
-
-        if (!targets)
-            fail(:node.items.first.token,
-                "Indirect call: expression does not evaluate to an overload set: "
-                    ~ explainType(head));
-
-        return solveArgsAndCall(node.items[1 ..], id: "__indirect", :targets);
-    }
-
     fn solveCall(
         mut id: string, mut args?: SolvedNode[],
         flags!?: Flags, targets!?: Target[..]): SolvedNode
@@ -10987,6 +10941,52 @@ pub fn solve(
 
         //
         return CallerNode(id, callTargIdx, args, :reorder, :conversions);
+    }
+
+    fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
+    {
+        shadow let args = solveNodes(args,
+
+            // Can't dead code elim naively -
+            //  A] Order of eval depends on target right now, can't be assumed here.
+            //  B] Fns with inline arguments can sink nevers inside their bodies.
+            DeadBreak_Only_WhileSolvingRecursion);
+
+        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
+            return args.last;
+
+        //
+        return solveCall(:id, args, :flags, :targets);
+    }
+
+    inline fn solveCallDirect(node: Node, targets!?: Target[..]): SolvedNode
+    {
+        return solveArgsAndCall(node.items, id: node.value, :node.flags, :targets);
+    }
+
+    fn solveCallIndirect(node: Node)
+    {
+        node.items.len || BUG("solveCallIndirect: No head node, nothing to call.");
+
+        mut targets: Target[];
+
+        let head = solveCallDirect(node.items.first);
+        if (head.isAddrOfFn) {
+            head.type.canon.unpackAddrOfFn: |t|
+                targets ~= t;
+        }
+        else if (head.is_Typename) {
+            let s = head.type.tryLookupUserType();
+            if (s.target)
+                targets ~= s.target;
+        }
+
+        if (!targets)
+            fail(:node.items.first.token,
+                "Indirect call: expression does not evaluate to an overload set: "
+                    ~ explainType(head));
+
+        return solveArgsAndCall(node.items[1 ..], id: "__indirect", :targets);
     }
 
 
@@ -11015,7 +11015,7 @@ pub fn solve(
 
         // Default constructor calls.
         if (!itemType && type && type.isUserType)
-            return solveCall(node, targets: [ lookupUserType(type).target ]);
+            return solveCallDirect(node, targets: [ lookupUserType(type).target ]);
 
         // Dead code elim.
         mut args = solveNodes(node.items, DeadBreak_Always, itemType);
