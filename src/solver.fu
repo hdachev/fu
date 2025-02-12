@@ -7539,7 +7539,7 @@ pub fn solve(
 
             // Seed return value.
             mut ret_seed = n_ret    ? ret_expect || BUG("falsy ret_expect: " ~ n_fn.value)
-                                    : t_AssumeNever_WhileSolvingRecursion;
+                                    : t_never_AssumingInfiniteRecursion;
 
             if (ret_seed.lifetime)
             {
@@ -10952,8 +10952,11 @@ pub fn solve(
             //  B] Fns with inline arguments can sink nevers inside their bodies.
             DeadBreak_Only_WhileSolvingRecursion);
 
-        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
-            return args.last;
+        if (args) {
+            let tail = args.last;
+            if (tail.is_never && tail.isAssumingInfiniteRecursion)
+                return tail;
+        }
 
         //
         return solveCall(:id, args, :flags, :targets);
@@ -12993,7 +12996,7 @@ pub fn solve(
                 // Dead code elim.
                 if (solved.type.is_never && dead_brk
                         && (dead_brk != DeadBreak_Only_WhileSolvingRecursion ||
-                            solved.type.is_AssumeNever_WhileSolvingRecursion))
+                            solved.type.isAssumingInfiniteRecursion))
                 {
                     if (i < nodes.len - 1)
                         makeNote(N_DeadCode);

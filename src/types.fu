@@ -87,8 +87,8 @@ pub fn is_void_or_propositionOK(type: Type, vfactsOK!?: bool)
 
 //
 
-fn QualsAdd(mut t: Type, quals: Quals) {
-    t.quals |= quals;
+fn VFactsAdd(mut t: Type, vfacts: VFacts) {
+    t.vfacts |= vfacts;
     return t;
 }
 
@@ -97,11 +97,11 @@ fn QualsClear(mut t: Type) {
     return t;
 }
 
-pub let t_AssumeNever_WhileSolvingRecursion =
-    QualsAdd(t_never, q_rx_resize);
+pub let t_never_AssumingInfiniteRecursion =
+    VFactsAdd(t_never, "AssumingInfiniteRecursion");
 
-pub fn is_AssumeNever_WhileSolvingRecursion(t: ValueType) =
-    t.canon == "never" && t.quals & q_rx_resize;
+pub fn isAssumingInfiniteRecursion(t: ValueType) =
+    t.vfacts & AssumingInfiniteRecursion;
 
 
 //
@@ -343,6 +343,8 @@ pub fn explainVFacts(vfacts: VFacts)
         result ~= "always-false".ansi::qVFACTS ~ ' ';
     if (vfacts & Typename)
         result ~= "type".ansi::qVFACTS  ~ ' ';
+    if (vfacts & AssumingInfiniteRecursion)
+        result ~= "assuming-infinite-recursion".ansi::qVFACTS ~ ' ';
 
     // TODO FIX ignoring LeftAligned & co here, not terribly relevant yet.
     // if (vfacts & LeftAligned) {
