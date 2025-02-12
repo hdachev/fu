@@ -10943,7 +10943,7 @@ pub fn solve(
         return CallerNode(id, callTargIdx, args, :reorder, :conversions);
     }
 
-    fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
+    inline fn solveArgsAndCall(id: string, args: Node[..], flags!?: Flags, targets!?: Target[..]): SolvedNode
     {
         shadow let args = solveNodes(args,
 
