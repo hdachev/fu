@@ -1,3 +1,5 @@
+#define TODO_FIX_REMOVE_copying_push
+
 
 #ifndef fu_NO_fdefs
 
@@ -6,11 +8,16 @@
 inline constexpr bool PROFILE = false;
                                 #endif
 
-void x2Bx3D_mJTpSrZk()
+                                #ifndef DEF_MEMORY
+                                #define DEF_MEMORY
+inline constexpr bool MEMORY = false;
+                                #endif
+
+void x2Bx3D_lO6QAhfF()
 {
 }
 
-void print_sTxdUhj0()
+void print_lO6QAhfF()
 {
 }
 

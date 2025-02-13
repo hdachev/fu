@@ -1,3 +1,5 @@
+#define TODO_FIX_REMOVE_copying_push
+
 #include <atomic>
 #include <cstdint>
 #include <stdint.h>
@@ -26,7 +28,7 @@ static std::atomic_uint64_t rand_u64_state { rand_u64_seed() };
 
 #ifndef fu_NO_fdefs
 
-uint64_t next_u64_3z5p6Ska()
+uint64_t next_u64_qB1H6Wbg()
 {
     uint64_t next {};
     auto prev = rand_u64_state.load(std::memory_order_relaxed);
