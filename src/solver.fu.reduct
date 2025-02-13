@@ -11,12 +11,9 @@ import module;
 import fail;
 import experiments;
 
-let OPTI_autoshadow         = true;
 let OPTI_bck                = true;
 let OPTI_unlist_callers     = true;
-let OPTI_moves_inside_fns   = true;
 
-let RESOLVE_report          = false;
 let TRACE_enable            = false;
 
 let NO_LOOP         = -1000001;
@@ -27,8 +24,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
     PROFILE(.UnaccountedFor, reset: true);
 
     lax mut TRACE_out       = TRACE_enable ? string : void;
-    lax mut TRACE_indent    = TRACE_enable ? string : void;
-
     lax fn TRACE(inline msg) if (TRACE_enable)
             (((TRACE_out ~= "") ~= TRACE_indent) ~= msg) ~= '\n';
 
@@ -37,9 +32,7 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         _bitset:            ::BitSet;
     };
 
-    struct LocidMap(type T) {
-        _values:            T[];
-    };
+    struct LocidMap(type T) {};
 
     struct WriteID
     {
@@ -55,8 +48,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
     {
         callsite_token:     TokenIdx;
         w:                  i32;
-
-        arg:                SolvedNode;
     };
 
     struct Events
@@ -68,26 +59,12 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         preceding_ref_args: PrecedingRefArg[];
     };
 
-    lax fn clear(lax ref events: Events) {}
+    lax fn clear() {}
 
-    lax fn Events_merge(lax ref events: EventsSnap,lax snap) {
-        return [];
-
-        return [];
-
-        for (fieldname i: EventsSnap)
-            events.i.Events_restore(restore.i);
-    }
+    lax fn Events_merge(lax ref events: EventsSnap,lax snap) {}
 
     struct PostdomSnap
     {};
-
-    struct Postdom
-    {
-        using snap:         PostdomSnap;
-
-        write_loop_start:   i32;
-    };
 
     struct VarUsage
     {
@@ -107,14 +84,10 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
     struct RevSpecPrototype
     {
         true solved:        SolvedNode;
-        args_neg:           i32;
     };
 
     struct RevSpecInstance
-    {
-        true original:      Target;
-        relaxed_quals:      Quals;
-    };
+    {};
 
     struct RevSpecOutput
     {
@@ -134,7 +107,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
         using flow?:        Flow;
 
-        far_jumps?:         flat::Set(i32);
         using events?:      Events;
         autoshadow_ok!:     i32;
 
@@ -148,41 +120,25 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
         TODO_FIX_children?: LocidMap(flat::Set(i32));
 
-        rev_spec_proto?:    RevSpecPrototype;
-
         TODO_FIX_unique?:   i32;
     };
 
     lax mut _current_fn:        CurrentFn;
 
-    inline fn add(ref set, other)
-        set._bitset.add(other._bitset);
-
     inline fn clear(ref set)
         set._bitset.clear();
-
-    inline fn has_inter(a, b)
-        a._bitset.has_inter(b._bitset);
 
     fn has(set: LocidSet, locid) {
         lax let args_neg = _current_fn.args_neg;
         return set._bitset.has(args_neg + locid);
     }
 
-    fn add(ref set, locid: i32) {
-        lax let args_neg = _current_fn.args_neg;
-    }
-
     fn each(set: LocidSet, each) return [];
 
     inline fn has(ref map: LocidMap(_), locid: i32)
-        return !!map.if(exists: locid);
+        return !!map.if();
 
     fn if(ref map: LocidMap(_), exists!locid: i32) return [];
-
-    fn ensure(ref map: LocidMap(_), exists!locid) {}
-
-    infix fn |=(ref dest: LocidMap(Quals), src: LocidMap(Quals)) {}
 
     struct SpecExtras
     {};
@@ -192,47 +148,16 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         scope_memo?:        ScopeMemo;
         scope_skip?:        ScopeSkipMemos;
 
-        calls?:             flat::CountedSet(i32);
-
         specs?:             flat::Map(string, Target);
-
-        far_jumps?:         flat::Set(i32);
 
         rev_spec?:          ReverseSpecialization;
     };
 
-    using flags TypeParamFlags {
-        TP_isTypenameArgSpec;
-        TP_needsConsumedTypes;
-    };
-
-    struct TypeParam {
-    };
-
-    using enum SolverPass
-    {
-        Solving = 0
-        RelaxMut
-        BorrowCheck
-        ArgumentsAtRisk
-        RelaxCopyResize
-    };
-
-    struct ConvCacheColumns {
-        types:              ValueType[];
-        paths:              Target[][];
-
-        must_see:           i32[][];
-    };
-
-    struct ConvCache_ColsAndBakes {
-    };
+    struct ConvCache_ColsAndBakes {};
 
     struct SolverState
     {
         _scope:             Scope;
-        _root_scope:        ScopeMemo;
-        _pub_imports:       flat::Set(i32);
         _helpers_data:      HelpersData[];
         _ephemeral:         Ephemeral[];
 
@@ -241,9 +166,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         _solver_safety:     int;
         _qstack_safety:     int;
 
-        shortModuleName:    string;
-
-        TODO_FIX_convert_args:  SolvedNode[];
         _solvingFnort:      Target;
         _nestingFnort:      Target;
     };
@@ -263,10 +185,9 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         DeadBreak_Only_WhileSolvingRecursion
     };
 
-    lax fn clear(lax ref flow: Flow) {
+    lax fn clear() {
         return [];
         reorder.applicable = false;
-        reorder.map.clear();
     }
 
     using enum ArgRationale {
@@ -280,20 +201,9 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
     using mut ss:           SolverState;
     implicit lax mut _helpers:  Helpers[];
 
-    lax fn push(lax data) {
-        return [];
-        lax let ret         = Helpers(index);
-        _helpers       ~= ret;
-        _helpers_data  ~= data;
-        return [];
-    }
+    lax fn isMutVal() return [];
 
-    lax fn Scope_pop(lax memo) {
-    }
-
-    lax fn isMutVal(lax o) return [];
-
-    using inline fn GET(h: Helpers): HelpersData return [];
+    using inline fn GET(): HelpersData return [];
 
     inline fn couldHaveEPH(target: Target) return [];
 
@@ -304,14 +214,7 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     fn nested(index: i32) return nested(:index, from: _nestingFnort);
 
-    fn explainTypeName(type: Type, brief!?: bool) return (type.canon == t_bool.canon ? ""
-              : type.canon).qKW;
-
     fn explainType(type, brief!?: bool, mut lt!?: bool, mut no_quals!?: bool, mut usage!?: bool, mut no_vfacts!?: bool, diff!?: Type, lax i!_ignore?: int) {}
-
-    lax fn fail_appendStack(lax mut reason: string) lax mut ellipsis            = false;
-
-    fn fail(reason: string, backtrack!?: string, mut token! = _here, highlight?: TokenIdx[]) reason || BUG("");
 
     fn str(t: Target, brief!?: bool) {
         lax let o       = GET(t);
@@ -323,37 +226,13 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         return (prefix) ~ ns ~ o.name.human.qID;
     }
 
-    fn str(arg: Argument, brief!?: bool) lax mut prefix = (arg.flags & F_INJECTED && "")
-                   ~ (arg.flags & F_IMPLICIT && "")
-                   ~ (arg.flags & F_REF && "");
-
     lax fn human(lax id) return [];
 
     fn ConvCache_nukeConverts(inline reason) _conv_cache.clear();
 
-    fn ConvCache_nukeUsings(inline reason) {
-        TRACE("" ~ reason);
-        _conv_cache.remove(ValueType());
-    }
+    fn ConvCache_nukeUsings(inline reason) {}
 
-    fn _Scope_import__forceCopy(modid: i32, private!?: bool): void {
-        lax let s = ctx.modules[modid].out.solve.scope;
-
-        lax let usings0     = _scope.usings.len;
-        lax let converts0   = _scope.converts.len;
-
-        inline fn pub_or_priv !T(what: T[..], pub_count: int) {
-            lax let N = what.len;
-            return what[private ? pub_count : 0
-                     .. private ? N : pub_count];
-        }
-
-        _scope.converts     ~= pub_or_priv(s.converts, s.pub_converts);
-        _scope.globals      ~= pub_or_priv(s.globals, s.pub_globals);
-
-        lax let usings1 = _scope.usings.len;
-        ConvCache_nukeUsings("" ~ usings1 ~ ")");
-    }
+    fn _Scope_import__forceCopy(modid: i32, private!?: bool): void {}
 
     fn isFnOrType(h): bool
         !!(h.mask & (HM_Function | HM_UserType));
@@ -363,36 +242,18 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         return _scope.overloads[globid - 1];
     }
 
-    fn EXT_mut(target: Target) lax let globid  = target.globid;
-
     fn EPH_mut(index) return _ephemeral.ensure(exists: index);
 
-    fn localOf(target: Target) return target.local_of;
-
-    fn SolvedNode(kind:       Kind, type:       Type, flags?:     Flags, value?, items?:     SolvedNode[], target?:    Target, helpers?:   Helpers) return [];
+    fn SolvedNode(kind:       Kind, type:       Type, flags?:     Flags, value?, items?:     SolvedNode[], helpers?:   Helpers) return [];
 
     lax fn TEST_varLifetime(lax lifetime, lax staticOK!?: bool, lax locid!expect?: i32) =
     {}
 
-    lax fn Binding(lax id,lax mut type: Type,lax flags!: Flags,lax asserts!: DeclAsserts,lax ref shadows!: bool,lax asArgument!: bool) {
-        lax mut name        = id;
-        lax mut end   = fname.len;
-
-        return [];
-    }
-
-    lax fn explainNotMutref(lax what) {
-        return [];
-
-        return [];
-    }
-
-    fn explainNotAssignable(host, guest: Type, cannot_retype!?: SolvedNode) return [];
+    lax fn Binding(lax id,lax mut type: Type,lax flags!: Flags,lax asserts!: DeclAsserts,lax ref shadows!: bool,lax asArgument!: bool) {}
 
     fn str(n: SolvedNode) return [];
 
     fn solveTypeCast(node: Node): SolvedNode {
-        lax let left   = node.items[0];
         lax let right  = node.items[1];
 
         lax let expect = evalTypeAnnot(right);
@@ -408,16 +269,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
         usings_left && BUG("");
 
-        {
-            lax mut trailing_misses     = 0;
-
-            lax let trailing_usings = (num_usings - non_trailing_misses).max(0);
-
-            lax mut first = names.len;
-
-            return [];
-        }
-
         return [];
     }
 
@@ -427,16 +278,9 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     inline fn findRestStart(ext: Extended) return [];
 
-    lax fn collectNamedArgs(lax args,lax ref minArity: int) {
-    }
-
-    lax fn applyRetype(lax ref node: SolvedNode,lax retype) node.type = retype;
-
-    lax fn explainWhichFn(lax mut t: Target,lax conversions?: Target[][],lax backtrack!?: string,lax fmt = NoContext) return [];
+    lax fn collectNamedArgs(lax args,lax ref minArity: int) {}
 
     lax fn doExploreConversions(lax startType,lax ref init: ConvCache_ColsAndBakes) {
-        lax mut result: ConvCache_ColsAndBakes;
-
         lax let conv_safety0 = _current_fn.conv_safety++;
 
         return [];
@@ -449,19 +293,7 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     lax fn SLOW_type_maybeInside(lax host!: ValueType,lax guest!: ValueType,lax guest_non_triv_mask!: u64) {
         return [];
-        lax fn cannotCOW_climbParents(lax lifetime,lax expected_refs!?: i32[]) {
-            lifetime.Lifetime_each: |locid, region, paths|
-            {
-                lax let inter = _current_fn.flow.rg_parents.if(exists).Lifetime_inter(parent_region);
-
-                lt.Lifetime_each: |locid, isAlwaysMoveable, lax isStatic|
-                h.kills = kills;
-            }
-
-            lax ref items = node.items;
-            _current_fn_eachArg_BACK: |t, position|
-                relaxBlockVar(t, );
-        }
+        lax fn cannotCOW_climbParents(lax lifetime,lax expected_refs!?: i32[]) {}
     }
 
     fn solveRoot(node): SolvedNode {
@@ -476,66 +308,17 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     lax fn TODO_FIX_optionalSemis_blockWantsVoid(lax h) return [];
 
-    fn solveBlock(node, type!: Type, fnbody_of!?: i32, mask! = HM_CanBreak, id!?: string, locals_start!?: i32): SolvedNode return [];
+    lax fn TEST_unusedButCopied(inline topic: string, slot) {}
 
-    lax fn TEST_unusedButCopied(inline topic: string, slot) {
-        lax ref node = o.solved;
-        lax mut type = t_byte;
-    }
-
-    lax fn executeCompilerPragma(lax node: Node) {
-        compilerBreak();
-        return [];
-    }
+    lax fn executeCompilerPragma(lax node: Node) {}
 
     lax fn getOrCreateChild(lax node: Node,lax onReuse,lax onCreate) return [];
-
-    lax fn resetChild(lax target: Target) {
-        callee.EPH_mut.callers.remove(target.globid)
-
-        callers.each: |caller| 
-        lax ref args = EXT_mut(target).args;
-        lax let instance        = target.rev_spec.instance;
-        lax mut args_n_locals   = prototype.args_n_locals;
-        lax let args_neg        = prototype.args_neg;
-
-        lax mut current_fn0     = _current_fn.steal();
-
-        lax let solvingFnort0   = _solvingFnort.exchange(target);
-        {
-            lax mut lastKnownLocal:     i32;
-
-            lax fn replaceGlobid(lax ref t: Target) {
-            }
-        }
-
-        overload.solved = solved;
-
-        eph.far_jumps   = _current_fn.far_jumps;
-
-        return [];
-    }
-
-    lax fn solveJump_finish(lax flags: Flags,lax expr: SolvedNode,lax h!: Helpers) {}
-
-    lax fn createJump(lax h!: Helpers,lax expr) return [];
-
-    lax fn tryConvertIfNeeded(lax ref actual: SolvedNode,lax expect: Type,lax asArgument!?: bool) {
-        return [];
-        _helpers.reveach(_ss.helpers, |item, i|
-        {
-            return [];
-        });
-
-        fail("");
-    }
 
     fn evalTypeParam(id): Type return [];
 
     fn solveTypeParam(node): SolvedNode return [];
 
-    fn evalTypeAnnot(node: Node, TODO_FIX_typeof_dontStripRefs!?: bool): Type {
-        lax let here0   = _here;
+    fn evalTypeAnnot(node, TODO_FIX_typeof_dontStripRefs!?: bool): Type {
         _here       = node.token;
 
         lax let exprType = node.kind == "typeparam"
@@ -549,8 +332,6 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     lax fn litfix_bound(lax expr,lax bound!: SolvedNode) return [];
 
-    lax fn createAndOr_staticEvalFold(lax ref items: SolvedNode[],lax static_eval_fold!: StaticEval) {}
-
     lax fn createAndOr_staticEvalTrim(lax trim: i32,lax ref items: SolvedNode[],lax ref type: Type,lax vfacts: VFacts,lax if_only) {}
 
     lax fn SLOW_traverse(lax node: SolvedNode,lax visit) {
@@ -561,22 +342,14 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
 
     lax fn qSTACK_cow_inside(lax target,lax node: SolvedNode,lax host_arg: Argument,lax cow_inside: TokenIdx,lax seen!?: Target[]) return [];
 
-    lax fn HelpersReplica(lax local_of!: i32,lax locals_start!: i32,lax ret_actual) return [];
-
     fn solveNodes(nodes, dead_brk, type_all?: Type, type_last!?: Type, use_type_last!?: bool, static_eval_brk!?: StaticEval, TODO_FIX_useSpecPath!?: bool): SolvedNode[] {
-        lax let here0   = _here;
-
         return [];
-        return o.acceptsTempCopies()
     }
 
     lax fn rejectsTempCopies(lax arg: Argument,lax requireVal!: ArgRationale) {
     }
 
     fn PASS_borrowCheck(ref root: SolvedNode, pass: BorrowCheckPass) {
-        fn tokenHash(token)
-            (token.modid.u32 * 9973 ^ token.tokidx.u32) << 20;
-
         fn locid(w: WriteID)
             (w._locid_and_hash & 0xfffff).sign_unrotate;
 
@@ -610,22 +383,12 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         }
 
         fn SLOW_findByReadID(read!, write_loop_start) {
-            fn eachLoopStart(mut search: i32, which, visit) {
-            }
+            fn eachLoopStart(mut search: i32, which, visit) {}
 
-            lax mut loop_ids: i32[];
             eachLoopStart(write_loop_start, .write_loop_start): |loop_id|
-                loop_ids ~= loop_id;
-
-            lax fn checkReadLoopStart(lax read_loop_start) {
-                eachLoopStart(read_loop_start, .read_loop_start): |loop_id|
-
                 return [];
-            }
 
             return SLOW_find(|node|
-                node.target.isLocal &&
-                node.target.locid == read &&
                 checkReadLoopStart(node._loop_start))
                     || BUG("");
         }
@@ -635,21 +398,9 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
         fn flow         = _current_fn.flow;
         fn events       = _current_fn.events;
 
-        lax fn Reference_trackLocalRef(lax t_left,lax right) {
-            lax let left = Lifetime_getRefLocid_unlessStatic(t_left.lifetime);
-            shadow let right = right.Lifetime_process(|locid, continue_keep|
-            {});
-
-            lax mut parents:    Lifetime;
-            lax mut siblings:   Lifetime;
-
-            siblings = siblings.Lifetime_process(|locid!sibling, continue_keep|
-            {});
-        }
-
         fn bck_trackWrites(callOrPragma: SolvedNode, lifetime: Lifetime) {
             lax let loop_start  = callOrPragma._loop_start;
-            lax let OPTI_isLoop = loop_start != NO_LOOP && !!events.used_in_a_loop;
+            lax let OPTI_isLoop = loop_start != NO_LOOP;
             lifetime.Lifetime_each: |locid!write, region!write_region, paths!write_paths|
             {
                 lax mut all_written = write_region;
@@ -659,29 +410,23 @@ pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module, implici
                 lax let invalidates = flow.rg_invalidates.if(exists: write);
 
                 if (OPTI_isLoop) invalidates.Lifetime_each: |locid!read|
-                {
-                    if (read < loop_start) if (events.used_in_a_loop.has(read)) RESOLVE_byMutvar(read) || fail("" ~ write.nested
+                if (read < loop_start) if (events.used_in_a_loop.has(read)) RESOLVE_byMutvar(read) || fail("" ~ write.nested
                                         ~ SLOW_findByReadID(:read, loop_start).token.addr_and_snippet
                                         ~ qSTACK_rwevent(callOrPragma, ));
-                }
             }
         }
 
         bck_node(root);
     }
 
-    lax fn TEST_node(lax ref node: SolvedNode, lax pass, lax expect_paint!?: bool) {}
+    lax fn TEST_node(lax ref node: SolvedNode, lax expect_paint!?: bool) {}
 
-    lax fn TEST_pass(lax ref node: SolvedNode, lax pass, lax expect_paint!?: bool) {
-    }
+    lax fn TEST_pass(lax ref node: SolvedNode, lax pass, lax expect_paint!?: bool) {}
 
     fn runAllPasses(ref node: SolvedNode) {
-        {
-            PASS_borrowCheck(node, BCK_bck);
-            _current_fn.write_loop_start == NO_LOOP;
-        }
+        PASS_borrowCheck(node, BCK_bck);
 
-        TEST_pass(node, :node.helpers.pass, expect_paint: true);
+        TEST_pass(node, :node.helpers.pass);
     }
 
     fn PASS_runAllVerifiers() {}
