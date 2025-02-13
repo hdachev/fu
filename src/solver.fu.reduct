@@ -14,11 +14,6 @@ using flags SolverStatus: u16
 
     SS_EXTERNAL_LINKAGE
     SS_OBSERVED_BY_CONV_CACHE
-    SS_Debug_AllPassesComplete
-}
-
-using flags HelpersMask: u16
-{
     HM_CanBreak
     HM_CanReturn
     HM_Anon
@@ -27,7 +22,6 @@ using flags HelpersMask: u16
     HM_Lambda
     HM_UserType
 
-    HM_LoopPreheader
     HM_LoopBody
 }
 
@@ -52,7 +46,6 @@ using flags Flags: u32
     F_CONVERSION
     F_TEST_painted
 
-    F_PUB           
     F_EXTERN        
     F_HOTSWAP       
     F_PREDICATE
@@ -64,8 +57,6 @@ using flags Flags: u32
 };
 
 let F_TODO_FIX_TRAILING_RETURN = F_LAMBDA;
-
-using flags ExitPaths {};
 
 let LET_TYPE        = 0;
 let LET_INIT        = 1;
@@ -83,7 +74,6 @@ let LOOP_POST_COND  = 5;
 let STRUCT_BASE     = 0;
 
 let TRY_TRY         = 0;
-let TRY_ERR         = 1;
 let TRY_CATCH       = 2;
 
 using flags SolverNotes: i32
@@ -95,7 +85,7 @@ using flags CGDefects
 enum Kind
 {}
 
-fn isImmediatelyDiscardable(k) return [];
+fn isImmediatelyDiscardable() return [];
 
 type Quals = u32; 
 primitive MayEscapeVia: u32;
@@ -104,48 +94,13 @@ struct NukeOnRebuild
 {};
 
 nocopy struct Context
-{
-    fudir:      string;
-
-    base_dir:   string;
-
-    modules:    Module[];
-    dep_order:  i32[];
-
-    using nuke: NukeOnRebuild;
-};
-
-struct Module
-{
-    modid:      i32;
-    fname:      string;
-
-    in?:        ModuleInputs;
-
-    profile?:   profiler::Profile;
-};
-
-struct ModuleInputs
-{
-    lex:        LexerOutput;
-    parse:      ParserOutput;
-};
-
-struct ModuleOutputs
-{
-    types:      UserType[];
-};
-
-struct ModuleStats
 {};
 
-struct UserType
-{
-    true kind:      Kind;
-    name:           string;
+struct Module
+{};
 
-    items?:         ScopeItem[];
-};
+struct ModuleInputs
+{};
 
 struct LexerOutput
 {
@@ -161,10 +116,7 @@ struct ParserOutput
 }
 
 struct SolverOutput
-{
-    root:       SolvedNode;
-    scope:      Scope;
-};
+{};
 
 struct BuildHacks
 {};
@@ -179,11 +131,6 @@ struct LineColChars
 struct Token
 {
     true kind:  Kind;
-    using lcc:  LineColChars;
-};
-
-struct Node
-{
     true kind:  Kind;
     asserts?:   DeclAsserts;
 };
@@ -216,23 +163,7 @@ struct SolvedNode
 }
 
 struct ScopeItem
-{
-    true id:        string;
-    _packed:        u64;
-};
-
-nocopy struct Scope
-{
-    items:          ScopeItem[];
-    globals:        ScopeItem[];
-    privates:       i32[];
-    usings:         Target[];
-
-    pub_items:      i32;
-    pub_implicits:  i32;
-    pub_globals:    i32;
-    pub_converts:   i32;
-};
+{};
 
 struct Template
 {};
@@ -242,27 +173,11 @@ struct Argument
     may_alias?:         ::BitSet;
 };
 
-struct COWInside
-{
-    token:          TokenIdx;
-    argTarget:      i32;
-    mayEscapeVia:   MayEscapeVia;
-    exitPaths:      ExitPaths;
-};
-
 struct Overload
 {};
 
 struct Extended
-{
-    min:            i32;
-    max:            i32;
-    args:           Argument[];
-
-    cows_inside:    COWInside[];
-
-    args_n_locals?: Overload[];
-};
+{};
 
 struct ValueType
 {
@@ -292,167 +207,84 @@ using flags VFacts
 
 fn isRTL_set(ref o, rtl)
 
-fn argsForward(lax RTL, host_args) {
-    lax mut lastPass = 1;
+fn argsForward(lax RTL, host_args) {}
 
-    lax let end         = RTL ? N : 0 - 1;
-    lax let incr        = RTL ? +1  :  -1;
-
-    for (mut i = start; i != end; i += incr)
-        fn(:i, host_arg, ooe_isLast?: i == start);
-}
-
-fn _token(implicit ctx: Context, idx: TokenIdx): Token
+fn _token(implicit ctx, idx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
 
-fn _fname(implicit ctx: Context, idx: TokenIdx): string
+fn _fname(implicit ctx, idx): string
     ctx.modules[idx.modid].fname;
 
-inline fn nextIndexOfLocal(ext, asArgument!: bool): int return [];
+inline fn nextIndexOfLocal(ext, asArgument!): int return [];
 
-inline fn sign_rotate(v)
-    (v.u32 << 1) ^ (v < 0 ? 0xffffffff : 0x0)
-
-inline fn sign_unrotate(v: u32)
+inline fn sign_unrotate(v)
     i32((v >> 1) ^ (v & 1 ? 0xffffffff : 0x0))
 
-inline fn globid(t: Target) i32(t._packed >> 20 & 0xfffff);
+inline fn globid(t) i32(t._packed >> 20 & 0xfffff);
 inline fn  locid(t) u32(t._packed       & 0xfffff).sign_unrotate;
 
-fn Target(modid, globid, locid: i32) {}
+fn Target(modid, globid, locid) {}
 
-inline fn isArg(target: Target) target.locid < 0;
+fn parseGlobal(str, ref offset!: i32) {}
 
-fn parseLocalOrGlobal(str, ref offset!: i32) {}
+fn appendGlobal(ref str, using target) {}
 
-fn parseGlobal(str: string, ref offset!: i32) {}
-
-fn appendGlobal(ref str: string, using target: Target) {}
-
-fn add(ref mayEscapeVia, locid!: i32) mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
-
-fn if(ref a: <T>[..], exists!i: (TODO_REMOVE_bootstrap ? int : void), and?: <Then>, else!?)
-    i.unsigned < a.len.unsigned
-        ? Then -> [] ? a[i] : and(a[i])
-        :
+fn add(ref mayEscapeVia, locid!) mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
 
 fn hasNonIdentifierChars(id) return [];
 
-fn zip_each(ref a, ref b) zip_each(a, b): |shadow a, shadow b, i|
+fn steal(ref a, start!, end!) {}
 
-    return [];
-
-fn steal(ref a, start!, end!: i32) {}
-
-fn parse10u32(ref offset) {}
-
-fn parse10s32(ref offset, str: string) {}
+fn parse10s32(ref offset, str) {}
 
 fn print(arr) return [];
 
-fn trim(str: string) return [];
+fn trim(str) return [];
 
 fn parse(v)
 
-fn parseWild(v: byte[..], type as!<T>) return [];
+fn parseWild(v) return [];
 
-fn cleanID(id: string) {}
+fn cleanID(id) {}
 
-fn steal(ref v: <T>) {}
-
-fn exchange(ref a: <T>, mut b: T) swap(a, b);
+fn steal(ref v) {}
 
 fn shadow(ref a: <T>, mut b: T) unwrap {}
 
 inline fn start  (ref arr) arr[.. 0];
-inline fn end    (ref arr: <T>[]) arr[arr.len ..];
+inline fn end    (ref arr) arr[arr.len ..];
 
-pub let SELF_TEST = !!true;
+pub fn formatTokenCoord(token, from!, implicit ctx: Context) {}
 
-pub fn formatTokenCoord(token, from!: i32, implicit ctx: Context) {
-    lax mut fname = from != token.modid && token._fname;
+pub fn formatTokenCoord(fname!: string, token: LineColChars) {}
 
-    return formatTokenCoord(:fname, token: token._token);
-}
+pub fn formatCodeSnippet(src!, fmt?, mut highlight!: LineColChars[]) {}
 
-pub fn formatTokenCoord(fname!: string, token: LineColChars) {
-    lax let lcc     = token.line ~ "" ~ token.chars;
-    lax let dir     = path::dirname(fname);
-    lax let file    = fname.slice(dir.len, fname.len);
-    lax let ext     = path::ext(file);
-    lax let noext   = file.slice(0, file.len - ext.len);
-
-    return ansi::DIM ~ dir ~ ansi::RESET
-         ~ noext
-         ~ ansi::DIM
-         ~ ext ~ "" ~ lcc
-         ~ ansi::RESET;
-}
-
-pub fn formatCodeSnippet(src!, fmt?, mut highlight!: LineColChars[]) {
-    highlight.sort(|a, b| (a.line - b.line) < 0);
-
-    lax let lines   = src.split("");
-
-    lax let start   = highlight.first;
-    lax let end     = highlight.last;
-
-    lax mut l_start = start.line - 1;  
-    lax mut l_end   =   end.line;
-
-    l_start     = l_start.min(lines.len).max(0);
-    lax mut result  = "";
-
-    return result;
-}
-
-pub fn formatCodeSnippet(mut tokens, from!, fmt?) {
-    lax mut append = "";
-
-    lax let head = tokens.if_first;
-    lax mut result = "";
-    result ~= formatTokenCoord(head, :from);
-
-    lax mut highlight: LineColChars[] = [];
-    result ~= append;
-    return result;
-}
+pub fn formatCodeSnippet(mut tokens, from!, fmt?) {}
 
 implicit ref _here: TokenIdx;
 
 pub inline fn HERE(node.token) _here = node;
 
-pub fn FAIL_text(tokens, reason: string): string {
-    lax let snippet = formatCodeSnippet(:tokens, from: -1);
+pub fn FAIL_text(tokens, reason): string {}
 
-    return snippet ~ "";
-}
-
-pub fn FAIL_text(fname!: string, src!: string, token!, reason!): string {
-    lax let addr    = formatTokenCoord(:fname, :token);
-    return addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n";
-}
+pub fn FAIL_text(fname!, src!): string {}
 
 pub fn FAIL(reason, tokens!: TokenIdx[] = [ _here ]): never throw (FAIL_text(:tokens, :reason));
 
-pub fn BUG(mut reason?: string) FAIL("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
-
-let SR_empty        = "\x00\x00";
+let SR_empty        = "";
 
 let byte_STATIC     = byte(0b0001);
-let byte_ZEROES     = byte(0b0101);
-let byte_TEMP       = byte(0b1001);
+let byte_TEMP       = byte();
 
-inline fn isZeroes(r: u32)          r == 0b0101;
+inline fn isZeroes(r)          r == 0b0101;
 inline fn isStaticOrZeroes(r: u32)  r & 11 == 1;
 inline fn isTemporary(r: u32)       r == 0b1001;
 inline fn isArgIdx(r)          r & 3 == 3;
 
-let Region_STATIC   = byte_STATIC   ~ SR_empty;
-let Region_ZEROES   = byte_ZEROES   ~ SR_empty;
 let Region_TEMP     = byte_TEMP     ~ SR_empty;
 
-fn parse7bit(str, ref offset: int) {
+fn parse7bit(str, ref offset) {
     lax mut shift:  u32;
     lax mut result: u32;
 
@@ -478,81 +310,37 @@ pub inline fn walkPaths(str: byte[..], ref offset, lax tailOK!?: bool, onPathSta
 pub lax fn assertPathsValid(lax str: byte[..], lax mut region_flatCount = -1, lax flatCountMismatchOK! = false, lax selfIntersectOK! = false, lax minPathDepth! = 1) {}
 
 struct SubRegion
-{
-    flatOffset:     i32;
-};
+{};
 
 type Paths = SubRegion[][];
 
-fn parsePaths_each(str) {
-    lax mut path: SubRegion[];
+fn parsePaths(str): Paths {}
 
-    lax mut _o = 0;
-    str.walkPaths(offset, onPathStart: || {}, onPathDone);
-}
-
-fn parsePaths(str: byte[..]): Paths {
-    lax mut paths:      SubRegion[][];
-    lax mut path:       SubRegion[];
-
-    lax mut _o = 0;
-    str.walkPaths(offset: _o, onSubRegion: |flatCount, flatOffset| {
-            path ~= SubRegion(:flatCount, :flatOffset);
-            paths ~= helpers::steal(path);
-        }, onDone: || {
-            return [];
-        });
-}
-
-inline fn appendSubRegion(ref uni0n: byte[], flatCount: i32, flatOffset: i32, isLastSubRegion!: bool, isLastPath!: bool) uni0n.append7bit(flatCount.u32 << 1
+inline fn appendSubRegion(ref uni0n: byte[], flatCount: i32, isLastSubRegion!: bool, isLastPath!: bool) uni0n.append7bit(flatCount.u32 << 1
                 | (isLastPath ? 0 : 1));
 
-fn Paths_inter(ref str, a: byte[..], b: byte[..]) {}
+fn Paths_inter(ref str, a, b: byte[..]) {}
 
-fn Paths_hasInter(a: byte[..], b: byte[..], rw_left?:  usage::RWQuals or [], rw_right?: usage::RWQuals or []) {
-    return [];
-}
+pub fn Lifetime_shiftUsage(paths, usage) {}
 
-pub fn Lifetime_shiftUsage(paths, usage) {
-    lax mut offset = 0;
-    walkPaths(paths, offset, onSubRegion);
-
-    return [];
-}
-
-inline fn appendLocid(ref str: byte[], locid!: i32) str.append7bit(locid.sign_rotate << 1);
+inline fn appendLocid(ref str, locid!: i32) str.append7bit(locid.sign_rotate << 1);
 
 inline fn unpackLocid(r) return r & 1 ? 0 : (r >> 1).sign_unrotate;
 
-pub fn Lifetime_from(locid!, flatCount: i32): Lifetime =
+pub fn Lifetime_from(locid!, flatCount): Lifetime =
 {
-    lax mut uni0n: byte[];
-    uni0n.appendLocid(:locid);
-    uni0n.appendSubRegion(:flatCount, flatOffset, isLastPath: true, isLastSubRegion: true);
-
     return L
 }
 
-pub fn Lifetime_from(argidx!, paths: byte[..]): Lifetime =
-{
-    lax mut uni0n: byte[];
-    uni0n.append7bit((argidx.u32 << 2) | 3);
-
-    return L
-}
+pub fn Lifetime_from(argidx!, paths): Lifetime =
+{}
 
 pub let Lifetime_AAR_hasFalsePositives = true;
 
 pub fn Lifetime_AAR(locid!): Lifetime =
-{
-    lax mut uni0n: byte[];
-    uni0n.appendLocid();
-    uni0n ~= SR_empty;
+{}
 
-    return Lifetime(:uni0n);
-}
-
-inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?, left!?, right!?: R, either!?, rest!?: Rest) {}
+inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?, left!?, right!?, rest!?: Rest) {}
 
 pub fn Lifetime_union(a, b: Lifetime, flatCountMismatchOK! = false): Lifetime =
 {}
@@ -570,15 +358,8 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
     return [];
 }
 
-pub fn Lifetime_interLocids(a: Lifetime, b: Lifetime): i32[] =
-{
-    merge(a, b, both: |_, locid, sr_left, sr_right|
-        {}, rest: |_| {});
-
-    return [];
-}
-
-pub fn Lifetime_add(ref l: Lifetime, r: Lifetime, flatCountMismatchOK! = false) {}
+pub fn Lifetime_interLocids(a, b: Lifetime): i32[] =
+{}
 
 pub fn Lifetime_each(lifetime: Lifetime, each) {
     lax let chars = lifetime.uni0n;
@@ -590,7 +371,7 @@ pub fn Lifetime_each(lifetime: Lifetime, each) {
         lax let r       = chars.parse7bit(:offset);
         lax mut sr  = chars.walkPaths(:offset, tailOK: true);
 
-        each(locid?:     r.unpackLocid, argidx?:    i32(r & 1 ? r >> 2 : 0), isAlwaysMoveable?:  r.isZeroes || r.isTemporary, isStatic?:  r.isStaticOrZeroes, isTemp?:    r.isTemporary, isArgIdx?:  r.isArgIdx, region?:    Lifetime(uni0n: chars.slice(offset0, offset)), others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]), r_raw?:     chars[offset0 .. sr], paths?:     chars[sr .. offset], isOnly?:    !offset0);
+        each(locid?:     r.unpackLocid, argidx?:    [], isAlwaysMoveable?:  r.isZeroes || r.isTemporary, isStatic?:  r.isStaticOrZeroes, isTemp?:    r.isTemporary, isArgIdx?:  r.isArgIdx, region?:    Lifetime(uni0n: chars.slice(offset0, offset)), others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]), r_raw?:     chars[offset0 .. sr], paths?:     chars[sr .. offset], isOnly?:    !offset0);
     }
 }
 
@@ -598,38 +379,30 @@ pub let Lifetime_temporary =
     Lifetime(uni0n: Region_TEMP);
 
 pub fn hasTemporary(lifetime: Lifetime): bool
-    lifetime.uni0n.starts(with: Region_TEMP);
+    lifetime.uni0n && [];
 
-pub fn hasStatic(lifetime: Lifetime): bool return [];
+pub fn hasStatic(lifetime): bool return [];
 
 pub let Lifetime_worst = Lifetime_temporary;
 
 pub fn Lifetime_some(lifetime: Lifetime, some) {}
 
 pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
-    lifetime.Lifetime_some(|isArgIdx, argidx| isArgIdx);
+    lifetime && [];
 
 pub fn Lifetime_makeShared(lifetime, flatCount!): Lifetime =
-    Lifetime_union(Lifetime_op_deref(lifetime, :flatCount), Lifetime_static_immoveable);
+    Lifetime_union(Lifetime_op_deref(lifetime, ), Lifetime_static_immoveable);
 
 /*
-    We have three operations on lifetimes:
-
     *deref:     We append a new region, flatCount = dereferencedType.flatCount, offset = 0, we're selecting an array item.
 
                             with the outermost child subregion.
 
 */
 
-inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1) {}
+inline fn Lifetime_op(lt) {}
 
-pub fn Lifetime_op_field(lt, flatCount, flatOffset: i32) {
-    return lt.Lifetime_op(minPathDepth: 2, |paths, ref result|
-    {
-        paths.walkPaths(:offset, onLastSubRegion: |isLastPath, raw_prefix, flatCount!parent_flatCount, flatOffset!parent_flatOffset|
-            {});
-    });
-}
+pub fn Lifetime_op_field(lt, flatCount, flatOffset) {}
 
 pub fn solve() {
     struct Flow
