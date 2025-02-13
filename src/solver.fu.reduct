@@ -1,82 +1,24 @@
 import ansi;
-import flags;
-import types;
-import usage;
-import usertypes;
 import lifetime;
 import module;
-import fail;
-import experiments;
-
-let NO_LOOP         = -1000001;
-
-pub fn solve(implicit lax ctx: Context, implicit lax ref module: Module): SolverOutput {
-    struct LocidSet
-    {};
-
-    struct PrecedingRefArg
-    {};
-
-    struct Events
-    {
-        used_in_a_loop:     LocidSet;
-
-        preceding_ref_args: PrecedingRefArg[];
-    };
+pub fn solve(): SolverOutput {;;
 
     struct Flow
     {
-        rg_parents:         [];
-        rg_invalidates:     [];         
-        rg_children:        [];
+        rg_invalidates:     [];
     };
 
     struct CurrentFn
     {
         using flow?:        Flow;
-
-        using events?:      Events;
-
-        TODO_FIX_catches?:  i32;
-
-        TODO_FIX_children?: [];
-
-        TODO_FIX_unique?:   i32;
     };
 
     lax mut _current_fn:        CurrentFn;
 
-    struct SolverState
-    {};
-
-    using enum StaticEval {};
-
-    using enum BorrowCheckPass {};
-
-    using mut ss:           SolverState;
-    lax fn Binding(lax id,lax mut type: Type,lax flags!: Flags,lax ref shadows!: bool,lax asArgument!: bool) {}
-
-    lax fn ERRMSG_optionalArgumentAmbiguity(lax host_args,lax names) names.each: |name|
-
-    lax fn createAndOr_staticEvalTrim(lax trim,lax ref items: SolvedNode[],lax ref type: Type,lax vfacts) {}
-
-    fn PASS_borrowCheck(ref root: SolvedNode, pass: BorrowCheckPass) {
+    fn PASS_borrowCheck() {
         fn flow         = _current_fn.flow;
-        fn events       = _current_fn.events;
 
-        fn bck_trackWrites(callOrPragma: SolvedNode, lifetime: Lifetime) {
-            lax let loop_start  = callOrPragma._loop_start;
-            lax let OPTI_isLoop = loop_start != NO_LOOP;
-            lifetime.Lifetime_each: |locid!write, region!write_region, paths!write_paths|
-            {
-                lax mut all_written = write_region;
-
-                lax let invalidates = flow.rg_invalidates.if(exists: write);
-            }
-        }
-
-        [];
+        fn bck_trackWrites(callOrPragma: SolvedNode, lifetime: Lifetime) lifetime.Lifetime_each: |locid!write, paths!write_paths|
+            lax let invalidates = flow.rg_invalidates.if(exists: write);
     }
-
-    fn PASS_runAllVerifiers() {}
 }
