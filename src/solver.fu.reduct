@@ -8,19 +8,14 @@ using flags SolverStatus: u16
 
     SS_FN_OOE_RTL
 
-    SS_NAME_UNUSED                  
-    SS_MATCHED
     SS_MOVED_FROM
 
-    SS_EXTERNAL_LINKAGE
-    SS_OBSERVED_BY_CONV_CACHE
     HM_CanBreak
     HM_CanReturn
     HM_Anon
     HM_Function
 
     HM_Lambda
-    HM_UserType
 
     HM_LoopBody
 }
@@ -30,150 +25,66 @@ using flags DeclAsserts: u16
 
 using flags Flags: u32
 {
-    F_CALL_HAS_DOT          
-    F_CALL_HAS_NAMED_ARGS   
-    F_OPERATOR
+    F_CALL_HAS_DOT
 
     F_COMPOUND_ID
     F_ARGID_IS_OPTIONAL
 
-    F_LAX
     F_SHADOW
-    F_MUSTNAME
-
     F_CONST
 
     F_CONVERSION
     F_TEST_painted
 
-    F_EXTERN        
-    F_HOTSWAP       
-    F_PREDICATE
-
-    F_LT_RETURNED   
-    F_TEMPLATE
     F_LAMBDA
-    F_COW_INSIDE
 };
 
-let F_TODO_FIX_TRAILING_RETURN = F_LAMBDA;
-
-let LET_TYPE        = 0;
-let LET_INIT        = 1;
-
-let FN_RET_BACK     = -2;
-let FN_BODY_BACK    = -1;
-
 let LOOP_INIT       = 0;
-let LOOP_PRE_COND   = 1;
 let LOOP_PRE        = 2;
-let LOOP_BODY       = 3;
-let LOOP_POST       = 4;
-let LOOP_POST_COND  = 5;
-
 let STRUCT_BASE     = 0;
 
 let TRY_TRY         = 0;
-let TRY_CATCH       = 2;
-
 using flags SolverNotes: i32
 {}
 
-using flags CGDefects
-{};
-
-enum Kind
-{}
-
-fn isImmediatelyDiscardable() return [];
-
 type Quals = u32; 
-primitive MayEscapeVia: u32;
-
-struct NukeOnRebuild
-{};
-
-nocopy struct Context
-{};
-
-struct Module
-{};
-
-struct ModuleInputs
-{};
-
-struct LexerOutput
-{
-    tokens:     Token[];
-};
-
 struct Import
 {};
 
 struct ParserOutput
-{
-    warnings:   string[];
-}
+{}
 
 struct SolverOutput
 {};
 
-struct BuildHacks
+struct LineColChars
 {};
 
-struct LineColChars
-{
-    line:       i32;
-    col:        i32;
-    chars:      i32;
-};
-
 struct Token
-{
-    true kind:  Kind;
-    true kind:  Kind;
-    asserts?:   DeclAsserts;
-};
+{};
 
 struct TokenIdx
-{
-    modid:      i32;
-    tokidx:     i32;
-};
+{};
 
 struct Target
-{
-    _packed!:   u64;
-}
+{}
 
 struct Helpers
-{
-    index:      i32;
-};
+{};
 
 struct SolvedNode
 {
     helpers:        Helpers; 
-    flags:          Flags;
     _loop_start?:   i32;
 
     value:          string;
     items:          SolvedNode[];
-    target:         Target;
 }
-
-struct ScopeItem
-{};
 
 struct Template
 {};
 
 struct Argument
-{
-    may_alias?:         ::BitSet;
-};
-
-struct Overload
 {};
 
 struct Extended
@@ -197,101 +108,34 @@ using flags VFacts
 {
     AlwaysTrue
     AlwaysFalse
-    Typename
-
-    LeftAligned
-    RightAligned
 
     AssumingInfiniteRecursion
 };
 
 fn isRTL_set(ref o, rtl)
 
-fn argsForward(lax RTL, host_args) {}
-
 fn _token(implicit ctx, idx): Token
     ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
-
-fn _fname(implicit ctx, idx): string
-    ctx.modules[idx.modid].fname;
-
-inline fn nextIndexOfLocal(ext, asArgument!): int return [];
 
 inline fn sign_unrotate(v)
     i32((v >> 1) ^ (v & 1 ? 0xffffffff : 0x0))
 
-inline fn globid(t) i32(t._packed >> 20 & 0xfffff);
 inline fn  locid(t) u32(t._packed       & 0xfffff).sign_unrotate;
 
-fn Target(modid, globid, locid) {}
-
-fn parseGlobal(str, ref offset!: i32) {}
-
-fn appendGlobal(ref str, using target) {}
-
 fn add(ref mayEscapeVia, locid!) mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
-
-fn hasNonIdentifierChars(id) return [];
-
-fn steal(ref a, start!, end!) {}
-
-fn parse10s32(ref offset, str) {}
-
-fn print(arr) return [];
-
-fn trim(str) return [];
-
-fn parse(v)
-
-fn parseWild(v) return [];
-
-fn cleanID(id) {}
 
 fn steal(ref v) {}
 
 fn shadow(ref a: <T>, mut b: T) unwrap {}
 
-inline fn start  (ref arr) arr[.. 0];
-inline fn end    (ref arr) arr[arr.len ..];
-
-pub fn formatTokenCoord(token, from!, implicit ctx: Context) {}
-
 pub fn formatTokenCoord(fname!: string, token: LineColChars) {}
 
-pub fn formatCodeSnippet(src!, fmt?, mut highlight!: LineColChars[]) {}
-
-pub fn formatCodeSnippet(mut tokens, from!, fmt?) {}
-
-implicit ref _here: TokenIdx;
-
 pub inline fn HERE(node.token) _here = node;
-
-pub fn FAIL_text(tokens, reason): string {}
-
-pub fn FAIL_text(fname!, src!): string {}
-
-pub fn FAIL(reason, tokens!: TokenIdx[] = [ _here ]): never throw (FAIL_text(:tokens, :reason));
-
-let SR_empty        = "";
-
-let byte_STATIC     = byte(0b0001);
-let byte_TEMP       = byte();
 
 inline fn isZeroes(r)          r == 0b0101;
 inline fn isStaticOrZeroes(r: u32)  r & 11 == 1;
 inline fn isTemporary(r: u32)       r == 0b1001;
 inline fn isArgIdx(r)          r & 3 == 3;
-
-let Region_TEMP     = byte_TEMP     ~ SR_empty;
-
-fn parse7bit(str, ref offset) {
-    lax mut shift:  u32;
-    lax mut result: u32;
-
-    lax mut c: byte;
-
-    return result | c.u32 << shift;
-}
 
 fn append7bit(ref str, mut v) str ~= byte(v);
 
@@ -300,14 +144,8 @@ fn append7bit(ref str, mut v) str ~= byte(v);
 */
 
 pub inline fn walkPaths(str: byte[..], ref offset, lax tailOK!?: bool, onPathStart!?, onSubRegion!?, onLastSubRegion!?, onPathDone!?, onDone!?) {
-    lax let offset0 = offset + 0 ;
-
-    onDone();
-
     return [];
 }
-
-pub lax fn assertPathsValid(lax str: byte[..], lax mut region_flatCount = -1, lax flatCountMismatchOK! = false, lax selfIntersectOK! = false, lax minPathDepth! = 1) {}
 
 struct SubRegion
 {};
@@ -319,18 +157,11 @@ fn parsePaths(str): Paths {}
 inline fn appendSubRegion(ref uni0n: byte[], flatCount: i32, isLastSubRegion!: bool, isLastPath!: bool) uni0n.append7bit(flatCount.u32 << 1
                 | (isLastPath ? 0 : 1));
 
-fn Paths_inter(ref str, a, b: byte[..]) {}
-
 pub fn Lifetime_shiftUsage(paths, usage) {}
 
-inline fn appendLocid(ref str, locid!: i32) str.append7bit(locid.sign_rotate << 1);
+inline fn appendLocid(ref str, locid!) str.append7bit(locid.sign_rotate << 1);
 
-inline fn unpackLocid(r) return r & 1 ? 0 : (r >> 1).sign_unrotate;
-
-pub fn Lifetime_from(locid!, flatCount): Lifetime =
-{
-    return L
-}
+inline fn unpackLocid(r) return [];
 
 pub fn Lifetime_from(argidx!, paths): Lifetime =
 {}
@@ -342,25 +173,6 @@ pub fn Lifetime_AAR(locid!): Lifetime =
 
 inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?, left!?, right!?, rest!?: Rest) {}
 
-pub fn Lifetime_union(a, b: Lifetime, flatCountMismatchOK! = false): Lifetime =
-{}
-
-pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
-{
-    lax mut result: Lifetime;
-
-    merge(a, b, both: |r_both, sr_left, sr_right|
-        {
-            lax let sr_chars =
-            {};
-        }, rest: |_| {});
-
-    return [];
-}
-
-pub fn Lifetime_interLocids(a, b: Lifetime): i32[] =
-{}
-
 pub fn Lifetime_each(lifetime: Lifetime, each) {
     lax let chars = lifetime.uni0n;
     lax mut offset = 0;
@@ -368,41 +180,17 @@ pub fn Lifetime_each(lifetime: Lifetime, each) {
     {
         lax let offset0 = offset;
 
-        lax let r       = chars.parse7bit(:offset);
+        lax let r       = chars && [];
         lax mut sr  = chars.walkPaths(:offset, tailOK: true);
 
         each(locid?:     r.unpackLocid, argidx?:    [], isAlwaysMoveable?:  r.isZeroes || r.isTemporary, isStatic?:  r.isStaticOrZeroes, isTemp?:    r.isTemporary, isArgIdx?:  r.isArgIdx, region?:    Lifetime(uni0n: chars.slice(offset0, offset)), others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]), r_raw?:     chars[offset0 .. sr], paths?:     chars[sr .. offset], isOnly?:    !offset0);
     }
 }
 
-pub let Lifetime_temporary =
-    Lifetime(uni0n: Region_TEMP);
-
-pub fn hasTemporary(lifetime: Lifetime): bool
-    lifetime.uni0n && [];
-
-pub fn hasStatic(lifetime): bool return [];
-
-pub let Lifetime_worst = Lifetime_temporary;
-
-pub fn Lifetime_some(lifetime: Lifetime, some) {}
-
-pub fn Lifetime_has(lifetime: Lifetime, locid!search: i32)
-    lifetime && [];
-
-pub fn Lifetime_makeShared(lifetime, flatCount!): Lifetime =
-    Lifetime_union(Lifetime_op_deref(lifetime, ), Lifetime_static_immoveable);
-
 /*
     *deref:     We append a new region, flatCount = dereferencedType.flatCount, offset = 0, we're selecting an array item.
 
-                            with the outermost child subregion.
-
 */
-
-inline fn Lifetime_op(lt) {}
-
-pub fn Lifetime_op_field(lt, flatCount, flatOffset) {}
 
 pub fn solve() {
     struct Flow
