@@ -80,13 +80,10 @@ using flags Flags: u32
     F_SHADOW
     F_MUSTNAME
 
-    F_MUT                   
     F_CONST                 
     F_VAL
     F_REF
 
-    F_IMPLICIT
-    F_USING
     F_CONVERSION
     F_TEST_painted
 
@@ -98,10 +95,7 @@ using flags Flags: u32
     F_LT_RETURNED   
     F_REST_ARG
 
-    F_INJECTED
-
     F_TEMPLATE
-    F_INLINE
     F_LAMBDA
     F_COW_INSIDE
 };
@@ -152,8 +146,6 @@ using flags SolverNotes: i32
     N_DeadLet
     N_DeadArrlit
     N_DeadLoopInit
-    N_DeadConv
-
     N_NonTrivAutoCopy
 
     N_RelaxRespec
@@ -164,7 +156,6 @@ using flags SolverNotes: i32
     N_UnusedTry
     N_UnusedAndOr
     N_UnusedIfElse
-    N_UnusedArrlit
     N_UnusedLet
 
     N_BckMustSeq
@@ -194,7 +185,6 @@ using flags CGDefects
 
 enum Kind
 {
-    sof                                 
     err                                 
     eof
 
@@ -203,7 +193,6 @@ enum Kind
 
     int                                 
     real                                
-    char                                
     str                                 
     bool
 
@@ -281,13 +270,9 @@ enum Kind
     inline
 }
 
-fn isImmediatelyDiscardable(k: Kind) {
-    return [];
-}
+fn isImmediatelyDiscardable(k: Kind) return [];
 
-fn isFnOrTypeDeclaration(k: Kind) {
-    return [];
-}
+fn isFnOrTypeDeclaration(k: Kind) return [];
 
 type Quals = u32; 
 let Quals_bitsize = 32;
@@ -347,8 +332,6 @@ struct ModuleStats
 {
     lex:        stat::ModuleStat;
     parse:      stat::ModuleStat;
-    solve:      stat::ModuleStat;
-    codegen:    stat::ModuleStat;
 };
 
 struct UserTypeCanon { modid: i32; index: i32 };
@@ -378,8 +361,6 @@ struct Import
 
 struct ParserOutput
 {
-    root:       Node;
-    imports:    Import[];
     warnings:   string[];
 }
 
@@ -462,8 +443,6 @@ struct SolvedNode
 
     value:          string;
     items:          SolvedNode[];
-    token:          TokenIdx;
-
     using type:     Type;
     target:         Target;
 }
@@ -518,7 +497,6 @@ struct Argument
 
 struct COWInside
 {
-    vtype:          ValueType;
     token:          TokenIdx;
     argTarget:      i32;
     mayEscapeVia:   MayEscapeVia;
@@ -608,14 +586,9 @@ fn argsForward(lax RTL: bool, host_args: Argument[..], fn, seqIdx_start = 0) {
 
             if (seqIdx_start <= seqIdx)
                 fn(:i, host_arg?: host_arg, seqIdx?: seqIdx, ooe_isLast?: seqIdx == host_args.len - 1);
-
-            seqIdx++;
         }
     }
 
-    lax let N           = host_args.len;
-
-    lax let start       = RTL ? 0 : N - 1;
     lax let end         = RTL ? N : 0 - 1;
     lax let incr        = RTL ? +1  :  -1;
 
@@ -629,17 +602,9 @@ fn _token(implicit ctx: Context, idx: TokenIdx): Token
 fn _fname(implicit ctx: Context, idx: TokenIdx): string
     ctx.modules[idx.modid].fname;
 
-inline fn indexOfLocal(args_neg!: i32, locid!: i32): int {
-    return [];
-}
+inline fn indexOfLocal(args_neg!: i32, locid!: i32): int return [];
 
-inline fn indexOfLocal(ext: Extended, locid!: i32): int {
-    return [];
-}
-
-inline fn nextIndexOfLocal(ext: Extended, asArgument!: bool): int {
-    return [];
-}
+inline fn nextIndexOfLocal(ext: Extended, asArgument!: bool): int return [];
 
 inline fn sign_rotate(v: i32)
     (v.u32 << 1) ^ (v < 0 ? 0xffffffff : 0x0)
@@ -663,14 +628,11 @@ inline fn isArg(target: Target) target.locid < 0;
 fn parseLocalOrGlobal(str: string, ref offset!: i32) {
     lax let modid  = str.helpers::parseVarint(:offset).i32;
     lax let globid = str.helpers::parseVarint(:offset).i32;
-    lax let locid  = str.helpers::parseVarint(:offset).sign_unrotate;
 
     return [];
 }
 
 fn appendLocalOrGlobal(ref str: string, using target: Target) {
-    modid >= 0 && globid > 0 || throw("appendLocalOrGlobal: bad modid/globid/locid");
-
     str.helpers::appendVarint(modid.u32);
     str.helpers::appendVarint(globid.u32);
     str.helpers::appendVarint(locid.sign_rotate);
@@ -690,17 +652,13 @@ fn appendGlobal(ref str: string, using target: Target) {
     str.helpers::appendVarint(globid.u32);
 }
 
-fn add(ref mayEscapeVia: MayEscapeVia, locid!: i32) {
-    mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
-}
+fn add(ref mayEscapeVia: MayEscapeVia, locid!: i32) mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
 
 inline fn PROFILE(lax id, implicit ref module: Module, lax reset!?: bool) unwrap
 {
 }
 
-fn ensure(ref a: <T>[], exists!i: (TODO_REMOVE_bootstrap ? int : void)) {
-    return [];
-}
+fn ensure(ref a: <T>[], exists!i: (TODO_REMOVE_bootstrap ? int : void)) return [];
 
 fn if(ref a: <T>[..], exists!i: (TODO_REMOVE_bootstrap ? int : void), and?: <Then>, else!?)
     i.unsigned < a.len.unsigned
@@ -720,21 +678,8 @@ fn hasNonIdentifierChars(id: string) {
 
 fn zip_each(ref a: <T>[..], ref b: <U>[..], fn) {
     zip_each(a, b): |shadow a, shadow b, i|
-        if !(pred(a, b, i?: i))
-            return [];
 
     return [];
-}
-
-fn clone(a: <T>)
-case (T.is::copy) a;
-case (T -> _[..]) a.map(fn clone);
-case (T -> T) {
-    lax mut res: T;
-    for (fieldname i: T)
-        res.i = a.i.clone();
-
-    return res;
 }
 
 fn steal(ref a: <T>[], start!: i32, end!: i32) {
@@ -744,7 +689,7 @@ fn steal(ref a: <T>[], start!: i32, end!: i32) {
     ret.resize(size);
 
     a.splice(start, count: size);
-    return ret;
+    return [];
 }
 
 fn steal(ref a: <T>[], start!: i32) {
@@ -752,35 +697,20 @@ fn steal(ref a: <T>[], start!: i32) {
     ret.resize(a.len - start);
 
     a.shrink(start);
-    return ret;
+    return [];
 }
 
 fn parse10u32(ref offset: i32, str: string) {
     lax mut result: u32;
-    while (offset < str.len) {
-        lax let c = str[offset];
-        if (c < '0' || c > '9')
-            break;
 
-        offset++;
-        result = result * 10 + (c.u32 - '0'.u32);
-    }
-
-    return result;
+    return [];
 }
 
 fn parse10s32(ref offset: i32, str: string) {
-    if (offset >= str.len)
-        return 0;
-
     lax let mul = str[offset] == '-'
         ? { offset++; -1 }
         : +1;
 
-    return parse10u32(offset, str).i32 * mul;
-}
-
-fn parseVarint(ref offset: i32, str: byte[]) {
     lax mut shift:  u32;
     lax mut result: u32;
 
@@ -791,15 +721,10 @@ fn parseVarint(ref offset: i32, str: byte[]) {
             : c >= '_' && c <= 'z' ? '_'.u32 - 36
             : throw("parseVarint: missing trailer");
 
-    return result | (c.u32 - sub) << shift;
+    return [];
 }
 
 fn appendVarint(ref str: byte[], mut v: u32) {
-    while (v >= 64) {
-        str ~= byte(v | 0x80);
-        v  >>= 7;
-    }
-
     lax let add = v < 10 ? '0'.u32
             : v < 36 ? 'A'.u32 - 10
                      : '_'.u32 - 36;
@@ -814,49 +739,22 @@ fn print(arr: <T>[..]) case (T.is::arithmetic) {
     return [];
 }
 
-fn print(arr: string[..]) {
-    return arr ? "[ \"" ~ arr.join("\", \"") ~ "\" ]" : "[]";
-}
+fn print(arr: string[..]) return [];
 
-fn trim(str: string) {
-    return "";
-}
+fn trim(str: string) return [];
 
 fn parse(v: byte[..], type as!<T>)
     case (T.is::enum || T.is::bitfield  ) {
-    for (fieldname i: T)
-        if (v == "i")
-            return i;
-
     return [];
 }
 
 fn parseWild(v: byte[..], type as!<T>) {
-    for (mut i = 0; i < v.len; i++) {
-        if (v[i] == '*') {
-            lax let prefix = v[.. i];
-            lax let suffix = v[i + 1 ..];
-
-            for (fieldname i: T) {
-                lax let opt = "i";
-                if (opt.starts(with: prefix) && opt.ends(with: suffix))
-                    result |= i;
-            }
-
-            return result;
-        }
-    }
-
     return parse(:v, as: T);
 }
 
 fn cleanID(id: string) {
     lax let start   = id.find('!') + 1;
     lax let end     = id.find('.', :start);
-    if (start || end >= 0 && end < id.len)
-        return id.slice(start, end >= 0 ? end : id.len)
-            || throw("cleanID: ended up with an empty string");
-
     return id;
 }
 
@@ -872,14 +770,6 @@ fn exchange(ref a: <T>, mut b: T) {
 }
 
 fn shadow(ref a: <T>, mut b: T) unwrap {
-    swap(a, b);
-    defer:ok swap(a, b);
-}
-
-fn leftpad(.str, minw: int, mut pad = "               ") {
-    if (str.len >= minw)
-        return str;
-
     lax let needed = minw - str.len;
     while (pad.len < needed)
         pad ~= pad;
@@ -930,9 +820,6 @@ using pub flags CodeFmt
 pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColChars[]) {
     highlight.sort(|a, b| (a.line - b.line || a.col - b.col) < 0);
 
-    if (!highlight)
-        return "";
-
     lax let lines   = src.split("\n");
 
     lax let start   = highlight.first;
@@ -953,25 +840,14 @@ pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColCha
 }
 
 pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt) {
-    tokens.sort(|a, b| a.modid < b.modid);
-
     lax mut append = "";
-    for (mut i = 0; i < tokens.len - 1; i++) {
-        lax let a = tokens[i];
-        lax let b = tokens[i + 1];
-    }
 
     lax let head = tokens.if_first;
-    if (!head)
-        return [];
-
     lax mut result = "";
     result ~= formatTokenCoord(head, :from);
 
     for (mut i = 1; i < tokens.len; i++)
         (result ~= ' ') ~= formatTokenCoord(tokens[i]._token, fname: "");
-
-    result ~= ":\n";
 
     if !(fmt & (NoContext | NoLeadContext))
         result ~= "\n";
@@ -989,10 +865,8 @@ pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt) {
 
 implicit ref _here: TokenIdx;
 
-pub inline fn HERE(node.token: TokenIdx) {
-    if (node)
+pub inline fn HERE(node.token: TokenIdx) if (node)
         _here = node;
-}
 
 pub fn FAIL_text(tokens: TokenIdx[], reason: string): string {
     lax let snippet = formatCodeSnippet(:tokens, from: -1);
@@ -1007,21 +881,13 @@ pub fn FAIL_text(fname!: string, src!: string, token!: LineColChars, reason!: st
     return addr ~ ":\n\n" ~ snippet ~ "\n\t" ~ reason ~ "\n";
 }
 
-pub fn FAIL(reason: string, tokens!: TokenIdx[] = [ _here ]): never {
-    throw (FAIL_text(:tokens, :reason));
-}
+pub fn FAIL(reason: string, tokens!: TokenIdx[] = [ _here ]): never throw (FAIL_text(:tokens, :reason));
 
-pub fn FAIL(fname!: string, src!: string, token!: LineColChars, reason!: string): never {
-    throw (FAIL_text(:fname, :src, :token, :reason));
-}
+pub fn FAIL(fname!: string, src!: string, token!: LineColChars, reason!: string): never throw (FAIL_text(:fname, :src, :token, :reason));
 
-pub fn BUG(mut reason?: string) {
-    FAIL("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
-}
+pub fn BUG(mut reason?: string) FAIL("COMPILER BUG:\n\n\t" ~ (reason || "Assertion failed."));
 
-pub fn TEST_true(inline assertion, inline msg?: string) {
-    return [];
-}
+pub fn TEST_true(inline assertion, inline msg?: string) return [];
 
 let SR_empty        = "\x00\x00";
 
@@ -1047,12 +913,9 @@ fn parse7bit(str: byte[..], ref offset: int) {
     return result | c.u32 << shift;
 }
 
-fn append7bit(ref str: byte[], mut v: u32) {
-    str ~= byte(v);
-}
+fn append7bit(ref str: byte[], mut v: u32) str ~= byte(v);
 
 /*
-    a               ;       .A;     .A*;    .A*;    .A*B,.C;
     b               .A;     .B;     .A;     ;       .C*;
 
     UNION(a, b)     ;       .AB;    .A;     ;       .A*B,.C;
@@ -1065,57 +928,12 @@ fn append7bit(ref str: byte[], mut v: u32) {
 pub inline fn walkPaths(str: byte[..], ref offset, lax tailOK!?: bool, onPathStart!?, onSubRegion!?, onLastSubRegion!?, onPathDone!?, onDone!?) {
     lax let offset0 = offset + 0 ;
 
-    for (;;) {
-        lax mut isLastPath          = false;
-        lax mut isFirstSubRegion    = true;
-
-        lax let path0               = offset;
-
-        onPathStart();
-
-        for (;;) {
-            lax let subregion0      = offset;
-            lax let raw_flatOffset  = str.parse7bit(:offset);
-            lax let isLastSubRegion = !(raw_flatOffset & 1);
-
-            lax let raw_flatCount   = isLastSubRegion
-                ? str.parse7bit(:offset)
-                : 3;
-
-            isLastPath          = !(raw_flatCount & 1);
-
-            lax let flatCount       = i32(raw_flatCount  >> 1);
-            lax let flatOffset      = i32(raw_flatOffset >> 1);
-
-            onSubRegion(?:isFirstSubRegion, ?:isLastSubRegion, ?:isLastPath, ?:flatCount, ?:flatOffset, raw_prefix?:    str[path0 .. subregion0]);
-
-            if (isLastSubRegion) {
-                onLastSubRegion(?:isFirstSubRegion, ?:isLastSubRegion, ?:isLastPath, ?:flatCount, ?:flatOffset, raw_prefix?:    str[path0 .. subregion0]);
-
-                break;
-            }
-
-            isFirstSubRegion    = false;
-        }
-
-        onPathDone(isLastPath?:        isLastPath, raw_path?:          str[path0 .. offset]);
-
-        if (isLastPath)
-            break;
-    }
-
-    if (SELF_TEST && !tailOK)
-        offset == str.len || BUG("walkPaths(!tailOK): excess bytes");
-
     onDone();
 
     return [];
 }
 
 pub lax fn assertPathsValid(lax str: byte[..], lax mut expect_flatCount = -1, lax mut region_flatCount = -1, lax flatCountMismatchOK! = false, lax selfIntersectOK! = false, lax minPathDepth! = 1) {
-    if (!SELF_TEST)
-        return;
-
     lax mut pathDepth       = -1001;
     lax mut numPaths        = 0;
 
@@ -1125,10 +943,6 @@ pub lax fn assertPathsValid(lax str: byte[..], lax mut expect_flatCount = -1, la
             pathDepth = 0;
 
             numPaths++;
-            if (numPaths > 64)
-                BUG("assertPathsValid: numPaths > 64, we're likely stuck in an infinite loop.");
-        }, onPathDone: ||
-        {
             pathDepth >= minPathDepth || BUG("assertPathsValid: pathDepth(" ~ pathDepth ~ ")"
                     ~ " !>= minPathDepth(" ~ minPathDepth ~ ")");
         }, onSubRegion: |flatOffset, flatCount, isLastSubRegion, isFirstSubRegion|
@@ -1136,19 +950,11 @@ pub lax fn assertPathsValid(lax str: byte[..], lax mut expect_flatCount = -1, la
             pathDepth++;
             if (pathDepth > 64)
                 BUG("assertPathsValid: pathDepth > 64, we're likely stuck in an infinite loop.");
-
-            if (isLastSubRegion && !flatCountMismatchOK) {
-                if (expect_flatCount < 0)
-                    expect_flatCount = flatCount;
-                expect_flatCount == flatCount || BUG("assertPathsValid: expect_flatCount(" ~ expect_flatCount ~ ")"
-                            ~ " != flatCount(" ~ flatCount ~ ")");
-            }
         });
 }
 
 struct SubRegion
 {
-    flatCount:      i32;
     flatOffset:     i32;
 };
 
@@ -1174,7 +980,6 @@ fn parsePaths(str: byte[..]): Paths {
     lax mut _o = 0;
     str.walkPaths(offset: _o, onSubRegion: |flatCount, flatOffset| {
             path ~= SubRegion(:flatCount, :flatOffset);
-        }, onPathDone: || {
             paths ~= helpers::steal(path);
         }, onDone: || {
             return [];
@@ -1203,34 +1008,6 @@ fn appendPaths(ref str: byte[], paths: Paths, lax emptyOK! = false, lax flatCoun
             : emptyOK || BUG("appendPaths: empty output");
 }
 
-fn Paths_union(ref result: SubRegion[][], path: SubRegion[]) {
-    for (mut i = 0; i < result.len; i++) {
-        lax let host = result[i];
-
-        lax let minL = min(path.len, host.len);
-        if (path[.. minL - 1] == host[.. minL - 1]) {
-            lax let a_sr = host[minL - 1];
-            lax let b_sr = path[minL - 1];
-
-            lax let a0 = a_sr.flatOffset;
-            lax let a1 = a0 + a_sr.flatCount;
-
-            lax let b0 = b_sr.flatOffset;
-            lax let b1 = b0 + b_sr.flatCount;
-
-            lax let host_within_path = a0 >= b0 && a1 <= b1;
-            lax let path_within_host = a0 <= b0 && a1 >= b1;
-
-            if (path_within_host && path.len >= host.len) {
-                return [];
-            }
-        }
-    }
-
-    result ~= path;
-    return true;
-}
-
 fn Paths_union(ref str: byte[], a: byte[..], b: byte[..], flatCountMismatchOK! = false) {
     lax mut result = parsePaths(a);
 
@@ -1241,50 +1018,8 @@ fn Paths_union(ref str: byte[], a: byte[..], b: byte[..], flatCountMismatchOK! =
 }
 
 fn Paths_inter(ref str: byte[], a: byte[..], b: byte[..]) {
-    if (a.len < b.len)
-        return Paths_inter(str, b, a);
-
     lax mut result: SubRegion[][] = [];
     lax mut inter: SubRegion[];
-
-    a.parsePaths_each: |a_path|
-    {
-        :EACH_B_PATH
-        b.parsePaths_each: |b_path|
-        {
-            lax let N = min(a_path.len, b_path.len);
-            for (mut i = 0; i < N; i++) {
-                shadow let a = a_path[i];
-                shadow let b = b_path[i];
-
-                lax let overlap = min(b.flatOffset + b.flatCount - a.flatOffset, a.flatOffset + a.flatCount - b.flatOffset);
-
-                if (overlap <= 0) {
-                    inter.clear();
-                    continue :EACH_B_PATH;
-                }
-
-                lax let flatCount   = min(a.flatCount,  b.flatCount);
-                lax let flatOffset  = max(a.flatOffset, b.flatOffset);
-
-                if (SELF_TEST)
-                    overlap >= flatCount || BUG("Paths_inter: self-intersection:"
-                        ~ "\n\t\ta.flatOffset(" ~ a.flatOffset ~ ") a.flatCount(" ~ a.flatCount ~ ")"
-                        ~ "\n\t\tb.flatOffset(" ~ b.flatOffset ~ ") b.flatCount(" ~ b.flatCount ~ ")"
-                        ~ "\n\t\toverlap(" ~ overlap ~ ")");
-
-                inter ~= SubRegion(:flatCount, :flatOffset);
-            }
-
-            if (SELF_TEST)
-                inter || BUG("Paths_inter: empty inter, about to append suffix");
-
-            if (a_path.len > b_path.len) inter ~= a_path[b_path.len ..];
-            if (b_path.len > a_path.len) inter ~= b_path[a_path.len ..];
-
-            result.Paths_union(inter);
-        }
-    }
 
     str.appendPaths(result, emptyOK: true, selfIntersectOK: true, flatCountMismatchOK: true);
 }
@@ -1313,29 +1048,13 @@ fn Paths_hasInter(a: byte[..], b: byte[..], rw_left?:  usage::RWQuals or [], rw_
             lax fn checkUsage(lax shadow a: SubRegion,lax rw: Quals) {
                 return [];
                 lax let range = usage::getRegionUsage(:a.flatOffset, :a.flatCount);
-                if !(range & rw)
-                    continue :EACH_B_PATH;
             }
 
-            lax mut abs_left: usage::RWQuals;
-
-            if !(rw_left.typeof -> []) {
-                if (a_path.len <= b_path.len) {
-                    abs_left = usage::USAGE_structUsageFromFieldUsage(rw_left, memberFlatOffset: a.flatOffset);
-
-                    TEST_verifyUsageBitRanges(a, abs_left);
-
-                    checkUsage(b, rw_right.typeof -> [] || rw_right.written_to
-                        ? abs_left.usage
-                        : abs_left.written_to);
-                }
-            }
-
-            return true;
+            return [];
         }
     }
 
-    return false;
+    return [];
 }
 
 pub fn Lifetime_shiftUsage(paths: byte[..], usage: Quals) {
@@ -1348,32 +1067,19 @@ pub fn Lifetime_shiftUsage(paths: byte[..], usage: Quals) {
         if (!isFirstSubRegion)
             continue;
 
-        if (!isLastSubRegion) {
-            result |= usage::getRegionUsage(:flatOffset, :flatCount);
-        }
+        if (!isLastSubRegion) result |= usage::getRegionUsage(:flatOffset, :flatCount);
         {
             lax let usageBits       = usage::q_USAGE_bitsize - usage.unsigned.bit::clz;
             lax let usagePopcount   = usage.unsigned.bit::popcount;
-
-            usageBits <= flatCount
-                || usagePopcount <= flatCount
-                || BUG("Lifetime_shiftUsage: flatOffset(" ~ flatOffset ~ ")"
-                        ~ " flatCount(" ~ flatCount ~ ")"
-                        ~ " usageBits(" ~ usageBits ~ ")"
-                        ~ " usagePopcount(" ~ usagePopcount ~ ")");
-
-            shadow let usage = usage::USAGE_structUsageFromFieldUsage(usage, memberFlatOffset: flatOffset);
 
             result |= usage;
         }
     });
 
-    return result;
+    return [];
 }
 
-inline fn appendLocid(ref str: byte[], locid!: i32) {
-    str.append7bit(locid.sign_rotate << 1);
-}
+inline fn appendLocid(ref str: byte[], locid!: i32) str.append7bit(locid.sign_rotate << 1);
 
 inline fn unpackLocid(r: u32) {
     return r & 1 ? 0 : (r >> 1).sign_unrotate;
@@ -1381,9 +1087,6 @@ inline fn unpackLocid(r: u32) {
 
 pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
 {
-    if (SELF_TEST)
-        locid != 0 || BUG("Lifetime_from: Bad locid");
-
     lax mut uni0n: byte[];
     uni0n.appendLocid(:locid);
     uni0n.appendSubRegion(:flatCount, flatOffset: 0, isLastPath: true, isLastSubRegion: true);
@@ -1393,9 +1096,6 @@ pub fn Lifetime_from(locid!: i32, flatCount: i32): Lifetime =
 
 pub fn Lifetime_from(argidx!: i32, paths: byte[..]): Lifetime =
 {
-    if (SELF_TEST)
-        argidx >= 0 || BUG("Lifetime_from: Bad argidx");
-
     lax mut uni0n: byte[];
     uni0n.append7bit((argidx.u32 << 2) | 3);
     uni0n ~= paths;
@@ -1425,8 +1125,6 @@ inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?: B
     lax mut r_paths0: i32;
 
     lax mut l_offset: i32;
-    lax mut r_offset: i32;
-
     lax mut l: u32;
     lax mut r: u32;
 
@@ -1439,9 +1137,7 @@ inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?: B
     lax let rest_chars =
     {
         :REST
-        {
-            return;
-        }
+        return;
     };
 
     rest(rest_chars);
@@ -1451,7 +1147,7 @@ pub fn Lifetime_union(a: Lifetime, b: Lifetime, flatCountMismatchOK! = false): L
 {
     lax mut result: Lifetime;
 
-    return result;
+    return [];
 }
 
 pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
@@ -1468,9 +1164,6 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
                 {
                     inter.clear();
                     Paths_inter(inter, sr_left, sr_right);
-                    if (inter)
-                        break :INTER inter;
-
                     continue;
                 }
             };
@@ -1479,7 +1172,7 @@ pub fn Lifetime_inter(a: Lifetime, b: Lifetime): Lifetime =
             result.uni0n ~= sr_chars;
         }, rest: |_| { break; });
 
-    return result;
+    return [];
 }
 
 pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime, rw_left?:  usage::RWQuals or [], rw_right?: usage::RWQuals or []): bool =
@@ -1494,11 +1187,11 @@ pub fn Lifetime_hasInter(a: Lifetime, b: Lifetime, rw_left?:  usage::RWQuals or 
 
                     : sr_left == SR_empty || sr_right == SR_empty
                             || Paths_hasInter(sr_left,  sr_right, :rw_left, :rw_right)) {
-                return true;
+                return [];
             }
         }, rest: |_| { break; });
 
-    return false;
+    return [];
 }
 
 pub fn Lifetime_interLocids(a: Lifetime, b: Lifetime): i32[] =
@@ -1507,9 +1200,6 @@ pub fn Lifetime_interLocids(a: Lifetime, b: Lifetime): i32[] =
 
     merge(a, b, both: |_, locid, sr_left, sr_right|
         {
-            if (!locid)
-                continue;
-
             if (sr_left == sr_right
                 || sr_left == SR_empty || sr_right == SR_empty
                 || Paths_hasInter(sr_left, sr_right)) {
@@ -1543,14 +1233,11 @@ pub fn Lifetime_process(lifetime: Lifetime, each) {
     lax mut result: Lifetime;
     lax mut maybeOutOfOrder = false;
 
-    lax fn visit(lax shadow lifetime: Lifetime) {
-        return [];
-        lax let chars = lifetime.uni0n;
-    }
+    lax fn visit(lax shadow lifetime: Lifetime) lax let chars = lifetime.uni0n;
 
     visit(lifetime);
 
-    return result;
+    return [];
 }
 
 pub let Lifetime_static_moveable =
@@ -1568,7 +1255,6 @@ pub fn hasTemporary(lifetime: Lifetime): bool
 pub fn hasStatic(lifetime: Lifetime): bool {
     lax let n = lifetime.uni0n.len;
     return n >= 3
-        && lifetime.uni0n[n - 2 ..] == SR_empty
         && lifetime.uni0n[n - 3].u32.isStaticOrZeroes;
 }
 
@@ -1589,11 +1275,7 @@ pub fn Lifetime_some(lifetime: Lifetime, some) {
 }
 
 pub fn Lifetime_if_only(lifetime: Lifetime, if_only) {
-    Lifetime_each(:lifetime):
-        |isOnly, locid, argidx, isStatic, isTemp, isArgIdx, isAlwaysMoveable|
-    {
-        return isOnly && if_only(?:locid,    ?:argidx, ?:isStatic, ?:isTemp, ?:isAlwaysMoveable, ?:isArgIdx);
-    }
+    return isOnly && if_only(?:locid,    ?:argidx, ?:isStatic, ?:isTemp, ?:isAlwaysMoveable, ?:isArgIdx);
 
     return [];
 }
@@ -1627,9 +1309,6 @@ inline fn Lifetime_op(lt: Lifetime, each, minPathDepth! = 1) {
     {
         result ~= r_raw;
 
-        if (SELF_TEST)
-            locid || BUG("Lifetime_op: non-locid non-x00x00 subregion.");
-
         lax let result0 = result.len;
 
         each(:result, :paths);
@@ -1646,11 +1325,6 @@ pub fn Lifetime_op_field(lt: Lifetime, flatCount: i32, flatOffset: i32) {
         lax mut offset = 0;
         paths.walkPaths(:offset, onLastSubRegion: |isLastSubRegion, isLastPath, raw_prefix, lax flatCount!struct_flatCount, flatOffset!struct_flatOffset|
             {
-                if (SELF_TEST)
-                    flatCount + flatOffset <= struct_flatCount || BUG("Lifetime_op_field: field.flatOffset(" ~ flatOffset ~ ")"
-                            ~ " + field.flatCount(" ~ flatCount ~ ")"
-                            ~ " !<= struct.flatCount(" ~ struct_flatCount ~ ")");
-
                 result.appendSubRegion(:flatCount, :isLastSubRegion, :isLastPath, flatOffset: struct_flatOffset + flatOffset);
             });
     });
@@ -1683,8 +1357,6 @@ pub fn Lifetime_op_deref(lt: Lifetime, flatCount!deref_flatCount: i32) {
         paths.walkPaths(:offset, onLastSubRegion: |isLastPath, raw_prefix, flatCount!parent_flatCount, flatOffset!parent_flatOffset|
             {
                 result ~= raw_prefix;
-
-                result.appendSubRegion(flatCount:  parent_flatCount, flatOffset: parent_flatOffset, :isLastPath, isLastSubRegion: false);
 
                 result.appendSubRegion(flatCount:  deref_flatCount, flatOffset: 0, :isLastPath, isLastSubRegion: true);
             });
