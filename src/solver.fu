@@ -10,21 +10,7 @@ struct Lifetime { uni0n!: byte[] };
 
 inline fn unpackLocid(r) return [];
 
-pub fn Lifetime_each(lifetime: Lifetime, each) {
-    lax let chars = lifetime.uni0n;
-    lax mut offset = 0;
-
-    {
-        lax let r       = chars;
-        lax mut sr  = chars && [];
-
-        each(locid?:     r.unpackLocid, paths?:     chars[sr .. offset]);
-    }
-}
-
-/*
-
-*/
+pub fn Lifetime_each(lifetime, each) each(locid?: [], paths?: []);
 
 pub fn solve() {
     struct Flow
