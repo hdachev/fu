@@ -1,194 +1,28 @@
 
 
-using flags SolverStatus: u16
-{
-    SS_LAZY
-
-    SS_UPDATED
-
-    SS_FN_OOE_RTL
-
-    SS_MOVED_FROM
-
-    HM_CanBreak
-    HM_CanReturn
-    HM_Anon
-    HM_Function
-
-    HM_Lambda
-
-    HM_LoopBody
-}
-
-using flags DeclAsserts: u16
-{};
-
-using flags Flags: u32
-{
-    F_CALL_HAS_DOT
-
-    F_COMPOUND_ID
-    F_ARGID_IS_OPTIONAL
-
-    F_SHADOW
-    F_CONST
-
-    F_CONVERSION
-    F_TEST_painted
-
-    F_LAMBDA
-};
-
-let LOOP_INIT       = 0;
-let LOOP_PRE        = 2;
-let STRUCT_BASE     = 0;
-
-let TRY_TRY         = 0;
-using flags SolverNotes: i32
-{}
-
-type Quals = u32; 
-struct Import
-{};
-
-struct ParserOutput
-{}
-
-struct SolverOutput
-{};
-
-struct LineColChars
-{};
-
-struct Token
-{};
-
-struct TokenIdx
-{};
-
-struct Target
-{}
-
-struct Helpers
-{};
-
 struct SolvedNode
-{
-    helpers:        Helpers; 
-    _loop_start?:   i32;
-
-    value:          string;
-    items:          SolvedNode[];
-}
-
-struct Template
-{};
-
-struct Argument
-{};
-
-struct Extended
-{};
-
-struct ValueType
-{
-    quals?:         Quals;
-    vfacts?:        VFacts;
-    canon:          string;
-};
-
-struct Type
-{
-    using vtype:    ValueType;
-};
+{}
 
 struct Lifetime { uni0n!: byte[] };
 
-using flags VFacts
-{
-    AlwaysTrue
-    AlwaysFalse
-
-    AssumingInfiniteRecursion
-};
-
-fn isRTL_set(ref o, rtl)
-
-fn _token(implicit ctx, idx): Token
-    ctx.modules[idx.modid].in.lex.tokens[idx.tokidx];
-
-inline fn sign_unrotate(v)
-    i32((v >> 1) ^ (v & 1 ? 0xffffffff : 0x0))
-
-inline fn  locid(t) u32(t._packed       & 0xfffff).sign_unrotate;
-
-fn add(ref mayEscapeVia, locid!) mayEscapeVia |= 1 << (locid.u32.MayEscapeVia % 32);
-
-fn steal(ref v) {}
-
-fn shadow(ref a: <T>, mut b: T) unwrap {}
-
-pub fn formatTokenCoord(fname!: string, token: LineColChars) {}
-
-pub inline fn HERE(node.token) _here = node;
-
-inline fn isZeroes(r)          r == 0b0101;
-inline fn isStaticOrZeroes(r: u32)  r & 11 == 1;
-inline fn isTemporary(r: u32)       r == 0b1001;
-inline fn isArgIdx(r)          r & 3 == 3;
-
-fn append7bit(ref str, mut v) str ~= byte(v);
-
 /*
-    We're going with full path serialize-parse for starters to keep things a little simpler, i think once we got this figured out it should be relatively easy
 */
 
-pub inline fn walkPaths(str: byte[..], ref offset, lax tailOK!?: bool, onPathStart!?, onSubRegion!?, onLastSubRegion!?, onPathDone!?, onDone!?) {
-    return [];
-}
-
-struct SubRegion
-{};
-
-type Paths = SubRegion[][];
-
-fn parsePaths(str): Paths {}
-
-inline fn appendSubRegion(ref uni0n: byte[], flatCount: i32, isLastSubRegion!: bool, isLastPath!: bool) uni0n.append7bit(flatCount.u32 << 1
-                | (isLastPath ? 0 : 1));
-
-pub fn Lifetime_shiftUsage(paths, usage) {}
-
-inline fn appendLocid(ref str, locid!) str.append7bit(locid.sign_rotate << 1);
-
 inline fn unpackLocid(r) return [];
-
-pub fn Lifetime_from(argidx!, paths): Lifetime =
-{}
-
-pub let Lifetime_AAR_hasFalsePositives = true;
-
-pub fn Lifetime_AAR(locid!): Lifetime =
-{}
-
-inline fn merge !<B, L, R, Either, Rest>(l_chars.uni0n, r_chars.uni0n, both!?, left!?, right!?, rest!?: Rest) {}
 
 pub fn Lifetime_each(lifetime: Lifetime, each) {
     lax let chars = lifetime.uni0n;
     lax mut offset = 0;
 
     {
-        lax let offset0 = offset;
+        lax let r       = chars;
+        lax mut sr  = chars && [];
 
-        lax let r       = chars && [];
-        lax mut sr  = chars.walkPaths(:offset, tailOK: true);
-
-        each(locid?:     r.unpackLocid, argidx?:    [], isAlwaysMoveable?:  r.isZeroes || r.isTemporary, isStatic?:  r.isStaticOrZeroes, isTemp?:    r.isTemporary, isArgIdx?:  r.isArgIdx, region?:    Lifetime(uni0n: chars.slice(offset0, offset)), others?:    Lifetime(uni0n: chars[.. offset0] ~ chars[offset ..]), r_raw?:     chars[offset0 .. sr], paths?:     chars[sr .. offset], isOnly?:    !offset0);
+        each(locid?:     r.unpackLocid, paths?:     chars[sr .. offset]);
     }
 }
 
 /*
-    *deref:     We append a new region, flatCount = dereferencedType.flatCount, offset = 0, we're selecting an array item.
 
 */
 
