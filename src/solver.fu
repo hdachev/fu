@@ -630,6 +630,7 @@ pub fn solve(
         DeadBreak_Dont = 0
         DeadBreak_Always
         DeadBreak_Only_WhileSolvingRecursion
+        DeadBreak_Not_WhileSolvingRecursion
     };
 
     struct Reorder {
@@ -1004,6 +1005,9 @@ pub fn solve(
 
         if (type.is_zeroes)
             return "[]".qKW;
+
+        if (type.is_AssumeNever_WhileSolvingRecursion)
+            return "<unsolved>".qBAD;
 
         return (type.canon == t_bool.canon ? "bool"
               : type.canon == t_byte.canon ? "byte"
@@ -5664,7 +5668,7 @@ pub fn solve(
             if (!tail.is_never)
                 reportReturnType(:h, tail);
             else if (!h.ret_actual)
-                h.ret_actual = t_never;
+                h.ret_actual = tail;
         }
 
         h.ret_actual || BUG("No ret_actual");
@@ -11556,7 +11560,9 @@ pub fn solve(
             use_type_last:      true,
             static_eval_brk:    staticEvalBrk && SE_False,
             type_all:           t_proposition,
-            dead_brk:           staticEvalBrk && DeadBreak_Always);
+            dead_brk:           staticEvalBrk
+                                    ? DeadBreak_Always
+                                    : DeadBreak_Not_WhileSolvingRecursion);
 
         return createAnd(items, :type);
     }
@@ -12993,8 +12999,9 @@ pub fn solve(
 
                 // Dead code elim.
                 if (solved.type.is_never && dead_brk
-                        && (dead_brk != DeadBreak_Only_WhileSolvingRecursion ||
-                            solved.type.is_AssumeNever_WhileSolvingRecursion))
+                        && (solved.type.is_AssumeNever_WhileSolvingRecursion
+                                ? dead_brk != DeadBreak_Not_WhileSolvingRecursion
+                                : dead_brk != DeadBreak_Only_WhileSolvingRecursion))
                 {
                     if (i < nodes.len - 1)
                         makeNote(N_DeadCode);
