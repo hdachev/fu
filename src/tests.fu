@@ -4885,6 +4885,17 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_logic(currently: "BUG createIf: cond.is_never 4:57+2", `
+        struct KnownType { known_field: int };
+        fn main() {
+            fn noinl(untyped?) inl(untyped.known_field) && 0;
+                    <alt>
+            inline </alt>
+            fn inl(arg: int) arg && <alt>noinl()<alt/>throw("not rec, just noreturn")</alt>;
+            return inl(0);
+        }
+    `);
+
     // /Logic and selectors.
 
 
