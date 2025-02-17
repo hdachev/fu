@@ -112,9 +112,11 @@ pub extern fn runTests()
     let TODO_slices     = fn TODO;
     let TODO_cow        = fn TODO;
     let TODO_pub        = fn TODO;
-    let TODO_litfix     = fn TODO;
     let TODO_args       = fn TODO;
     let TODO_mangle     = fn TODO;
+
+    let TODO_litfix     = fn TODO;
+    let TODO_definit    = fn TODO;
 
     let TODO_confusing  = fn TODO;
     let TODO_logic      = fn TODO;
@@ -14498,6 +14500,26 @@ pub extern fn runTests()
         let USE_MIPMAPS = false;
         let glsl_what = "A " ~ (USE_MIPMAPS && 'B') ~ " C";
         fn main() glsl_what == "A \\0 C" ? 0 : 1;
+    `);
+
+    TODO_definit(currently: "BUG not assignable to host arg expects [][..], got [] 7:40+6", `
+        struct Flow { rg_invalidates: [] }
+        fn Starts(ref arr: <T>[..], with: T) arr && arr[0] == with;
+
+        fn main() {
+            mut flow: Flow;
+            return flow.rg_invalidates.Starts(with: []) ? 0 : 1;
+        }
+    `);
+
+    TODO_definit(currently: "BUG and/or type !<- item[0]: expects [], got [][..] 3:42+2", `
+        struct Flow { rg_invalidates: [] }
+        fn IfFirst(ref arr: <T>[..]) arr && arr[0];
+
+        fn main() {
+            mut flow: Flow;
+            return flow.rg_invalidates.IfFirst() == [] ? 0 : 1;
+        }
     `);
 
     // /Litfix /Definit
