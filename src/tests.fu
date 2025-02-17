@@ -19226,6 +19226,31 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_inline(currently: "BUG n.type !<- w.type expects Node[], got Node[..] 9:22+5", `
+        struct Node { target: int; items?: Node[] };
+
+        pub fn solve(ref o: Node[]) {
+            fn GET(mut target: int) o.ensure(exists: target);
+            fn reenter(nodes: Node[]) nodes && OUTER(nodes[1 ..]);
+
+                    <alt>
+            inline </alt>
+            fn INNER(nodes: Node[]) {
+                let args = reenter(nodes);
+                return GET((nodes || args) && nodes[0].target);
+            }
+                    <alt>
+            inline </alt>
+            fn OUTER(nodes: Node[]) = INNER(:nodes);
+            return OUTER([]).target;
+        }
+
+        fn main() {
+            mut o: Node[];
+            return solve(o);
+        }
+    `);
+
     // /Inliner.
 
 
