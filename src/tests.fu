@@ -13618,6 +13618,16 @@ pub extern fn runTests()
         fn main() VIEW_QUADS == Batch() ? 0 : 1;
     `);
 
+    TODO_infer(currently: "BUG did match on second pass Import:token 5:34+5", `
+        struct Token { addr_and_snippet: int }
+        struct Import { token: Token }
+
+        fn test(untyped) untyped.token.addr_and_snippet + 101;
+        fn main()
+            try         return test(|| throw(":-)"));
+            catch (e)   return e.len - 3;
+    `);
+
     // /quite right
 
 
