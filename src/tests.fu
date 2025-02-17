@@ -4885,7 +4885,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_logic(currently: "BUG createIf: cond.is_never 4:57+2", `
+    ZERO(`
         struct KnownType { known_field: int };
         fn main() {
             fn noinl(untyped?) inl(untyped.known_field) && 0;

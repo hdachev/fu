@@ -11391,8 +11391,13 @@ pub fn solve(
     fn createIf(cond: SolvedNode, mut cons: SolvedNode, mut alt: SolvedNode, mut type?: Type): SolvedNode
     {
         // Control flow.
-        if (SELF_TEST)
-            cond.type.is_never && BUG("createIf: cond.is_never");
+        if (cond.type.is_never)
+        {
+            if (SELF_TEST)
+                cond.is_AssumeNever_WhileSolvingRecursion || BUG("createIf: cond.is_never");
+
+            return cond;
+        }
 
         // Unfortunately, we gotta do the abstract eval again,
         //  otherwise stuff using createIf directly fails to benefit.
