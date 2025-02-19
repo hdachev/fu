@@ -3477,7 +3477,7 @@ pub fn solve(
         if (k == "argid")       return solveArgID(node, :type);
 
         if (k == "let")         return solveLet(node, asArgument: false);
-        if (k == "call")        return solveCall(node);
+        if (k == "call")        return solveCallDirect(node);
         if (k == "arrlit")      return solveArrlit(node, type);
 
         if (k == "not")         return solveNot(node);
@@ -10789,7 +10789,7 @@ pub fn solve(
         }
         else if (node.kind == "call")
         {
-            let res = tryAbstractEvalAsBool(solveCall(node));
+            let res = tryAbstractEvalAsBool(solveCallDirect(node));
             if (res == SE_True)  return true;
             if (res == SE_False) return false;
         }
@@ -10922,7 +10922,28 @@ pub fn solve(
         return other.out.solve.scope;
     }
 
-    fn solveCall(node: Node, targets!?: Target[..]): SolvedNode
+    fn solveCall(
+        mut id: string, mut args?: SolvedNode[],
+        flags!?: Flags, targets!?: Target[..]): SolvedNode
+    {
+        id || targets || BUG("solveCall: No id, no target.");
+
+        // Qualified?
+        let qualified = flags & F_COMPOUND_ID;
+        let misc_scope = qualified && dequalify_andGetScope(id);
+
+        //
+        mut reorder: Reorder;
+        mut conversions: Target[][];
+        let callTargIdx = matchCall(
+            :misc_scope, local_scope: !qualified,
+            :id, :args, :reorder, :conversions, :flags, :targets);
+
+        //
+        return CallerNode(id, callTargIdx, args, :reorder, :conversions);
+    }
+
+    fn solveCallDirect(node: Node, targets!?: Target[..]): SolvedNode
     {
         let args = solveNodes(node.items,
 
@@ -10944,7 +10965,7 @@ pub fn solve(
 
         mut targets: Target[];
 
-        let head = solveCall(node.items.first);
+        let head = solveCallDirect(node.items.first);
         if (head.isAddrOfFn) {
             head.type.canon.unpackAddrOfFn: |t|
                 targets ~= t;
@@ -10967,27 +10988,6 @@ pub fn solve(
 
         //
         return solveCall(id: "__indirect", args, :targets);
-    }
-
-    fn solveCall(
-        mut id: string, mut args?: SolvedNode[],
-        flags!?: Flags, targets!?: Target[..]): SolvedNode
-    {
-        id || targets || BUG("solveCall: No id, no target.");
-
-        // Qualified?
-        let qualified = flags & F_COMPOUND_ID;
-        let misc_scope = qualified && dequalify_andGetScope(id);
-
-        //
-        mut reorder: Reorder;
-        mut conversions: Target[][];
-        let callTargIdx = matchCall(
-            :misc_scope, local_scope: !qualified,
-            :id, :args, :reorder, :conversions, :flags, :targets);
-
-        //
-        return CallerNode(id, callTargIdx, args, :reorder, :conversions);
     }
 
 
@@ -11016,7 +11016,7 @@ pub fn solve(
 
         // Default constructor calls.
         if (!itemType && type && type.isUserType)
-            return solveCall(node, targets: [ lookupUserType(type).target ]);
+            return solveCallDirect(node, targets: [ lookupUserType(type).target ]);
 
         // Dead code elim.
         mut args = solveNodes(node.items, DeadBreak_Always, itemType);
