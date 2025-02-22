@@ -6087,8 +6087,9 @@ pub fn solve(
 
         if (type.vfacts & AlwaysFalse)
         {
-            SELF_TEST && node.value && BUG(
-                "solveString: AlwaysFalse but non-empty: `" ~ node.value ~ "`.");
+            if (SELF_TEST && node.value)
+                if !(type.is_primitive && ALLOW_retying_truthy_string_literals_to_falsy_enum_values)
+                    BUG("solveString: AlwaysFalse but non-empty: `" ~ node.value ~ "`.");
 
             return createEmpty(:type);
         }

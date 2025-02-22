@@ -22780,7 +22780,7 @@ pub extern fn runTests()
         fn main() build("Normally", false) - 2;
     `);
 
-    TODO_enums(currently: "BUG AlwaysFalse but non-empty None 3:35+6", `
+    ZERO(`
         enum Color { None = 0; Black }
         fn woot(): Color { return "None" }
         fn main() woot.i32;

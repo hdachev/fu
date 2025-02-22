@@ -1,4 +1,10 @@
 
+// if enum { None = 0 }, then allow return "None";
+//  Not ideal, because it requires special care to make sure
+//   we don't retype "None" to false in a boolean context.
+//
+let ALLOW_retying_truthy_string_literals_to_falsy_enum_values = true;
+
 // Experimental -
 //  approximating `void` being defined as an empty struct,
 //   as if it were a regular user-defined ZST.
