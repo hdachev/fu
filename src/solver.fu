@@ -11588,7 +11588,12 @@ pub fn solve(
             {
                 let item = items[i];
                 if (item.type.is_never)
+                {
+                    if (item.is_AssumeNever_WhileSolvingRecursion)
+                        return item;
+
                     continue;
+                }
 
                 if (sumType)
                 {
