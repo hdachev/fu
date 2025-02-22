@@ -4888,6 +4888,17 @@ pub extern fn runTests()
     `);
 
     ZERO(`
+        fn selfRecRetMutref(ref a: <T>[])
+            a[.. a.len/2] && selfRecRetMutref(a[a.len/2 ..]);
+
+        fn main() {
+            mut a = [ 1, 2, 3, 4, 5 ];
+            selfRecRetMutref(a) = [ 20, 30 ];
+            return a == [ 1, 2, 3, 4, 20, 30, 5 ] ? 0 : 1;
+        }
+    `);
+
+    ZERO(`
         struct KnownType { known_field: int };
         fn main() {
             fn noinl(untyped?) inl(untyped.known_field) && 0;
