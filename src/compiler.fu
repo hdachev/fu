@@ -334,6 +334,8 @@ pub fn compile_and_build(
     //  the shared runtime, built first, prelude-only,
     //   the main executable + any replacement payloads.
 
+    shadow let TODO_REMOVE_bootstrap = true;
+
     fn build(
         shadow flags_ld !: string[],
         shadow runmode  !: RunMode,
