@@ -92,6 +92,11 @@ do
     sed_i 's/!!true/!!!101/g' ./src/fail.fu
     CLEANUP_must_restore_SELF_TEST=true
 
+    # Suppress some warnings.
+    sed_i 's/-Wno-dangling-reference //g' ./src/build.fu
+    sed_i 's/-Wno-float-conversion /-Wno-float-conversion -Wno-dangling-reference /g' ./src/build.fu
+    CLEANUP_must_restore_SELF_TEST=true
+
     #
     ./bin/fu.works --bin bin/fu.temp src/cli.fu
     ./bin/fu.temp  --bin bin/fu.temp src/cli.fu
