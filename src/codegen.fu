@@ -932,8 +932,8 @@ pub fn cpp_codegen(
 
                 if (dupes)
                     (locid < 0
-                        ? _current_fn._ids_dedupe_n.ensure(exists: -locid)
-                        : _current_fn._ids_dedupe_p.ensure(exists: +locid)) = dupes;
+                        ? _current_fn._ids_dedupe_n.ensure(-locid)
+                        : _current_fn._ids_dedupe_p.ensure(+locid)) = dupes;
             }
 
             // Dedupe #2.

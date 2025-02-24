@@ -1,5 +1,5 @@
 
-fn ensure(ref a: <T>[], exists!i: (TODO_REMOVE_bootstrap ? int : void)) {
+fn ensure(ref a: <T>[], i: int) {
     if (a.len <= i)
         a.grow(i + 1);
 

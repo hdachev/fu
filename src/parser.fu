@@ -44,7 +44,7 @@ fn setupOperators()
             "Assertion failed: precedence < 64");
 
         out .RIGHT_TO_LEFT
-            .ensure(exists: precedence) = rightToLeft;
+            .ensure(precedence) = rightToLeft;
 
         for (mut i = 0; i < ops.len; i++)
             out.PRECEDENCE.set(ops[i], precedence);
