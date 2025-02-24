@@ -1850,8 +1850,8 @@ pub fn parse(
 
         // Whitespace lint -
         let whitesp_lint = max(
-            whitespaceDiff(tokens.if(exists: _idx - 1), op),
-            whitespaceDiff(op, tokens.if(exists: _idx + 1)));
+            whitespaceDiff(tokens.if(_idx - 1), op),
+            whitespaceDiff(op, tokens.if(_idx + 1)));
 
         if (_precedence.tokidx)
         {

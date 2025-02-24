@@ -426,7 +426,7 @@ pub fn solve(
 
     fn if(ref map: LocidMap(_), exists!locid: i32) {
         let args_neg = _current_fn.args_neg;
-        return map._values.if(exists: args_neg + locid);
+        return map._values.if(args_neg + locid);
     }
 
     fn ensure(ref map: LocidMap(_), exists!locid: i32) {
@@ -887,7 +887,7 @@ pub fn solve(
     using fn EPH(target: Target)
     {
         return target.couldHaveEPH
-            && _ephemeral.if(exists: target.globid);
+            && _ephemeral.if(target.globid);
     }
 
     fn GET_next_local_index()
@@ -1113,7 +1113,7 @@ pub fn solve(
 
                 // No trailing comma.
                 if (result.ends(with: ", "))
-                    result.remove(at: result.len - 2);
+                    result.remove(i: result.len - 2);
 
                 result ~= "}";
             }
@@ -1849,7 +1849,7 @@ pub fn solve(
 
                 let t       = nested(locid);
                 let o       = GET(t);
-                let init    = o.solved.items.if(exists: LET_INIT);
+                let init    = o.solved.items.if(LET_INIT);
 
                 if (o.type.is_mutref)
                     continue;
@@ -2123,7 +2123,7 @@ pub fn solve(
         mut error = "Optional argument ambiguity:";
 
         host_args.each: |host_arg, i| {
-            let callsiteIndex = reorder.map.if(exists: i, else: -1);
+            let callsiteIndex = reorder.map.if(i, else: -1);
             if (callsiteIndex < 0) {
                 error ~= "\n\n\t\t" ~ (host_arg.default ? "Optional callee " : "Callee ")
                                     ~ host_arg ~ " not provided"
@@ -6696,7 +6696,7 @@ pub fn solve(
                 else if (k == "jump")
                 {
                     let foreign = node.helpers;
-                    let local = helpersReplicas.if(exists: foreign.index);
+                    let local = helpersReplicas.if(foreign.index);
 
                     node.helpers = local.TEST_true;
                 }
@@ -7900,7 +7900,7 @@ pub fn solve(
                     {
                         at_risk.if(exists: argTarget.locid).each: |other|
                         {
-                            let otherPos_1b = argPos_1b.if(exists: (-1) - other);
+                            let otherPos_1b = argPos_1b.if(-1 - other);
                             if (otherPos_1b)
                                 output.add(otherPos_1b - 1);
                         }
@@ -8080,7 +8080,7 @@ pub fn solve(
                     }
                     else
                     {
-                        shadow let argPos_1b = argPos_1b.if(exists: (-1) - locid) || BUG(
+                        shadow let argPos_1b = argPos_1b.if(-1 - locid) || BUG(
                             "Non-argument local in retval.lifetime: " ~ nested(locid));
 
                         let i   = argPos_1b - 1;
@@ -9004,7 +9004,7 @@ pub fn solve(
                     non_triv_reason < 1
                         ? " because it is " ~ "nocopy".qKW ~ "."
                         : " because of non-trivial member "
-                            ~ memberNodes.if(exists: non_triv_reason - 1).value.qID));
+                            ~ memberNodes.if(non_triv_reason - 1).value.qID));
 
             if (SELF_TEST)
                 shape.non_triv_mask || non_triv_reason < 0 || BUG(
@@ -10291,7 +10291,7 @@ pub fn solve(
             : ctx.modules[modid];
 
         let imports = m.in.parse.imports;
-        let import  = imports.if(exists: index);
+        let import  = imports.if(index);
 
         return ctx.modules[import.modid || BUG(
             "findModule: !import.modid, marker(" ~ modid ~ ", " ~ index ~ ")")];
@@ -12218,7 +12218,7 @@ pub fn solve(
                                 if (node.kind == "if")
                                 {
                                     node.kind = "block";
-                                    node.items.remove(at: ae == SE_True ? 2 : 1);
+                                    node.items.remove(i: ae == SE_True ? 2 : 1);
                                 }
                                 else
                                 {
@@ -12436,7 +12436,7 @@ pub fn solve(
                 if (node.kind == "jump")
                 {
                     let foreign = node.helpers;
-                    let local   = helpersReplicas.if(exists: foreign.index);
+                    let local   = helpersReplicas.if(foreign.index);
                     if (local)
                     {
                         TRACE("inlineExpression: REPLICATE jump #" ~ foreign.index ~ " -> #" ~ local.index);
@@ -15430,12 +15430,12 @@ pub fn solve(
                     ///////////////////////////////////////
 
                     // AAR sequencing.
-                    let argPos_1b = _argPos_1b.if(exists: (-1) - locid);
+                    let argPos_1b = _argPos_1b.if(-1 - locid);
                     if (argPos_1b)
                     {
                         let i = argPos_1b - 1;
                         let may_alias = !dontUse_may_alias
-                                     && _may_alias.if(exists: i);
+                                     && _may_alias.if(i);
 
                         if (may_alias)
                         {
