@@ -97,6 +97,17 @@ do
     sed_i 's/-Wno-float-conversion /-Wno-float-conversion -Wno-dangling-reference /g' ./src/build.fu
     CLEANUP_must_restore_SELF_TEST=true
 
+    # Shim LEGACY_ headers.
+    if [ ! -f ./include/fu/vec/LEGACY_cmp.h ]; then
+      echo '#include "./cmp.h"' >> ./include/fu/vec/LEGACY_cmp.h
+    fi
+    if [ ! -f ./include/fu/vec/LEGACY_find.h ]; then
+      echo '#include "./find.h"' >> ./include/fu/vec/LEGACY_find.h
+    fi
+    if [ ! -f ./include/fu/vec/LEGACY_slice.h ]; then
+      echo '#include "./slice.h"' >> ./include/fu/vec/LEGACY_slice.h
+    fi
+
     #
     ./bin/fu.works --bin bin/fu.temp src/cli.fu
     ./bin/fu.temp  --bin bin/fu.temp src/cli.fu
