@@ -419,7 +419,7 @@ pub fn solve(
             map._values.shrink(i);
     }
 
-    postfix fn [] (ref map: LocidMap(_), locid: i32) {
+    fn ref(ref map: LocidMap(_), locid: i32) {
         let args_neg = _current_fn.args_neg;
         return map._values[args_neg + locid];
     }
@@ -13763,7 +13763,7 @@ pub fn solve(
                 }
 
                 if (OPTI_bck)
-                    events.invalidated_by[target] = [];
+                    events.invalidated_by.ref(target) = [];
             }
 
             // Track reads in a loop.
