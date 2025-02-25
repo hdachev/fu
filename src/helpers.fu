@@ -333,3 +333,26 @@ inline fn start  (ref arr: <T>[]) arr[.. 0];
 inline fn end    (ref arr: <T>[]) arr[arr.len ..];
 inline fn before (ref arr: <T>[], index: int) arr[i .. i];
 inline fn after  (ref arr: <T>[], index: int) arr.before(i + 1);
+
+
+//
+
+fn Only(ref a: <T>[..]) {
+    assert(a.len == 1);
+    return a[0];
+}
+
+fn First(ref a: <T>[..])
+    a[0];
+
+fn Last(ref a: <T>[..])
+    a[a.len - 1];
+
+fn ifOnly(ref a: <T>[..])
+    a.len == 1 && a[0];
+
+fn ifFirst(ref a: <T>[..])
+    a.len && a[0];
+
+fn ifLast(ref a: <T>[..])
+    a.len && a[a.len - 1];

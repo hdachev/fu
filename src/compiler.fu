@@ -39,7 +39,7 @@ fn compile_lexParseDeps(fname: string, via?: TokenIdx[]): ModidAndOrder
 
     if (!src)
     {
-        let token = via.if_last;
+        let token = via.ifLast;
         if (token)
         {
             mut err = "Could not resolve this import.";

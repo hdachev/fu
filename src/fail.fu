@@ -81,8 +81,8 @@ pub fn formatCodeSnippet(src!: string, fmt?: CodeFmt, mut highlight!: LineColCha
     //
     let lines   = src.split("\n");
 
-    let start   = highlight.first;
-    let end     = highlight.last;
+    let start   = highlight.First;
+    let end     = highlight.Last;
 
     mut l_start = start.line - 1;  // lines are 1 based.
     mut l_end   =   end.line;
@@ -165,7 +165,7 @@ pub fn formatCodeSnippet(mut tokens: TokenIdx[], from!: i32, fmt?: CodeFmt)
         }
     }
 
-    let head = tokens.if_first;
+    let head = tokens.ifFirst;
     if (!head)
         return append;
 

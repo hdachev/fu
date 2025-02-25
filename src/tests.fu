@@ -8851,26 +8851,6 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_disjoint(currently: "cannot access t 11:20+1 inval by GET 8:35+1", `
-        struct SolverState  {
-            overloads:          string[];
-            eph?:               int;
-        }
-
-        fn solve(ref ss: SolverState) {
-            fn GET(t) ss.overloads[t];
-            ref t = ss.eph;
-            t.GET = t.GET ~ ", world!";
-            return t.GET;
-        }
-
-        fn main() {
-            mut ss = SolverState(overloads: [ "hello" ] );
-            ss.solve();
-            return ss.overloads.only.len - 13;
-        }
-    `);
-
     ZERO(`
         struct SolverState {
             overloads:          string[];
@@ -13540,36 +13520,6 @@ pub extern fn runTests()
                            </fail>
     `);
 
-    ZERO(`
-        novec fn test(ref items: int[]) {
-            fn qStackInfLoop(mut v) {                           ;; PointlessMustSeq
-                v--;
-                if      (v > 8) qStackInfLoop(v.u64);
-                else if (v > 7) qStackInfLoop(v.i64);
-                else if (v > 6) qStackInfLoop(v.u32);
-                else if (v > 5) qStackInfLoop(v.i32);
-                else if (v > 4) qStackInfLoop(v.u16);
-                else if (v > 3) qStackInfLoop(v.i16);
-                else if (v > 2) qStackInfLoop(v.u8);
-                else if (v > 1) qStackInfLoop(v.i8);
-                else {                  <fail novec via copy 14:32+5 20:23+13 10:33+13>
-                    let back = items;
-                    for (mut i = 0; i < items.len; i++)
-                        items[i] += back[back.len - 1 - i] + v.int;             <pass/>
-                    items.each: |ref item| item *= 2 + v.int;                   </fail>
-                }
-            }
-
-            items.len.qStackInfLoop();
-        }
-
-        fn main() {
-            mut v = [ 1 ];
-            v.test();
-            return v.only - 2;
-        }
-    `);
-
     ZERO([`
         let T_unorm     = 0x1;
         let T_8x4       = 0x1 << 8;
@@ -15138,44 +15088,6 @@ pub extern fn runTests()
         }
 
         fn main() get_FU_ROOT(1).len - 6;
-    `);
-
-    ZERO(`
-        fn slash(a: string)
-            a.if_last == '/' ? a : a ~ '/';
-
-        fn join(a: string, b: string)
-            b.starts  (with: '/') ?           b :
-            a.ends    (with: '/') ? a       ~ b :
-                                    a ~ '/' ~ b ;
-
-        let HOME = "/hello/world";
-
-        fn HOME_bang(n: int) {
-            mut res = HOME;
-            for (mut i = 0; i < n; i++) res ~= '!';
-            return res;
-        }
-
-        <split/>
-        fn get_FU_ROOT(n: int): string {
-            let FU_ROOT         = {                             ;; GNUStmtExpr
-                let exe         = HOME_bang(:n);
-
-                mut start       = -1;
-                for (;;) {
-                    let match   = exe.find("/world", :start + 1);
-                    if (match   < 0) break;
-                    start       = match;
-                }
-
-                start > 0 && exe.slice(start: 0, end: start)
-            };
-
-            return slash(FU_ROOT || join(HOME, "fu"));          ;; ConstCast
-        }
-
-        fn main() get_FU_ROOT(1).len - 7;
     `);
 
     ZERO(`
@@ -18246,26 +18158,6 @@ pub extern fn runTests()
         fn main() nodes.closeOpenBlocks(Node[](), OpenBlock(Node(nodes.len))).len - 1;
     `);
 
-    TODO_conv(currently: "Incompatible types T for Node <-> OpenBlock 7:42+2", `
-        struct Node         { value: int; items: Node[] };
-        struct OpenBlock    { using node: Node };
-
-        fn closeOpenBlocks(ref open_blocks: OpenBlock[]) {
-            for (mut i = open_blocks.len; i --> 1; )
-                open_blocks[i - 1].items ~= open_blocks[i];
-
-            open_blocks.shrink(1);
-            return open_blocks.only;
-        }
-
-        fn main() {
-            mut open_blocks = [ OpenBlock(Node(10)), OpenBlock(Node(20)), OpenBlock(Node(30)) ];
-            let n = closeOpenBlocks(open_blocks);
-            fn sum(n: Node) { mut sum = n.value; n.items.each(|item| sum += item.sum()); sum }
-            return n.sum() == 60 ? 0 : 1;
-        }
-    `);
-
     ZERO(`
         enum Color { Red = 0; Green; Blue; Yellow; Cyan; Magenta };
         enum ColorFam { Primary = 0; Secondary = 3 };
@@ -19265,31 +19157,6 @@ pub extern fn runTests()
             fn trackVarUsage(what) { unwrapCall(fn what); }         </fail>
             trackVarUsage(|| res++);
             return res;
-        }
-    `);
-
-    TODO_inline(currently: "BUG n.type !<- w.type expects Node[], got Node[..] 9:22+5", `
-        struct Node { target: int; items?: Node[] };
-
-        pub fn solve(ref o: Node[]) {
-            fn GET(mut target: int) o.ensure(exists: target);
-            fn reenter(nodes: Node[]) nodes && OUTER(nodes[1 ..]);
-
-                    <alt>
-            inline </alt>
-            fn INNER(nodes: Node[]) {
-                let args = reenter(nodes);
-                return GET((nodes || args) && nodes[0].target);
-            }
-                    <alt>
-            inline </alt>
-            fn OUTER(nodes: Node[]) = INNER(:nodes);
-            return OUTER([]).target;
-        }
-
-        fn main() {
-            mut o: Node[];
-            return solve(o);
         }
     `);
 

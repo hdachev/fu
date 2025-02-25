@@ -64,7 +64,7 @@ fn main()
 
                 // Launch rebuild //////////////
 
-                let argv    = [ run_no++ ? "./cycle" : "./recycle" ];
+                let argv    = [ run_no++ ? "./cycle" : "./cycle" ];
 
                 // println("REBUILD Spawning argv(" argv.join(" ") ").");
 

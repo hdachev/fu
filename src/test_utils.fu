@@ -61,7 +61,7 @@ pub fn compile_snippets(sources: string[], mut fnames?: string[], mut options?: 
 
     // Compile everything once all sources populated,
     //  allows for testing import circles & such.
-    compile(fname: fnames.last, :options);
+    compile(fname: fnames.Last, :options);
 
     // Cross-check: module compile order should not affect cg,
     //  this is a common driver for c++ build thrashing,
@@ -263,7 +263,7 @@ pub fn ZERO(
             mut fails  = split[0].split("<fail/>");
 
             split.shift();
-            mut pass   = split.only;
+            mut pass   = split.Only;
 
             for (mut j = fails.len; j --> 0; )
             {
@@ -417,8 +417,8 @@ pub fn ZERO(
 
     // Try running this without some of
     //  the most code-change inducing optimizations.
-    if (!sources.first.has(";; EXPECT") &&
-        !sources.first.has(";; !DEV_DontFoldLiterals"))
+    if (!sources.First.has(";; EXPECT") &&
+        !sources.First.has(";; !DEV_DontFoldLiterals"))
     {
         if (~options.dev & DEV_DontFoldLiterals)
         {
@@ -470,7 +470,7 @@ pub fn ZERO(
             mut annot = src.slice(start + 4, end);
 
             // Trim trailing whitespace.
-            while (annot && annot.last <= ' ')
+            while (annot && annot.Last <= ' ')
                 annot.pop();
 
             if (annot[0] == '!')

@@ -961,8 +961,8 @@ pub fn cpp_codegen(
         {
             let line = lines[i];
             if (line)
-                src ~= (line.if_first == '\n' ? '\n' ~ line : _indent ~ line)
-                     ~ (line.if_last == ';' ? '\n' : ';');
+                src ~= (line.ifFirst == '\n' ? '\n' ~ line : _indent ~ line)
+                     ~ (line.ifLast == ';' ? '\n' : ';');
         }
 
         return src;
@@ -1027,7 +1027,7 @@ pub fn cpp_codegen(
         ///////////////////////////////////////////
 
         {
-            let tail = items.if_last;
+            let tail = items.ifLast;
             if (tail.kind == "let"    || tail.kind == "letdef" ||
                 tail.kind == "struct" || tail.kind == "fn"     ||
                 tail.kind == "defer")
@@ -1178,7 +1178,7 @@ pub fn cpp_codegen(
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         if (has_val)
-            nodes.last.TEST_noDanglingRefs(:surviving_locals);
+            nodes.Last.TEST_noDanglingRefs(:surviving_locals);
 
         //
         mut count: int;
@@ -1198,7 +1198,7 @@ pub fn cpp_codegen(
                 || nodes.len != 1 || count != 1
                 || labelUsed
                 || src.has('{') || src.has("if")
-                || nodes.only.kind == "pragma")
+                || nodes.Only.kind == "pragma")
         {
             mut gnuOpen = "";
             if (gnuStmtExpr)
@@ -1221,7 +1221,7 @@ pub fn cpp_codegen(
                   : node.value == "ok"  ? "fu_DEFER_IF_OK"
                                         : "fu_DEFER";
 
-        return which ~ "(" ~ cgNode(node.items.only, M_STMT) ~ ")";
+        return which ~ "(" ~ cgNode(node.items.Only, M_STMT) ~ ")";
     }
 
 
@@ -1684,7 +1684,7 @@ pub fn cpp_codegen(
             }
 
             if (expr.kind == "copy")
-                return expr.items.only.isConstexpr;
+                return expr.items.Only.isConstexpr;
 
             return false;
         }
@@ -2073,7 +2073,7 @@ pub fn cpp_codegen(
     {
         let helpers     = node.helpers;
         let use_return  = helpers == _current_fn.can_return;
-        let expr        = node.items.only;
+        let expr        = node.items.Only;
 
         fn findBlock()
         {
@@ -2277,7 +2277,7 @@ pub fn cpp_codegen(
 
         if (mode & M_PARENS)
         {
-            if (id.last == '=')
+            if (id.Last == '=')
             {
                 // Clang errors on equality within parens in conditionals ...
                 if (id == "==" || id == "!=")
@@ -2296,7 +2296,7 @@ pub fn cpp_codegen(
 
     fn cgNot(node: SolvedNode): string
     {
-        return "!" ~ cgNode(node.items.only);
+        return "!" ~ cgNode(node.items.Only);
     }
 
     fn cgCall(node: SolvedNode, mode: Mode): string
@@ -2709,7 +2709,7 @@ pub fn cpp_codegen(
         if (id == "/prim/convert")
         {
             let output  = node.type;
-            let input   = node.items.only.type;
+            let input   = node.items.Only.type;
 
             let cast    = typeAnnotBase(output);
 
@@ -2738,7 +2738,7 @@ pub fn cpp_codegen(
                 {
                     let inner = typeAnnotBase(mid_t);
 
-                    return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
+                    return cast ~ '(' ~ inner ~ '(' ~ args.Only ~ "))";
                 }
             }
             else if (input.canon == t_byte.canon &&
@@ -2747,10 +2747,10 @@ pub fn cpp_codegen(
                 // Go through unsigned char.
                 let inner = typeAnnotBase(t_u8);
 
-                return cast ~ '(' ~ inner ~ '(' ~ args.only ~ "))";
+                return cast ~ '(' ~ inner ~ '(' ~ args.Only ~ "))";
             }
 
-            return cast ~ '(' ~ args.only ~ ')';
+            return cast ~ '(' ~ args.Only ~ ')';
         }
 
         BUG("Unknown builtin: " ~ id);
@@ -3072,7 +3072,7 @@ pub fn cpp_codegen(
             // TODO FIX make this work for non-field-chains too,
             //  just gotta transform the via thing to perform the copy on the cons.
             //
-            let expr = node.items.only;
+            let expr = node.items.Only;
 
             // NOTE, re: double cgNode here, it's a fieldchain, nothing horrible.
             if (expr.isFieldChain)
@@ -3113,7 +3113,7 @@ pub fn cpp_codegen(
 
         let t = GET(node.target);
         if (t.kind == "field")
-            return isFieldChain(node.items.only);
+            return isFieldChain(node.items.Only);
 
         if (t.kind == "var")
             return true;
@@ -3163,7 +3163,7 @@ pub fn cpp_codegen(
 
         // :(
         src[end] == '}' || BUG();
-        if (postfix.if_first == '\n')
+        if (postfix.ifFirst == '\n')
             for (mut i = end; i --> 0 && src[i] == ' '; )
                 end--;
 
@@ -3330,7 +3330,7 @@ pub fn cpp_codegen(
 
     fn inferIndentation(v: string)
     {
-        if (v.if_first == '\n')
+        if (v.ifFirst == '\n')
         {
             for (mut i = 1; i < v.len; i++)
             {
@@ -3502,7 +3502,7 @@ pub fn cpp_codegen(
 
     fn cgCopyOrMove(node: SolvedNode, mode: Mode): string
     {
-        let expr = node.items.only;
+        let expr = node.items.Only;
 
         // Sanity check.
         expr.is_ref || BUG("cgCopyOrMove: !expr.is_ref");

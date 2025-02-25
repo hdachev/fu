@@ -380,16 +380,16 @@ pub fn build(
         flags_ld!?: string[]): BuildOutput
 {
     // Where we do our dirtywork.
-    if (dir_wrk.if_last != '/')
+    if (dir_wrk.ifLast != '/')
     {
         dir_wrk || fail("No workspace directory provided.");
         dir_wrk ~= '/';
     }
 
     //
-    if (dir_obj && dir_obj.if_last != '/') dir_obj ~= '/';
-    if (dir_src && dir_src.if_last != '/') dir_src ~= '/';
-    if (dir_cpp && dir_cpp.if_last != '/') dir_cpp ~= '/';
+    if (dir_obj && dir_obj.ifLast != '/') dir_obj ~= '/';
+    if (dir_src && dir_src.ifLast != '/') dir_src ~= '/';
+    if (dir_cpp && dir_cpp.ifLast != '/') dir_cpp ~= '/';
 
     // Optimization level.
     mut O_lvl   = bscheme & "unoptimized"

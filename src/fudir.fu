@@ -4,7 +4,7 @@ import helpers;
 //
 
 fn slash(a: string)
-    a.if_last == '/' ? a : a ~ '/';
+    a.ifLast == '/' ? a : a ~ '/';
 
 let HOME            = slash(env::get("HOME"));
 

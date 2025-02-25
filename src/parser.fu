@@ -385,8 +385,8 @@ pub fn parse(
 
     fn createBlock(mut items: Node[], label?: string): Node
     {
-        if (items.if_last.syntax & (PS_DISCARD_IF_BLOCK_TAIL | PS_ALWAYS_DISCARD))
-            items ~= make("empty", :items.last.token);
+        if (items.ifLast.syntax & (PS_DISCARD_IF_BLOCK_TAIL | PS_ALWAYS_DISCARD))
+            items ~= make("empty", :items.Last.token);
 
         return make("block", :items, value: label);
     }
@@ -2185,7 +2185,7 @@ pub fn parse(
         {
             let sign = expr.value[0];
             if (sign == '+' || sign == '-')
-                expr.value[0] = sign == op.only ? '+' : '-';
+                expr.value[0] = sign == op.Only ? '+' : '-';
             else
                 expr.value = op ~ expr.value;
 
@@ -2244,7 +2244,7 @@ pub fn parse(
                 // HACK .is::primtive & co /////////////////
                 if (path == "is" && expr.items.len == 1)
                 {
-                    let left    = expr.items.only;
+                    let left    = expr.items.Only;
                     let right   = createTypeTag(id);
                     return typeCheck(left, right);
                 }
@@ -2293,7 +2293,7 @@ pub fn parse(
                     {
                         if (out_args)
                         {
-                            ref last = out_args.last;
+                            ref last = out_args.Last;
                             if (last.kind == "argid")
                                 fail();
 

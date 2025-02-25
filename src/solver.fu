@@ -2229,7 +2229,7 @@ pub fn solve(
             //  We only pushback stuff when the modules are not imported and there's an actual match,
             //   and we could possibly further filter them by arity.
             //
-            let explore = flags & F_CALL_HAS_DOT && args.first;
+            let explore = flags & F_CALL_HAS_DOT && args.First;
 
             let field_items = considerFieldItems
 
@@ -2611,7 +2611,7 @@ pub fn solve(
                                 matchFail(autocall_error.replace("\t", "\t\t"));
 
                             if (autocall_conversions)
-                                conversions.ensure(i) ~= autocall_conversions.only;
+                                conversions.ensure(i) ~= autocall_conversions.Only;
 
                             conversions.ensure(i) ~= t;
                             autocall_reorder.map.len < 2 || BUG("autocall: reorder");
@@ -2653,7 +2653,7 @@ pub fn solve(
                         {
                             let        arg = args[callsiteIndex];
                             shadow let arg = arg.kind == "argid"
-                                ? arg.items.only
+                                ? arg.items.Only
                                 : arg;
 
                             let retype = tryRetyping(arg, expect);
@@ -2782,7 +2782,7 @@ pub fn solve(
             if (!alternate_ids)
                 break;
 
-            id = alternate_ids.last;
+            id = alternate_ids.Last;
             alternate_ids.pop();
             //////////////////////////////////
         }
@@ -2808,8 +2808,8 @@ pub fn solve(
             :  node.type.is_zeroes      ? 3
             :  node.kind == "str"       ? 3
             :  node.kind == "if"        ? min(node.items[1].couldRetype, node.items[2].couldRetype)
-            :  node.kind == "block"     ? !node.helpers && node.items.last.couldRetype
-            :  node.kind == "argid"     ? node.items.only.couldRetype
+            :  node.kind == "block"     ? !node.helpers && node.items.Last.couldRetype
+            :  node.kind == "argid"     ? node.items.Only.couldRetype
             :  0;
     }
 
@@ -2841,7 +2841,7 @@ pub fn solve(
         if (node.kind == "block" || node.kind == "argid")
             return !(node.helpers.mask & HM_LabelUsed)
                 && node.items
-                && tryRetyping(node.items.last, expect);
+                && tryRetyping(node.items.Last, expect);
 
         return [];
     }
@@ -2861,7 +2861,7 @@ pub fn solve(
             node.helpers.mask & HM_LabelUsed && BUG(
                 "Trying to retype a labelled block, we cant do this still.");
 
-            applyRetype(node.items.last, retype);
+            applyRetype(node.items.Last, retype);
         }
 
         node.type = retype;
@@ -3198,7 +3198,7 @@ pub fn solve(
 
                         // AUTOCALL /////////////
                         if (TODO_FIX_conversions)
-                            path ~= TODO_FIX_conversions.only;
+                            path ~= TODO_FIX_conversions.Only;
 
                         path ~= target;
 
@@ -3524,7 +3524,7 @@ pub fn solve(
     fn solveDeclExpr(node: Node, TODO_FIX_useSpecPath!?: bool): SolvedNode
     {
         mut res = solveNodes([ node ], DeadBreak_Dont,
-            :TODO_FIX_useSpecPath).only;
+            :TODO_FIX_useSpecPath).Only;
 
         // Anonymous structs & co.
         if (res.target && res.target.kind == "type")
@@ -4412,7 +4412,7 @@ pub fn solve(
 
             ////////////////////////////////////////////////////////////////
             if (items.len < 2)
-                node = items.if_only || createEmpty(type: slot);
+                node = items.ifOnly || createEmpty(type: slot);
             else if (canDiscard)
                 node.type = t_bool;
             ////////////////////////////////////////////////////////////////
@@ -4631,11 +4631,11 @@ pub fn solve(
         {
             if (canDiscard)
             {
-                node = node.items.only;
+                node = node.items.Only;
                 return discardType(node, :relax_mask);
             }
 
-            return node.items.only.propagateType(t_proposition, :relax_mask);
+            return node.items.Only.propagateType(t_proposition, :relax_mask);
         }
         else if (k == "call")
         {
@@ -4655,11 +4655,11 @@ pub fn solve(
 
                 if (canDiscard)
                 {
-                    node = node.items.only;
+                    node = node.items.Only;
                     return node.propagateType(slot, :relax_mask);
                 }
 
-                return node.items.only.propagateType(slot, :relax_mask);
+                return node.items.Only.propagateType(slot, :relax_mask);
             }
 
             if (t.kind == "var")
@@ -4947,7 +4947,7 @@ pub fn solve(
             if (relax_mask != RELAX_all)
                 BUG("Found a copy node during first relax: " ~ node);
 
-            ref item = node.items.only;
+            ref item = node.items.Only;
             mut isCopy = true;
 
             mut usedAgain: UsedAgain;
@@ -4992,7 +4992,7 @@ pub fn solve(
                             let letdef = createLet(setScope: false,
                                 "__partcopy_ref", init: item, flags: [], asserts: []);
 
-                            node.items.only = CallerNode("__partcopy_ref", :letdef.target || BUG());
+                            node.items.Only = CallerNode("__partcopy_ref", :letdef.target || BUG());
                             node            = createBlock(letdef, node);
                         }
 
@@ -5048,7 +5048,7 @@ pub fn solve(
             }
 
             // TODO FIX bck doesnt see the `return propagateType` above //
-            shadow ref item = node.items.only; ///////////////////////////
+            shadow ref item = node.items.Only; ///////////////////////////
 
             item.is_ref || BUG("Nothing to copy, item is not a ref: " ~ item);
 
@@ -5117,7 +5117,7 @@ pub fn solve(
         }
         else if (k == "argid" || k == "__litfix_bound")
         {
-            node = node.items.first;
+            node = node.items.First;
             return node.propagateType(:relax_mask, :slot);
         }
         else if (k == "jump")
@@ -5129,7 +5129,7 @@ pub fn solve(
             h.ret_actual || BUG(
                 "propagateType(jump): h.ret_actual not available: #" ~ h.index);
 
-            ref expr            = node.items.only;
+            ref expr            = node.items.Only;
 
             // Postdom.
             {
@@ -5223,7 +5223,7 @@ pub fn solve(
                         if (expr.kind != "block")
                             expr = createBlock(t_irrelevant, items: [ expr ]);
 
-                        expr.items.if_last.is_void && BUG(
+                        expr.items.ifLast.is_void && BUG(
                             "tryInjectJumps: Block tail is void, but block.type isn't: " ~ expr.type.explainType);
 
                         expr.items ~= createEmpty();
@@ -5235,7 +5235,7 @@ pub fn solve(
                             && !(expr.helpers.mask & HM_LabelUsed))
                     {
                         // Unlablled block = inject into tail.
-                        injectJumps(expr.items.last);
+                        injectJumps(expr.items.Last);
 
                         expr.type = t_never;
                         return true;
@@ -5270,7 +5270,7 @@ pub fn solve(
 
                 // MCOM [B]
                 if (PASS_MaybeCopyOrMove && !canDiscard && !h.ret_actual.is_never)
-                    maybeCopyOrMove(node.items.last, h.ret_actual);
+                    maybeCopyOrMove(node.items.Last, h.ret_actual);
             }
 
             if (h)
@@ -5292,7 +5292,7 @@ pub fn solve(
                     {
                         TEST_paintNode(node);
 
-                        ref expr = node.items.only;
+                        ref expr = node.items.Only;
                         discardType(expr, :relax_mask);
 
                         //
@@ -5315,7 +5315,7 @@ pub fn solve(
                         //
                         // This helps bck better figure out some patterns down the line.
                         //
-                        if (node.items.last.is_never)
+                        if (node.items.Last.is_never)
                         {
                             let cond = node.items.slice(0, node.items.len - 1);
                             let cons = node.items[node.items.len - 1];
@@ -5327,7 +5327,7 @@ pub fn solve(
                                 ? createAnd(cond, t_proposition)
                                 : createOr (cond, t_proposition);
 
-                            shadow let alt = createBlock(alt, :alt.last.type);
+                            shadow let alt = createBlock(alt, :alt.Last.type);
 
                             //
                             let replacement = createIf(:cond,
@@ -5339,7 +5339,7 @@ pub fn solve(
                     }
                     else if (k == "block")
                     {
-                        if (node.items.if_last.kind == "unwrap")
+                        if (node.items.ifLast.kind == "unwrap")
                         {
                             relax_mask == RELAX_before_bck || BUG(
                                 "Unwrapping a `defer` after BCK, changes control flow.");
@@ -5369,7 +5369,7 @@ pub fn solve(
                 // Tail item.
                 while (items)
                 {
-                    ref tail = items.last;
+                    ref tail = items.Last;
 
                     // Unwrap trailing defer.
                     if (tail.kind == "defer")
@@ -5377,7 +5377,7 @@ pub fn solve(
                         // Discard trailing defer:err.
                         tail = tail.value == "err"
                             ? createEmpty()
-                            : tail.items.only;
+                            : tail.items.Only;
 
                         // Already relaxed above.
                         break;
@@ -5441,7 +5441,7 @@ pub fn solve(
             else if (items.len == 1 && !(h.mask & (HM_LabelUsed | HM_Function)))
             {
                 // Unwrap single item blocks.
-                node = items.only;
+                node = items.Only;
             }
             else
             {
@@ -5458,7 +5458,7 @@ pub fn solve(
                     //
                     if (items)
                     {
-                        let tail = items.last;
+                        let tail = items.Last;
                         if (h.ret_actual)
                         {
                             reportReturnType(:h, :tail.type);
@@ -5471,7 +5471,7 @@ pub fn solve(
                     }
                 }
 
-                let tail = node.items.if_last;
+                let tail = node.items.ifLast;
                 if (tail.kind == "block" && !(tail.helpers.mask & HM_LabelUsed))
                 {
                     // Cleanup -
@@ -5568,9 +5568,9 @@ pub fn solve(
 
         //
         let items = solveNodes(node.items, DeadBreak_Always, t_irrelevant);
-        if (items.if_last.is_never)
+        if (items.ifLast.is_never)
         {
-            _here = items.last.token;
+            _here = items.Last.token;
             fail("Noreturn during static init: this program will never finish booting.");
         }
 
@@ -5607,7 +5607,7 @@ pub fn solve(
         // TODO FIX adding the trailing return /////////////////////////
         if (fnbody_of && nodes)
         {
-            ref last = nodes.last;
+            ref last = nodes.Last;
             if (last.kind == "unwrap")
             {
                 _current_fn.TODO_FIX_isInline = true;
@@ -5640,7 +5640,7 @@ pub fn solve(
         {
             // For blocks that expect void (e.g. loop bodies),
             //  this allows the omission of the final semicolon.
-            if (items && !items.last.isIrrelevantOrNever)
+            if (items && !items.Last.isIrrelevantOrNever)
                 items ~= createEmpty();
         }
 
@@ -5660,7 +5660,7 @@ pub fn solve(
 
         // Block tail expressions.
         {
-            let tail = items ? items.last.type : t_void;
+            let tail = items ? items.Last.type : t_void;
             if (!tail.is_never)
                 reportReturnType(:h, tail);
             else if (!h.ret_actual)
@@ -5698,7 +5698,7 @@ pub fn solve(
                 // Stash away prototype for reverse specialization.
                 {
                     mut solved = _current_fn.out;
-                    solved.items.last = block;
+                    solved.items.Last = block;
 
                     let target = localfn(fnbody_of);
                     _current_fn.rev_spec_proto =
@@ -6047,7 +6047,7 @@ pub fn solve(
     {
         mut type = t_byte;
         if !(options.dev & options::DEV_DontFoldLiterals)
-            type.vfacts = node.value.only
+            type.vfacts = node.value.Only
                 ? AlwaysTrue
                 : AlwaysFalse;
 
@@ -6724,7 +6724,7 @@ pub fn solve(
         {
             solved.target           = target;
 
-            ref n_body              = solved.items.last;
+            ref n_body              = solved.items.Last;
             n_body.helpers.target   = target;
             n_body.helpers.mask     = HM_Function;
 
@@ -6745,7 +6745,7 @@ pub fn solve(
         {
             // runAllPasses needs the fnode on _current_fn.
             //  Body can't be there, bck not happy.
-            mut n_body = solved.items.last.steal();
+            mut n_body = solved.items.Last.steal();
             swap(_current_fn.out, solved);
 
             runAllPasses(n_body);
@@ -6757,7 +6757,7 @@ pub fn solve(
                 "reported retval intersects relaxed_quals");
 
             // Put the body up on _current_fn.
-            swap(_current_fn.out.items.last, n_body);
+            swap(_current_fn.out.items.Last, n_body);
         }
 
         // Update as usual.
@@ -6830,12 +6830,12 @@ pub fn solve(
         if (end == start)
             return;
 
-        let last = scope_skip.if_last;
+        let last = scope_skip.ifLast;
         last.end <= start || BUG("ScopeSkip_push: last.end > start.");
 
         // Opti - don't grow if possible, so we stay in small storage.
         if (scope_skip && last.end == start)
-            scope_skip.last.end = end;
+            scope_skip.Last.end = end;
         else
             scope_skip ~= ScopeSkip(:start, :end);
     }
@@ -8202,7 +8202,7 @@ pub fn solve(
 
         asserts & A_NOFLOW && _current_fn.far_jumps && fail(
             backtrack: "noflow", target ~ " is not noflow: contains non-local control flow, jumping out to "
-                ~ localfn(index: _current_fn.far_jumps.keys_asc.first) ~ ".");
+                ~ localfn(index: _current_fn.far_jumps.keys_asc.First) ~ ".");
 
         if (maybeLast && !mustBecomeInline)
             numArgsWritten || ext.fx_mask
@@ -9512,7 +9512,7 @@ pub fn solve(
         h || BUG("solveJump: empty jump target");
 
         // Deal with expression first, might noop the jump.
-        let n_expr = node.items.if_only;
+        let n_expr = node.items.ifOnly;
 
         mut expr = !n_expr
             ? createEmpty()
@@ -9763,7 +9763,7 @@ pub fn solve(
 
     fn solveArgID(node: Node, type: Type): SolvedNode
     {
-        let expr = solveNode(node.items.only, :type);
+        let expr = solveNode(node.items.Only, :type);
         return solved(node, [ expr ], :expr.type);
     }
 
@@ -9890,7 +9890,7 @@ pub fn solve(
         // Control flow & deadcode elim.
         //  TODO break & continue.
         let items = solveNodes(items_ast, DeadBreak_Always, type_all: t_irrelevant);
-        let type  = items.if_last.type.is_never ? t_never : t_void;
+        let type  = items.ifLast.type.is_never ? t_never : t_void;
 
         return createBlock(type, items);
     }
@@ -10332,7 +10332,7 @@ pub fn solve(
         // TODO unless defer:ok, must be noexcept //
         ////////////////////////////////////////////
 
-        let item = solveNode(node.items.only, t_irrelevant);
+        let item = solveNode(node.items.Only, t_irrelevant);
         return solved(node, t_void, [ item ]);
     }
 
@@ -10413,7 +10413,7 @@ pub fn solve(
 
     fn evalTypeAnnot(node: Node, TODO_FIX_typeof_dontStripRefs!?: bool): Type
     {
-        fn T = evalTypeAnnot(node.items.only);
+        fn T = evalTypeAnnot(node.items.Only);
 
         /////////////////////////
         let here0   = _here;
@@ -10441,11 +10441,11 @@ pub fn solve(
 
                 if (node.value == "typeof")
                 {
-                    mut type = solveNode(node.items.only).type;
+                    mut type = solveNode(node.items.Only).type;
 
                     if (type.is_Typename)
                     {
-                        _here = node.items.only.token;
+                        _here = node.items.Only.token;
                         fail("Redundant " ~ "typeof".qBAD  ~ ", this is a type, not a value: " ~ explainType(type));
                     }
 
@@ -10650,7 +10650,7 @@ pub fn solve(
                             shadow let node = node.items[callsiteIndex];
                             shadow let type = Type(parseType(argSpecType));
 
-                            shadow let node = node.kind == "argid" ? node.items.only : node;
+                            shadow let node = node.kind == "argid" ? node.items.Only : node;
 
                             if (!trySolveTypeParams(
                                     :node, :type, :error,
@@ -10761,7 +10761,7 @@ pub fn solve(
                     //
                     shadow let left =
                         left.kind  == "call"   &&
-                        left.value == "typeof" && left.items.if_only
+                        left.value == "typeof" && left.items.ifOnly
                             || left;
 
                     if (left.kind == "typeparam")
@@ -10786,7 +10786,7 @@ pub fn solve(
         }
         else if (node.kind == "not")
         {
-            return !evalTypePattern(node.items.only);
+            return !evalTypePattern(node.items.Only);
         }
         else if (node.kind == "call")
         {
@@ -10953,8 +10953,8 @@ pub fn solve(
             //  B] Fns with inline arguments can sink nevers inside their bodies.
             DeadBreak_Only_WhileSolvingRecursion);
 
-        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
-            return args.last;
+        if (args.ifLast.is_AssumeNever_WhileSolvingRecursion)
+            return args.Last;
 
         //
         return solveCall(id: node.value, args, :node.flags, :targets);
@@ -10966,7 +10966,7 @@ pub fn solve(
 
         mut targets: Target[];
 
-        let head = solveCallDirect(node.items.first);
+        let head = solveCallDirect(node.items.First);
         if (head.isAddrOfFn) {
             head.type.canon.unpackAddrOfFn: |t|
                 targets ~= t;
@@ -10978,14 +10978,14 @@ pub fn solve(
         }
 
         if (!targets)
-            fail(:node.items.first.token,
+            fail(:node.items.First.token,
                 "Indirect call: expression does not evaluate to an overload set: "
                     ~ explainType(head));
 
         // TODO FIX this copy pastes the stuff in solveCall above, not amazing.
         let args = solveNodes(node.items[1 ..], DeadBreak_Only_WhileSolvingRecursion);
-        if (args.if_last.is_AssumeNever_WhileSolvingRecursion)
-            return args.last;
+        if (args.ifLast.is_AssumeNever_WhileSolvingRecursion)
+            return args.Last;
 
         //
         return solveCall(id: "__indirect", args, :targets);
@@ -11021,7 +11021,7 @@ pub fn solve(
 
         // Dead code elim.
         mut args = solveNodes(node.items, DeadBreak_Always, itemType);
-        if (args.if_last.type.is_never)
+        if (args.ifLast.type.is_never)
         {
             makeNote(N_DeadArrlit);
             return createBlock(t_never, args);
@@ -11539,7 +11539,7 @@ pub fn solve(
         }
 
         //
-        let last_type = items.last.type;
+        let last_type = items.Last.type;
         if (last_type.is_never || last_type.vfacts & AlwaysTrue)
             type.vfacts = AlwaysTrue;
 
@@ -11617,7 +11617,7 @@ pub fn solve(
             if (andNodeType_canCleanlyDefinit(sumType))
             {
                 let cond = items.slice(0, items.len - 1);
-                let cons = items.last;
+                let cons = items.Last;
 
                 // We'll use the type of the last operand,
                 //  and generate a falsy default for the rest.
@@ -11640,7 +11640,7 @@ pub fn solve(
             return only;
 
         //
-        let last_type = items.last;
+        let last_type = items.Last;
         if (last_type.is_never || last_type.vfacts & AlwaysFalse)
             type.vfacts = AlwaysFalse;
 
@@ -11689,7 +11689,7 @@ pub fn solve(
         }
 
         if (items.len < 2)
-            if_only(items.only);
+            if_only(items.Only);
     }
 
 
@@ -11698,7 +11698,7 @@ pub fn solve(
     fn solveNot(node: Node)
     {
         let item = solveNode(
-            node.items.only, type: t_proposition);
+            node.items.Only, type: t_proposition);
 
         _here = node.token;
         return createNot(item);
@@ -11834,7 +11834,7 @@ pub fn solve(
                 if (query == AQ_WhyNotNovec
                         && (callsite.kind == "copy" || callsite.kind == "move"))
                 {
-                    let arg = callsite.items.only;
+                    let arg = callsite.items.Only;
                     if (arg.type.lifetime.Lifetime_unwinds_through(:locid))
                         return "\n            "
                              ~ "via " ~ callsite.kind
@@ -12018,7 +12018,7 @@ pub fn solve(
         shadow let seen = seen ~ target;
         SLOW_traverse(node): |callsite|
         {
-            if (callsite.kind == "copy" && callsite.items.only.token == cow_inside)
+            if (callsite.kind == "copy" && callsite.items.Only.token == cow_inside)
                 return "\n            "
                      ~ "in " ~ target ~ " at " ~ cow_inside.addr_and_snippet;
 
@@ -12460,7 +12460,7 @@ pub fn solve(
                     _here = node.token;
 
                     TRACE("Fixing up a __far_jump: " ~ node);
-                    node = solveJump_finish(:node.flags, h: node.helpers, expr: node.items.only);
+                    node = solveJump_finish(:node.flags, h: node.helpers, expr: node.items.Only);
 
                     _here = here0;
                 }
@@ -12646,7 +12646,7 @@ pub fn solve(
 
                     // Drop argids at this point, not useful.
                     if (arg.kind == "argid")
-                        arg = arg.items.only;
+                        arg = arg.items.Only;
 
                     let expect = host_arg.type;
                     {
@@ -12684,7 +12684,7 @@ pub fn solve(
         // Special casing field access.
         if (kind == "field")
         {
-            ref arg = args.only || BUG();
+            ref arg = args.Only || BUG();
             type = make_field_reference(from: arg.type, target);
 
             if (arg.is_zeroes)
@@ -12848,7 +12848,7 @@ pub fn solve(
         }
 
         //
-        let n_body = target.solved.items.last;
+        let n_body = target.solved.items.Last;
 
         mut callsite_args: SolvedNode[]; // TODO FIX REMOVE mutslice defaulting
         mut s_body = inlineExpression(
@@ -13165,7 +13165,7 @@ pub fn solve(
             return false;
 
         let t = arg.target.kind;
-        return t == "var" || t == "field" && isFieldChain(arg.items.only);
+        return t == "var" || t == "field" && isFieldChain(arg.items.Only);
     }
 
     fn Lifetime_getRefLocid_unlessStatic(lifetime: Lifetime)
@@ -13754,7 +13754,7 @@ pub fn solve(
                 if (AAR ? !RESOLVE_byAAR(read: target, writes: u.keys_asc, trySoft: true /* F_REF check inside */)
                         : !RESOLVE_byMutvar(target))
                 {
-                    let first = u.keys_asc.first;
+                    let first = u.keys_asc.First;
 
                     fail("Cannot access"
                         ~ " " ~ target.nested ~ ", reference invalidated by write to"
@@ -14430,12 +14430,12 @@ pub fn solve(
             }
 
             if (node.items.len < 2)
-                node = node.items.only;
+                node = node.items.Only;
         }
 
         fn bck_not(ref node: SolvedNode)
         {
-            ref expr = node.items.only;
+            ref expr = node.items.Only;
             bck_node(expr);
 
             let ae_expr = tryAbstractEvalAsBool(expr);
@@ -14508,7 +14508,7 @@ pub fn solve(
             for (mut i = defers.len; i --> 0; )
                 bck_node(
                     node.items[defers[i]]
-                        .items.only);
+                        .items.Only);
 
             _current_fn.TODO_FIX_bckCantDealWithNestedDefers =
                 TODO_FIX_nesteDefers0;
@@ -14951,7 +14951,7 @@ pub fn solve(
             {
                 // node.items || BUG(debug ~ " is empty");
 
-                checkLt(node.items.if_last, "block.tail");
+                checkLt(node.items.ifLast, "block.tail");
 
                 if (node.helpers.ret_actual /*TODO FIX: */&& !(node.helpers.mask & HM_Function))
                     checkLt(node.helpers.ret_actual, "helpers.ret_actual");
@@ -15025,7 +15025,7 @@ pub fn solve(
                 //    or maybe even address this during mcom, not sure.
                 //
                 let h       = node.helpers;
-                let expr    = node.items.only;
+                let expr    = node.items.Only;
 
                 h.ret_actual.isAssignable(expr)
                     || BUG("BROKEN JUMP TYPE"
@@ -15099,7 +15099,7 @@ pub fn solve(
                 if (init.kind == "copy" && !init.is_trivial && !(o.status & SS_MOVED_FROM)
                                                             && !o.type.is_mutref)
                 {
-                    let expr = init.items.only;
+                    let expr = init.items.Only;
                     expr.is_ref || BUG("test_node(let) init::copy, !expr.is_ref");
 
                     mut notPointless = false;
@@ -15539,7 +15539,7 @@ pub fn solve(
                         // Move happens INSIDE fn,
                         //  so sequenced AFTER arg list.
                         //
-                        ref expr = arg.items.only;
+                        ref expr = arg.items.Only;
                         if (unsequencedOutside)
                             outer.moves.flag(expr.type.lifetime);
 
@@ -15629,16 +15629,16 @@ pub fn solve(
                 if (_unseqDepth)
                     if (node.kind == "move")
                         _inner.moves.flag(
-                            node.items.only.type.lifetime);
+                            node.items.Only.type.lifetime);
             }
 
             for (mut i = 0; i < node.items.len; i++)
                 visit(node.items[i]);
         }
 
-        mut root = GET_mut(_nestingFnort).solved.items.last.steal();
+        mut root = GET_mut(_nestingFnort).solved.items.Last.steal();
         visit(root);
-        swap(root, GET_mut(_nestingFnort).solved.items.last);
+        swap(root, GET_mut(_nestingFnort).solved.items.Last);
     }
 
     fn hash(ref hash: tea::TEA, type: Type)
