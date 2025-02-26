@@ -255,7 +255,7 @@ pub fn remove(mut ref a.keys_asc: $T[], b.keys_asc: $T[..])
 
 // The new thing potentially.
 
-fn merge(l.keys_asc: $T[..], r.keys_asc: $T[..], left_or_both!?: <LeftOrBoth>, left!?, right!, both!?)
+fn merge!<LeftOrBoth>(l.keys_asc: $T[..], r.keys_asc: $T[..], left_or_both!?: LeftOrBoth, left!?, right!, both!?)
 {
     mut li = 0;
     mut ri = 0;

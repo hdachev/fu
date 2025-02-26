@@ -1,17 +1,17 @@
 
-fn ensure(ref a: <T>[], i: int) {
+fn ensure(ref a: _[], i: int) {
     if (a.len <= i)
         a.grow(i + 1);
 
     return a[i];
 }
 
-fn if(ref a: <T>[..], i: int, and?: <Then>, else!?)
+fn if!<T, Then>(ref a: T[..], i: int, and?: Then, else!?)
     i.unsigned < a.len.unsigned
         ? Then -> [] ? a[i] : and(a[i])
         : else();
 
-fn remove(ref a: <T>[..], i: int, count = 1)
+fn remove(ref a: _[..], i: int, count = 1)
     a.splice(i, count);
 
 
@@ -56,14 +56,14 @@ fn hasNonIdentifierChars(id: string)
 
 //
 
-fn zip_each(ref a: <T>[..], ref b: <U>[..], fn)
+fn zip_each(ref a: _[..], ref b: _[..], fn)
 {
     a.len == b.len || throw("a.len != b.len");
     for (mut i = 0; i < a.len; i++)
         fn(a[i], b[i], i?: i);
 }
 
-fn zip_all(ref a: <T>[..], ref b: <U>[..], pred)
+fn zip_all(ref a: _[..], ref b: _[..], pred)
 {
     zip_each(a, b): |shadow a, shadow b, i|
         if !(pred(a, b, i?: i))
@@ -75,7 +75,7 @@ fn zip_all(ref a: <T>[..], ref b: <U>[..], pred)
 
 //
 
-fn clone(a: <T>)
+fn clone!<T>(a: T)
 case (T.is::copy) a;
 case (T -> _[..]) a.map(fn clone);
 case (T -> T) // <- weird, whats this for?
@@ -87,7 +87,7 @@ case (T -> T) // <- weird, whats this for?
     return res;
 }
 
-fn steal(ref a: <T>[], start!: i32, end!: i32)
+fn steal!<T>(ref a: T[], start!: i32, end!: i32)
 {
     let size = end - start;
 
@@ -101,7 +101,7 @@ fn steal(ref a: <T>[], start!: i32, end!: i32)
     return ret;
 }
 
-fn steal(ref a: <T>[], start!: i32)
+fn steal!<T>(ref a: T[], start!: i32)
 {
     mut ret: T[];
     ret.resize(a.len - start);
@@ -194,7 +194,7 @@ fn appendVarint(ref str: byte[], mut v: u32)
 
 //
 
-fn print(arr: <T>[..]) case (T.is::arithmetic)
+fn print!<T>(arr: T[..]) case (T.is::arithmetic)
 {
     mut result = "";
     for (mut i = 0; i < arr.len; i++)
@@ -234,7 +234,7 @@ fn trim(str: string)
 
 //
 
-fn parse(v: byte[..], type as!<T>)
+fn parse!<T>(v: byte[..], lax as: T)
     case (T.is::enum || T.is::bitfield /*TODO .is::flags*/ )
 {
     // now supported, there's a test for it, this parser is wrong though
@@ -250,7 +250,7 @@ fn parse(v: byte[..], type as!<T>)
     return [];
 }
 
-fn parseWild(v: byte[..], type as!<T>)
+fn parseWild!<T>(v: byte[..], lax as: T)
 {
     mut result: T;
     for (mut i = 0; i < v.len; i++)
@@ -291,13 +291,13 @@ fn cleanID(id: string)
 
 //
 
-fn steal(ref v: <T>) {
+fn steal!<T>(ref v: T) {
     mut ret: T;
     swap(v, ret);
     return ret;
 }
 
-fn exchange(ref a: <T>, mut b: T) {
+fn exchange!<T>(ref a: T, mut b: T) {
     swap(a, b);
     return b;
 }
@@ -305,7 +305,7 @@ fn exchange(ref a: <T>, mut b: T) {
 // TODO using this for _nestingFnort got me in trouble
 //  with COW police, but there's no COW, Target is trivial
 //
-fn shadow(ref a: <T>, mut b: T) unwrap {
+fn shadow!<T>(ref a: T, mut b: T) unwrap {
     swap(a, b);
     defer:ok swap(a, b);
 }
@@ -329,30 +329,30 @@ fn leftpad(.str, minw: int, mut pad = "               ")
 
 // Sketch, cursor-like empty ranges.
 
-inline fn start  (ref arr: <T>[]) arr[.. 0];
-inline fn end    (ref arr: <T>[]) arr[arr.len ..];
-inline fn before (ref arr: <T>[], index: int) arr[i .. i];
-inline fn after  (ref arr: <T>[], index: int) arr.before(i + 1);
+inline fn start  (ref arr: _[]) arr[.. 0];
+inline fn end    (ref arr: _[]) arr[arr.len ..];
+inline fn before (ref arr: _[], index: int) arr[i .. i];
+inline fn after  (ref arr: _[], index: int) arr.before(i + 1);
 
 
 //
 
-fn Only(ref a: <T>[..]) {
+fn Only(ref a: _[..]) {
     assert(a.len == 1);
     return a[0];
 }
 
-fn First(ref a: <T>[..])
+fn First(ref a: _[..])
     a[0];
 
-fn Last(ref a: <T>[..])
+fn Last(ref a: _[..])
     a[a.len - 1];
 
-fn ifOnly(ref a: <T>[..])
+fn ifOnly(ref a: _[..])
     a.len == 1 && a[0];
 
-fn ifFirst(ref a: <T>[..])
+fn ifFirst(ref a: _[..])
     a.len && a[0];
 
-fn ifLast(ref a: <T>[..])
+fn ifLast(ref a: _[..])
     a.len && a[a.len - 1];

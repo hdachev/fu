@@ -3680,7 +3680,7 @@ pub fn solve(
     {
         mut seen: flat::Set(UserTypeCanon);
 
-        fn type_maybeInside(shadow host: ValueType, usage?: <Usage/*: Quals or []*/>, flatCount?: <FlatCount>)
+        fn type_maybeInside!<Usage, FlatCount>(shadow host: ValueType, usage?: Usage/*: Quals or []*/, flatCount?: FlatCount)
         {
             if (!(Usage -> []) && !usage)
                 return false;

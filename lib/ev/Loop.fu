@@ -436,18 +436,18 @@ pub fn watch_files(
 
 //
 
-pub nothrow fn Loop(
+pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEvent, OnChildClosed, OnWatchEvent>(
     loop_start!,
     loop_error!?,
 
-    socket_accepted!?:  <OnSocketAccepted>,
-    socket_closed!?:    <OnSocketClosed>,
-    socket_event!?:     <OnSocketEvent>,
+    socket_accepted!?:  OnSocketAccepted,
+    socket_closed!?:    OnSocketClosed,
+    socket_event!?:     OnSocketEvent,
 
-    child_event!?:      <OnChildEvent>,
-    child_closed!?:     <OnChildClosed>,
+    child_event!?:      OnChildEvent,
+    child_closed!?:     OnChildClosed,
 
-    watch_event!?:      <OnWatchEvent>)
+    watch_event!?:      OnWatchEvent)
 {
     include_epollOrKqueue();
 
