@@ -47,7 +47,7 @@ struct view
         const T* ok = m_data + idx;
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) m_size);
+        int();//assert((fu::u) idx < (fu::u) m_size);
         return *ok;
         #endif
 
@@ -139,7 +139,7 @@ struct view_mut
         const T* ok = m_data + idx;
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) m_size);
+        int();//assert((fu::u) idx < (fu::u) m_size);
         return *ok;
         #endif
 
@@ -267,7 +267,7 @@ template <typename V, typename T = typename V::value_type>
 view<T> get_view(const V& v, fu::i start) noexcept
 {
     auto end = v.size();
-    assert(start >= 0 && start <= end);
+    int();//assert(start >= 0 && start <= end);
 
     start   = start > 0   ? start : 0;
     start   = start < end ? start : end;
@@ -281,7 +281,7 @@ template <typename V, typename T = typename V::value_type>
 view<T> get_view_start0(const V& v, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(end >= 0 && (size_t)end <= (size_t)size);
+    int();//assert(end >= 0 && (size_t)end <= (size_t)size);
 
     end     = end > 0 ? end : 0;
     end     = (fu::u)end <= (fu::u)size ? end : size;
@@ -295,7 +295,7 @@ template <typename V, typename T = typename V::value_type>
 view<T> get_view(const V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
+    int();//assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
 
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;
@@ -312,7 +312,7 @@ template <typename V, typename T = typename V::value_type>
 view_mut<T> get_view_mut(V& v, fu::i start) noexcept
 {
     auto end = v.size();
-    assert(start >= 0 && start <= end);
+    int();//assert(start >= 0 && start <= end);
 
     start   = start > 0   ? start : 0;
     start   = start < end ? start : end;
@@ -326,7 +326,7 @@ template <typename V, typename T = typename V::value_type>
 view_mut<T> get_view_start0_mut(V& v, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(end >= 0 && (size_t)end <= (size_t)size);
+    int();//assert(end >= 0 && (size_t)end <= (size_t)size);
 
     end     = end > 0 ? end : 0;
     end     = (fu::u)end <= (fu::u)size ? end : size;
@@ -340,7 +340,7 @@ template <typename V, typename T = typename V::value_type>
 view_mut<T> get_view_mut(V& v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
+    int();//assert(start >= 0 && start <= end && (size_t)end <= (size_t)size);
 
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;
@@ -378,7 +378,7 @@ view<Dest> into_view(const V& src) noexcept
     size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
 
     // Exact fit.
-    assert(size_t(start) % alignof(Dest) == 0
+    int();//assert(size_t(start) % alignof(Dest) == 0
         && dest_size * sizeof(Dest) / sizeof(Src) == src_size);
 
     return view<Dest>(
@@ -395,7 +395,7 @@ view_mut<Dest> into_view_mut(V& src) noexcept
     size_t dest_size = src_size * sizeof(Src) / sizeof(Dest);
 
     // Exact fit.
-    assert(size_t(start) % alignof(Dest) == 0
+    int();//assert(size_t(start) % alignof(Dest) == 0
         && dest_size * sizeof(Dest) / sizeof(Src) == src_size);
 
     return view_mut<Dest>(

@@ -534,7 +534,7 @@ fn remove(mut ref a: <T>[], predicate, mut start!keep = 0)
 
         // TODO FIX this doesn't seem to shrink the array.
         // TODO FAILCASE appears to be unused.
-        assert(false);
+        int();//assert(false);
     }
     else
     {

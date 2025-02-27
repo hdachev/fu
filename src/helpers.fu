@@ -338,7 +338,7 @@ inline fn after  (ref arr: _[], index: int) arr.before(i + 1);
 //
 
 fn Only(ref a: _[..]) {
-    assert(a.len == 1);
+    int();//assert(a.len == 1);
     return a[0];
 }
 

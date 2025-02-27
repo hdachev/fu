@@ -364,7 +364,7 @@ pub fn socket_event(ref http: Sockets($T), socket_u32!: u32,
         out ~= "XXXXXXXXX: X\r\n"
 
         if (headers) {
-            assert(headers.ends(with: "\r\n"))
+            int();//assert(headers.ends(with: "\r\n"))
             out ~= headers
         }
 

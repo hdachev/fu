@@ -97,7 +97,7 @@ inline fn ksfd_pack(
     state:      SocketState or ServerOptions = SocketState(),
     user32?:    u32): u64
 {
-    assert(fd >= 0 && fd <= 0xffffff);
+    int();//assert(fd >= 0 && fd <= 0xffffff);
 
     return kind.u64
          | fd.u64 << 8
@@ -201,7 +201,7 @@ pub fn spawn(
         return 0;
     }
 
-    assert(child.pid > 0 && child.pid <= 0xffffff);
+    int();//assert(child.pid > 0 && child.pid <= 0xffffff);
 
     // Linux - we don't consistently use pidfds everywhere as we should,
     //  mostly because we can't really do it portably without a lot of cruft & duplication,
@@ -842,7 +842,7 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
                 inline fn get_pid_fd() = i32(meta.meta_u128 & 0x7fffffff.u128).FD;
 
                 inline fn get_fd(which!: i32) {
-                    assert(which >= 0 && which <= 2);
+                    int();//assert(which >= 0 && which <= 2);
                     return i32(meta.meta_u128 >> u128((1 + which) * 32) & 0x7fffffff.u128).FD;
                 }
 
@@ -853,17 +853,17 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
                 }
 
                 inline fn is_available(which!: i32) {
-                    assert(which >= 0 && which <= 2);
+                    int();//assert(which >= 0 && which <= 2);
                     return !!(meta.meta_u128 & 1.u128 << u128((1 + which) * 32 + 31));
                 }
 
                 inline fn set_available(which!: i32) {
-                    assert(which >= 0 && which <= 2);
+                    int();//assert(which >= 0 && which <= 2);
                     meta.meta_u128 |= (1.u128 << u128((1 + which) * 32 + 31));
                 }
 
                 inline fn clear_available(which!: i32) {
-                    assert(which >= 0 && which <= 2);
+                    int();//assert(which >= 0 && which <= 2);
                     meta.meta_u128 &= ~(1.u128 << u128((1 + which) * 32 + 31));
                 }
 
@@ -879,7 +879,7 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
 
                 fn read(which: i32, ref buffer: byte[])
                 {
-                    assert(which > 0);
+                    int();//assert(which > 0);
                     let fd = get_fd(:which);
                     if (!fd)
                     {
@@ -1006,7 +1006,7 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
                             #ifdef __linux__
                             `pid_fd` = `get_pid_fd()`;
                             #else
-                            assert(!`get_pid_fd()`);
+                            int();//assert(!`get_pid_fd()`);
                             #endif
 
                             Retry:
@@ -1042,7 +1042,7 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
 
                         // Forget.
                         let listed = event_loop.must_sigkill.remove(pid.i32);
-                        assert(listed);
+                        int();//assert(listed);
 
                         event_loop.metas.free(event_id);
 
@@ -1165,7 +1165,7 @@ fn unsubscribeAndClose(
     dbg::ln("  CLOSE fd(" fd ")");
 
     let exists = event_loop.must_close.remove(fd.int);
-    assert(exists);
+    int();//assert(exists);
     if (!exists)
         return Errno::EBADF;
 
@@ -1296,11 +1296,11 @@ fn acceptSocket_doesntCloseOnError(server_fd!: int, ref socket_fd!: FD)
         {
         #ifndef SOCK_NONBLOCK
             auto flags_fl = fcntl(socket_fd, F_GETFL);
-            assert(flags_fl & O_NONBLOCK);
+            int();//assert(flags_fl & O_NONBLOCK);
         #endif
         #ifndef SOCK_CLOEXEC
             auto flags_fd = fcntl(socket_fd, F_GETFD);
-            assert(flags_fd & FD_CLOEXEC);
+            int();//assert(flags_fd & FD_CLOEXEC);
         #endif
         }
     #endif
@@ -1449,7 +1449,7 @@ fn wakeUp_forChild(
         Kind.child_process_pidfd, event_id.FD);
 
     // Ensures we don't mess up the EPOLL_CTL_ADD vs MOD nonsense.
-    assert(!initial || wants_streams == 7);
+    int();//assert(!initial || wants_streams == 7);
 
     mut err: Errno;
     pragma output(

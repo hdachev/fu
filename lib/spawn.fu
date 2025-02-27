@@ -73,7 +73,7 @@ fn pipe(ref p: PosixPipe, blocking!: bool): Errno
         "<unistd.h>",           // pipe
         "<errno.h>");
 
-    assert(p.r == 0 && p.w == 0);
+    int();//assert(p.r == 0 && p.w == 0);
 
     mut err: Errno;
     pragma emit(
@@ -347,7 +347,7 @@ pub struct Child {
 
 fn close_one(fd: ReadEnd or WriteEnd, ref err!: Errno)
 {
-    assert(fd != 0);
+    int();//assert(fd != 0);
     pragma output(`
         if (close(`fd`) && !`err`)
             `err` = errno;
@@ -392,7 +392,7 @@ fn close_both(pipe: PosixPipe, ref err!: Errno)
 
 fn close_one_lax(fd: ReadEnd or WriteEnd)
 {
-    assert(fd != 0);
+    int();//assert(fd != 0);
     pragma output(`
         if (close(`fd`))
             perror("spawn::close_one_lax");

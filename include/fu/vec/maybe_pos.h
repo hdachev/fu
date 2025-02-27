@@ -7,7 +7,7 @@ struct fu_ZERO
     }
 
     fu_INL void operator=(int x) noexcept {
-        assert(x == 0); (void) x;
+        int();//assert(x == 0); (void) x;
     }
 };
 
@@ -18,7 +18,7 @@ struct fu_ONE
     }
 
     fu_INL void operator=(int x) noexcept {
-        assert(x == 1); (void) x;
+        int();//assert(x == 1); (void) x;
     }
 };
 

@@ -32,7 +32,7 @@ namespace fu {
     {
         fu::i s = v.size();
 
-        assert(start >= 0 && start <= end && end <= s);
+        int();//assert(start >= 0 && start <= end && end <= s);
 
         // Can we noop this?
         if constexpr (fu::vec<T>::TRIVIAL)

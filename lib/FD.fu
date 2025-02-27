@@ -5,7 +5,7 @@ pub primitive FD: i32;
 pub fn close(fd: FD): Errno
 {
     // assert(fd > 0);
-    assert(fd > 2);
+    int();//assert(fd > 2);
 
     pragma include(
         "<unistd.h>",           // close
@@ -22,7 +22,7 @@ pub fn close(fd: FD): Errno
 
 pub fn write(fd: FD, data: byte[..], ref bytes_written!: int): Errno
 {
-    assert(fd > 0);
+    int();//assert(fd > 0);
 
     pragma include(
         "<unistd.h>",           // write

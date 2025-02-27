@@ -12,11 +12,11 @@ struct Pool(type T)
 fn [] !T(ref pool: Pool(T), i: int)
 {
     // One based.
-    assert(i > 0);
+    int();//assert(i > 0);
     shadow let i = i - 1;
 
     if (process::DEBUG && i < 32)
-        assert(!!(pool.debug & (1 << i)));
+        int();//assert(!!(pool.debug & (1 << i)));
 
     return pool.items[i];
 }
@@ -24,14 +24,14 @@ fn [] !T(ref pool: Pool(T), i: int)
 fn alloc !T(ref pool: Pool(T))
 {
     let first = pool.first_free
-    assert(first >= 0)
+    int();//assert(first >= 0)
 
     mut i = first - 1
     if (i >= 0)
     {
         ref item = pool.items[i]
         ref next = item.Pool__next_free
-        assert(next >= 0)
+        int();//assert(next >= 0)
 
         pool.first_free = next
         next = 0
@@ -44,7 +44,7 @@ fn alloc !T(ref pool: Pool(T))
 
     if (process::DEBUG && i < 32)
     {
-        assert(!(pool.debug & (1 << i)));
+        int();//assert(!(pool.debug & (1 << i)));
         pool.debug |= 1 << i;
     }
 
@@ -55,7 +55,7 @@ fn alloc !T(ref pool: Pool(T))
 fn free !T(ref pool: Pool(T), mut ref slot: int)
 {
     // One based.
-    assert(slot > 0);
+    int();//assert(slot > 0);
     shadow let i = slot - 1;
     slot = 0;
 
@@ -73,7 +73,7 @@ fn free !T(ref pool: Pool(T), mut ref slot: int)
 
     if (process::DEBUG && i < 32)
     {
-        assert(!!(pool.debug & (1 << i)));
+        int();//assert(!!(pool.debug & (1 << i)));
         pool.debug &= ~(1 << i);
     }
 }

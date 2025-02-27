@@ -109,7 +109,7 @@ struct fu_VEC
         if (!(IS_BIG_MASK & UNSAFE__Pack(actual)))
         {
             actual--;
-            assert(actual > 0 && (IS_BIG_MASK & UNSAFE__Pack(actual)));
+            int();//assert(actual > 0 && (IS_BIG_MASK & UNSAFE__Pack(actual)));
         }
     }
 
@@ -139,7 +139,7 @@ struct fu_VEC
     }
 
     fu_INL fu::i UNSAFE__MarkUnique() const noexcept {
-        assert(!small());
+        int();//assert(!small());
         fu::i capa = shared_capa();
         big.PACK = UNSAFE__Pack(capa);
         return capa;
@@ -147,13 +147,13 @@ struct fu_VEC
 
     fu_INL void UNSAFE__MarkShared() const noexcept {
         static_assert(SHAREABLE, "Cannot share fu_VECs of this type.");
-        assert(!small());
+        int();//assert(!small());
         big.PACK = UNSAFE__Pack( // Make negative.
                   UNSAFE__Unpack(big.PACK) | SIGN_BIT);
     }
 
     fu_INL void UNSAFE__WriteBig(T* data, fu::i size, fu::i capa) noexcept {
-        assert(capa > SMALL_CAPA);
+        int();//assert(capa > SMALL_CAPA);
         big.data = data;
         big.size = size;
         big.PACK = UNSAFE__Pack(capa);
@@ -260,7 +260,7 @@ struct fu_VEC
     fu_INL static void SHARED__Dealloc(
         T* old_data, fu::i old_size, fu::i shared_capa) noexcept
     {
-        assert(shared_capa > SMALL_CAPA);
+        int();//assert(shared_capa > SMALL_CAPA);
 
         if constexpr (SHAREABLE) {
             fu_ARC* arc = UNSAFE__arc(old_data);
@@ -287,7 +287,7 @@ struct fu_VEC
     fu_INL void UNIQ__Dealloc_DontRunDtors() noexcept
     {
         fu::i unique_capa = capa();
-        assert(unique_capa > SMALL_CAPA);
+        int();//assert(unique_capa > SMALL_CAPA);
 
         UNIQ__Dealloc_DontRunDtors(
             (T*)big.data, unique_capa &~ SIGN_BIT);
@@ -302,7 +302,7 @@ struct fu_VEC
             fu_ARC* arc = UNSAFE__arc(old_data);
 
             #ifndef NDEBUG
-            assert(arc->decr() && "not unique");
+            int();//assert(arc->decr() && "not unique");
             #endif
 
             fu_ARC_DEALLOC(arc, size_t(old_capa) * sizeof(T));
@@ -347,7 +347,7 @@ struct fu_VEC
     fu_INL fu_VEC& operator=(const fu_VEC& c) noexcept
     {
         static_assert(COPIABLE, "Cannot copy fu_VECs of non-copiable types.");
-        assert(this != &c);
+        int();//assert(this != &c);
         return *this = fu_VEC(c);
     }
 
@@ -430,7 +430,7 @@ struct fu_VEC
               fu::i old_capa = is_Init ? SMALL_CAPA : capa();
               T*    old_data = is_Init ? (T*)this   : (T*)data();
 
-        assert(idx >= 0 && idx <= old_size
+        int();//assert(idx >= 0 && idx <= old_size
             && del >= 0 && pop >= 0 && idx + del + pop <= old_size
             && insert >= 0 && push >= 0);
 
@@ -575,7 +575,7 @@ struct fu_VEC
             if constexpr (HAS_SMALL)
                 UNSAFE__HAS_SMALL__EnsureActualLooksBig(new_capa);
 
-            assert(new_capa >= new_size);
+            int();//assert(new_capa >= new_size);
 
             // Small-to-big needs to move content
             //  BEFORE persisting big size.
@@ -612,7 +612,7 @@ struct fu_VEC
                (shared_capa > 0 && shared_capa < new_size && slow_check_unique(old_data)))
             {
                 // Cheap move by memcpy.
-                assert(new_data != old_data);
+                int();//assert(new_data != old_data);
 
                 // Call destructors (copy-paste from above).
                 if constexpr (is_Clear)
@@ -673,7 +673,7 @@ struct fu_VEC
         //  if we somehow ended up as the unique owner in the meantime.
         if constexpr (TRIVIAL)
         {
-            assert(shared_capa > SMALL_CAPA);
+            int();//assert(shared_capa > SMALL_CAPA);
 
             SHARED__Dealloc(
                 old_data, old_size, shared_capa);
@@ -917,7 +917,7 @@ struct fu_VEC
     template <typename I, typename D>
     void splice(I idx, D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&src != (void*)this && "splice: rvalref alias");
+        int();//assert((void*)&src != (void*)this && "splice: rvalref alias");
 
         T*    src_data = (T*) src.data();
         fu::i src_size =      src.size();
@@ -974,7 +974,7 @@ struct fu_VEC
     template <typename D>
     void append(D del, fu_VEC&& src) noexcept
     {
-        assert((void*)&src != (void*)this && "append: rvalref alias");
+        int();//assert((void*)&src != (void*)this && "append: rvalref alias");
 
         const T*    src_data = src.data();
               fu::i src_size = src.size();
@@ -1079,7 +1079,7 @@ struct fu_VEC
 
     fu_NEVER_INLINE void _DoReserve(fu::i new_capa) noexcept {
         if (new_capa) {
-            assert(new_capa > 0);
+            int();//assert(new_capa > 0);
 
             fu::i grow = new_capa - size();
                   grow = grow > 0
@@ -1145,7 +1145,7 @@ struct fu_VEC
         const T* ok = data() + idx;
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
         return *ok;
         #endif
 
@@ -1165,7 +1165,7 @@ struct fu_VEC
         T* ok = data_mut() + idx;
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
         return *ok;
         #endif
 

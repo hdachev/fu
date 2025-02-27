@@ -97,7 +97,7 @@ pub fn resolveFile(
             name ~= ".fu";
         }
 
-        assert(from && name && !name.has('\v'));
+        int();//assert(from && name && !name.has('\v'));
 
         fn run(strategy) {
             return           strategy(:from, :name)

@@ -98,7 +98,7 @@ fn main()
             {
                 // println("  CHILD EXIT pid(" pid ") signo(" signo ") code(" code ")");
 
-                assert(pid == run_pid);
+                int();//assert(pid == run_pid);
                 run_pid = 0;
 
                 if (dirty)

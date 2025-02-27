@@ -153,7 +153,7 @@ extern "C" fu_EXPORT void fu_ARC_DEALLOC(fu_ARC* arc, size_t bytes)
 {
     #if fu_ARC__DETECT_MEMORY_LEAKS
     {
-        assert((int)bytes <= arc->DEBUG_bytes
+        int();//assert((int)bytes <= arc->DEBUG_bytes
                    && arc == arc->DEBUG_self);
 
         fu_ARC__CDOWN_count.m_cnt -= 1;

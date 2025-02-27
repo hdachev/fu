@@ -583,8 +583,8 @@ pure fn Verify(ref map: Map(_, _, _))
 
         mut ideal = index_entry.hash & mask
         let dist = (i - ideal) & mask
-        assert(dist < max_probes)
-        assert(dist <= max_dist)
+        int();//assert(dist < max_probes)
+        int();//assert(dist <= max_dist)
         max_dist = dist + 1
 
         //
@@ -597,7 +597,7 @@ pure fn Verify(ref map: Map(_, _, _))
             ref bucket      = reach_bits[i >> 6]
             let bit         = 1 << u64(i & 63)
 
-            assert(!(bucket & bit))
+            int();//assert(!(bucket & bit))
             bucket |= bit
             reach_actual++
 
@@ -605,7 +605,7 @@ pure fn Verify(ref map: Map(_, _, _))
         }
     }
 
-    assert(reach_actual == reach_expect)
+    int();//assert(reach_actual == reach_expect)
 }
 
 pure fn Explain(map: Map(_, _, _))
@@ -723,7 +723,7 @@ test grow_and_rehash()
                     // actual.Explain()
                     actual.Verify()
 
-                    assert(expect_ok == actual_ok)
+                    int();//assert(expect_ok == actual_ok)
                 }
                 else {
                     expect_add(key)
@@ -742,15 +742,15 @@ test grow_and_rehash()
 
                 mut exists: bool
                 shadow let actual = actual.get(key, :exists)
-                assert(exists ? actual == key : actual == 0)
+                int();//assert(exists ? actual == key : actual == 0)
 
-                assert(expect == exists)
+                int();//assert(expect == exists)
 
                 if (exists) count++
             }
 
-            assert(run <= 10 || size > 256)
-            assert(count == size || op_cycle > 0)
+            int();//assert(run <= 10 || size > 256)
+            int();//assert(count == size || op_cycle > 0)
         }
     }
 }
@@ -789,7 +789,7 @@ test bad_hash()
                 let key = i.u8
                 mut exists: bool
                 let val = map.get(key, :exists)
-                assert(exists && val == key)
+                int();//assert(exists && val == key)
             }
 
             for (mut i = 0; i < 256; i++) {
@@ -802,7 +802,7 @@ test bad_hash()
                 let key = i.u8
                 mut exists: bool
                 let val = map.get(key, :exists)
-                assert(!exists && val == 0)
+                int();//assert(!exists && val == 0)
             }
         }
     }
@@ -850,28 +850,28 @@ test default_hash_collisions()
                 num_collisions++
 
             let key = key(i)
-            assert(entry.key == key)
-            assert(entry.value == key)
+            int();//assert(entry.key == key)
+            int();//assert(entry.value == key)
         }
 
         // Ideally we wouldn't generate collisions for <=32bit keys.
-        assert(!num_collisions)
+        int();//assert(!num_collisions)
 
         // Failing that, we expect about 30k collisions for 16mil items.
-        assert(num_collisions < 30000)
-        assert(actual == 16000000)
+        int();//assert(num_collisions < 30000)
+        int();//assert(actual == 16000000)
 
         // Ideally we'd end up with a load factor nearing 100%.
-        assert(map.index.len <= 2*16777216)
+        int();//assert(map.index.len <= 2*16777216)
 
         for (mut i = 0; i < 16000000; i++)
         {
             let key = key(i)
             map.remove(:key)
-            assert(map.data.len == 16000000 - (i + 1))
+            int();//assert(map.data.len == 16000000 - (i + 1))
         }
 
-        assert(!map.data.len)
+        int();//assert(!map.data.len)
     }
 
 

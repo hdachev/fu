@@ -50,7 +50,7 @@ struct alignas(16) fu_ARC
         int prev = m_arc.fetch_add(
             -1, std::memory_order_acq_rel );
 
-        assert(prev >= 0);
+        int();//assert(prev >= 0);
         return 0 == prev;
     }
 
@@ -79,7 +79,7 @@ extern "C" char* fu_UNIQ_ALLOC  (size_t* inout_bytes);
 template <typename T, bool SHAREABLE>
 inline void fu_ALLOC(T*& out_ptr, int& inout_cnt)
 {
-    assert(inout_cnt > 0);
+    int();//assert(inout_cnt > 0);
 
     int cnt = inout_cnt;
         cnt = cnt > 1

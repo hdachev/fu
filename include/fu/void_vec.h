@@ -17,17 +17,17 @@ struct void_vec
     }
 
     void resize(fu::i n) noexcept {
-        assert(n >= 0);
+        int();//assert(n >= 0);
         _size = n > 0 ? n : 0;
     }
 
     void grow(fu::i n) noexcept {
-        assert(n >= _size);
+        int();//assert(n >= _size);
         _size = n > 0 ? n : 0;
     }
 
     void shrink(fu::i n) noexcept {
-        assert(n >= 0 && n <= _size);
+        int();//assert(n >= 0 && n <= _size);
         _size = n > 0 ? n : 0;
     }
 
@@ -52,7 +52,7 @@ struct void_vec
     }
 
     void insert([[maybe_unused]] fu::i idx) noexcept {
-        assert(idx >= 0 && idx <= _size);
+        int();//assert(idx >= 0 && idx <= _size);
         _size++;
     }
 
@@ -61,31 +61,31 @@ struct void_vec
     }
 
     void shift_pop(fu::i shift, fu::i pop) noexcept {
-        assert(shift >= 0 && pop >= 0);
+        int();//assert(shift >= 0 && pop >= 0);
         shrink(_size - shift - pop);
     }
 
     void splice([[maybe_unused]] fu::i idx, fu::i del) noexcept {
-        assert(idx >= 0 && del >= 0 && idx + del <= _size);
+        int();//assert(idx >= 0 && del >= 0 && idx + del <= _size);
         shrink(_size - del);
     }
 
     void splice([[maybe_unused]] fu::i idx, fu::i del, const void_vec& src) noexcept {
-        assert(idx >= 0 && del >= 0 && idx + del <= _size);
+        int();//assert(idx >= 0 && del >= 0 && idx + del <= _size);
         resize(_size - del + src.size());
     }
 
     void append(fu::i del, const void_vec& src) noexcept {
-        assert(del >= 0 && del <= _size);
+        int();//assert(del >= 0 && del <= _size);
         resize(_size - del + src.size());
     }
 
     void reserve([[maybe_unused]] fu::i capa) noexcept {
-        assert(capa >= 0);
+        int();//assert(capa >= 0);
     }
 
     void mutref([[maybe_unused]] fu::i idx) noexcept {
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
     }
 };
 

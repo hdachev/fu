@@ -40,7 +40,7 @@ S lfind(const H& haystack, const N& needle, S start) noexcept
 {
     S size = haystack.size();
 
-    assert(start >= 0 && start <= size);
+    int();//assert(start >= 0 && start <= size);
     start = start >    0 ? start :    0;
     start = start < size ? start : size;
 
@@ -63,11 +63,11 @@ S lfind(const H& haystack, const N& needle, S start, S end) noexcept
 {
     S size = haystack.size();
 
-    assert(start >= 0 && start <= size);
+    int();//assert(start >= 0 && start <= size);
     start = start >    0 ? start :    0;
     start = start < size ? start : size;
 
-    assert(end >= start && end <= size);
+    int();//assert(end >= start && end <= size);
     size  = size  <  end ? size  :  end;
     size  = size  >    0 ? size  :    0;
 

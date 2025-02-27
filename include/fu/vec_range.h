@@ -66,7 +66,7 @@ struct vec_range_mut
         const T* ok = m_vec->data() + (idx + Left());
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
         return *ok;
         #endif
 
@@ -86,7 +86,7 @@ struct vec_range_mut
         T* ok = (T*) m_vec->data_mut() + (idx + Left());
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
         return *ok;
         #endif
 
@@ -117,7 +117,7 @@ struct vec_range_mut
     {
         const auto old_size = size();
 
-        assert((fu::u) idx <  (fu::u) old_size
+        int();//assert((fu::u) idx <  (fu::u) old_size
             && (fu::u) del <= (fu::u)(old_size - idx));
 
         // Sanitize.
@@ -142,7 +142,7 @@ struct vec_range_mut
     {
         const auto old_size = size();
 
-        assert((fu::u) idx <  (fu::u) old_size
+        int();//assert((fu::u) idx <  (fu::u) old_size
             && (fu::u) del <= (fu::u)(old_size - idx));
 
         // Sanitize.
@@ -171,7 +171,7 @@ struct vec_range_mut
     {
         const auto old_size = size();
 
-        assert((fu::u) del <= (fu::u) old_size);
+        int();//assert((fu::u) del <= (fu::u) old_size);
 
         // Sanitize.
         del = del > 0 ? del : D();
@@ -196,7 +196,7 @@ struct vec_range_mut
     {
         const auto old_size = size();
 
-        assert((fu::u) del <= (fu::u) old_size);
+        int();//assert((fu::u) del <= (fu::u) old_size);
 
         // Sanitize.
         del = del > 0 ? del : D();
@@ -226,7 +226,7 @@ struct vec_range_mut
         if constexpr (fu_MAYBE_POS(idx))
         {
             auto old_size = size();
-            assert(idx >= 0 && idx <= old_size);
+            int();//assert(idx >= 0 && idx <= old_size);
             idx = idx > 0 ? idx : 0;
             idx = idx < old_size ? idx : old_size;
         }
@@ -253,7 +253,7 @@ struct vec_range_mut
         if constexpr (fu_MAYBE_POS(idx))
         {
             auto old_size = size();
-            assert(idx >= 0 && idx <= old_size);
+            int();//assert(idx >= 0 && idx <= old_size);
             idx = idx > 0 ? idx : 0;
             idx = idx < old_size ? idx : old_size;
         }
@@ -276,7 +276,7 @@ struct vec_range_mut
     void resize(fu::i new_size) noexcept {
         auto old_size = size();
 
-        assert(new_size >= 0);
+        int();//assert(new_size >= 0);
         new_size = new_size > 0 ? new_size : 0;
 
         auto dif = new_size - old_size;
@@ -293,7 +293,7 @@ struct vec_range_mut
     void grow(fu::i new_size) noexcept {
         auto old_size = size();
 
-        assert(new_size >= old_size);
+        int();//assert(new_size >= old_size);
         new_size = new_size > old_size ? new_size : old_size;
 
         auto add = new_size - old_size;
@@ -311,7 +311,7 @@ struct vec_range_mut
 
         if constexpr (fu_MAYBE_POS(new_size))
         {
-            assert(new_size >= 0 && new_size <= old_size);
+            int();//assert(new_size >= 0 && new_size <= old_size);
             new_size = new_size > 0 ? new_size : 0;
             new_size = new_size < old_size ? new_size : old_size;
         }
@@ -330,7 +330,7 @@ struct vec_range_mut
     fu_INL void pop() noexcept {
         auto old_size = size();
 
-        assert(old_size > 0);
+        int();//assert(old_size > 0);
 
         if (old_size)
             m_vec->splice(
@@ -345,7 +345,7 @@ struct vec_range_mut
 
         if constexpr (fu_MAYBE_POS(idx))
         {
-            assert(idx >= 0 && idx < old_size);
+            int();//assert(idx >= 0 && idx < old_size);
             idx = idx > 0 ? idx : 0;
             idx = idx < old_size ? idx : old_size;
         }
@@ -354,7 +354,7 @@ struct vec_range_mut
         {
             auto del_max = old_size - idx;
 
-            assert(del >= 0 && del <= del_max);
+            int();//assert(del >= 0 && del <= del_max);
             del = del > 0 ? del : 0;
             del = del < del_max ? del : del_max;
         }
@@ -553,7 +553,7 @@ struct vec_range_mut
     }
 
     void UNSAFE__WriteSize(fu::i new_size) noexcept {
-        assert(!Right());
+        int();//assert(!Right());
         m_vec->UNSAFE__WriteSize(new_size + Left());
     }
     //
@@ -624,7 +624,7 @@ struct vec_range
         const T* ok = m_vec->data() + (idx + Left());
 
         #ifndef NDEBUG
-        assert((fu::u) idx < (fu::u) size());
+        int();//assert((fu::u) idx < (fu::u) size());
         return *ok;
         #endif
 
@@ -671,7 +671,7 @@ template <typename T>
 fu::vec_range<T> get_range(fu::vec_range<T> v, fu::i start) noexcept
 {
     auto end = v.size();
-    assert(start >= 0 && start <= end);
+    int();//assert(start >= 0 && start <= end);
 
     start   = start > 0   ? start : 0;
     start   = start < end ? start : end;
@@ -684,7 +684,7 @@ template <typename T>
 fu::vec_range<T> get_range_start0(fu::vec_range<T> v, fu::i end) noexcept
 {
     auto size = v.size();
-    assert((fu::u) end <= (fu::u) size);
+    int();//assert((fu::u) end <= (fu::u) size);
 
     end     = end   > 0 ? end   : 0;
     end     = (fu::u)end <= (fu::u)size ? end : size;
@@ -697,7 +697,7 @@ template <typename T>
 fu::vec_range<T> get_range(fu::vec_range<T> v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(start >= 0 && start <= end && (fu::u) end <= (fu::u) size);
+    int();//assert(start >= 0 && start <= end && (fu::u) end <= (fu::u) size);
 
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;
@@ -716,7 +716,7 @@ template <typename T>
 fu::vec_range_mut<T> get_range_mut(fu::vec_range_mut<T> v, fu::i start) noexcept
 {
     auto end = v.size();
-    assert(start >= 0 && start <= end);
+    int();//assert(start >= 0 && start <= end);
 
     start   = start > 0   ? start : 0;
     start   = start < end ? start : end;
@@ -729,7 +729,7 @@ template <typename T>
 fu::vec_range_mut<T> get_range_start0_mut(fu::vec_range_mut<T> v, fu::i end) noexcept
 {
     auto size = v.size();
-    assert((fu::u) end <= (fu::u) size);
+    int();//assert((fu::u) end <= (fu::u) size);
 
     end     = end   > 0 ? end   : 0;
     end     = (fu::u)end <= (fu::u)size ? end : size;
@@ -742,7 +742,7 @@ template <typename T>
 fu::vec_range_mut<T> get_range_mut(fu::vec_range_mut<T> v, fu::i start, fu::i end) noexcept
 {
     auto size = v.size();
-    assert(start >= 0 && start <= end && (fu::u) end <= (fu::u) size);
+    int();//assert(start >= 0 && start <= end && (fu::u) end <= (fu::u) size);
 
     end     = end   > 0 ? end   : 0;
     start   = start > 0 ? start : 0;

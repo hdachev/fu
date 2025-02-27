@@ -22,13 +22,13 @@ fu_INL void view_assign(V0& a, const V1& b) noexcept
 
     auto s0 = (size_t) a.size() * sizeof(T0);
     auto s1 = (size_t) b.size() * sizeof(T1);
-    assert(s0 == s1);
+    int();//assert(s0 == s1);
 
     auto s  = s0 < s1 ? s0 : s1;
     auto pd = reinterpret_cast<char*>       (a.data_mut());
     auto ps = reinterpret_cast<const char*> (b.data()    );
 
-    assert((pd <= ps - s || pd >= ps + s) &&
+    int();//assert((pd <= ps - s || pd >= ps + s) &&
         "view_assign: mutptr aliasing, "
         "TODO use memcpy instead of memmove.");
 

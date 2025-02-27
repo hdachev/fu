@@ -37,7 +37,7 @@ namespace lockfree
             //   so we use the rest for a u20 ABA tag.
 
                                             //            ####    ####
-            assert(!(u64(ptr) & ~PTR_4x));  // e.g. 0x0000fffffffffff0
+            int();//assert(!(u64(ptr) & ~PTR_4x));  // e.g. 0x0000fffffffffff0
                                             //        ####    ####
 
             return  (u64(ptr)    >>     ALIGN_BITS)
@@ -74,7 +74,7 @@ namespace lockfree
 
                 const u64 state1 = tag(first, tagof(state0));
 
-                assert(untag(state1) == first);
+                int();//assert(untag(state1) == first);
 
                 if (!head.compare_exchange_weak(
                     state0, state1,

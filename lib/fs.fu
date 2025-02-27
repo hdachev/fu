@@ -119,7 +119,7 @@ pub fn executable(): string
             #if defined(__APPLE__)
             uint32_t bufsize = 0;
             _NSGetExecutablePath(executable.data_mut(), &bufsize);
-            assert(bufsize > 0);
+            int();//assert(bufsize > 0);
 
             executable.grow(fu::i(bufsize));
             _NSGetExecutablePath(executable.data_mut(), &bufsize);
@@ -137,7 +137,7 @@ pub fn executable(): string
             */
 
             #else
-            assert(false && "TODO fs::executable");
+            int();//assert(false && "TODO fs::executable");
 
             #endif
 

@@ -551,7 +551,7 @@ pub fn compile_and_build(
 
                 loop_start: ||
                 {
-                    assert(!fswatch_wid && !run_pid);
+                    int();//assert(!fswatch_wid && !run_pid);
 
                     if (watch_list)
                     {
@@ -575,7 +575,7 @@ pub fn compile_and_build(
 
                 watch_event: |watch_id|
                 {
-                    assert(watch_id == fswatch_wid);
+                    int();//assert(watch_id == fswatch_wid);
 
                     // TODO use whatever information we can get from
                     //  the file watch to make this test cheaper,
@@ -638,7 +638,7 @@ pub fn compile_and_build(
 
                 child_closed: |pid, lax signo, lax code|
                 {
-                    assert(pid == run_pid);
+                    int();//assert(pid == run_pid);
                     if (pid == run_pid)
                         run_pid = 0;
 

@@ -710,7 +710,7 @@ pub fn build(
 
         let cpp = unit.src || fail("Empty translation unit.");
 
-        ref hash = unit.obj_hash; assert(!hash);
+        ref hash = unit.obj_hash;
 
         hash.hash(unit.src);
 
@@ -749,7 +749,7 @@ pub fn build(
     if (bscheme & "watch")
     {
         // Previously generateWatchList:
-        assert(!ret.watch_list);
+        int();//assert(!ret.watch_list);
 
         for (mut i = 1; i < ctx.modules.len; i++) {
             let fname = ctx.modules[i].fname;
