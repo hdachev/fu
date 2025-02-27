@@ -99,7 +99,7 @@ pub fn executable(): string
 {
     shadow mut executable: string;
 
-    pragma emit_top(`
+    pragma emit(`
         #if defined(__APPLE__)
         #include <mach-o/dyld.h>
         #include <assert.h>

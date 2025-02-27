@@ -13540,7 +13540,7 @@ pub extern fn runTests()
         let TWO = 2;
     `,`
         import _0;
-        pragma emit_top("int times_TWO(int x) { return x * "TWO"; }");
+        pragma emit("int times_TWO(int x) { return x * "TWO"; }");
         fn main() {
             mut res = 3;
             pragma emit(res" = times_TWO(" res ");");

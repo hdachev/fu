@@ -207,7 +207,7 @@ pub fn spawn(
     //  mostly because we can't really do it portably without a lot of cruft & duplication,
     //   but we do emit one here so we epoll_ctl it.
     //
-    pragma emit_top(`
+    pragma emit(`
         #ifdef __linux__
         #include <sys/syscall.h>    // SYS_pidfd_open
         #include <unistd.h>         // syscall
@@ -277,7 +277,7 @@ pub fn watch_files(
     mut files: string[],
     else): WatchID
 {
-    pragma emit_top(`
+    pragma emit(`
     #ifdef __linux__
         #include <sys/inotify.h>
         #include <stdio.h>          // perror
@@ -990,7 +990,7 @@ pub nothrow fn Loop !<OnSocketAccepted, OnSocketClosed, OnSocketEvent, OnChildEv
                         pragma include(
                             "<sys/wait.h>");
 
-                        pragma emit_top(`
+                        pragma emit(`
                             #ifdef __linux__
                             #include <linux/wait.h>
                             #endif
@@ -1148,7 +1148,7 @@ inline fn include_epollOrKqueue()
     pragma include(
         "<errno.h>");
 
-    pragma emit_top(
+    pragma emit(
     `
     #ifdef __linux__
         #include <sys/epoll.h>

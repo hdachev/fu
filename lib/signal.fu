@@ -84,7 +84,7 @@ pub fn block(sigmask: Signo[..], ref err: Errno): BlockedSigmask
 
     mut fd: SignalFD;
 
-    pragma emit_top(
+    pragma emit(
     `
         #ifdef __linux__
         #include <sys/signalfd.h>

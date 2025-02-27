@@ -86,7 +86,7 @@ fn pipe(ref p: PosixPipe, blocking!: bool): Errno
     `);
 
     // pipe2 shim for sad macs
-    pragma emit_top(
+    pragma emit(
     `
         template <typename i32, typename = decltype(*((i32**)1) = (int*)1)>
         i32 pipe2(i32 fildes[2], i32 flags, ...)
