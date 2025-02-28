@@ -64,7 +64,14 @@ fn main()
 
                 // Launch rebuild //////////////
 
-                let argv    = [ run_no++ ? "./cycle" : "./recycle" ];
+                mut recycle = !run_no++;
+                if (recycle && env::get("QUICK"))
+                {
+                    println("\n  QUICK Skipping recycle.")
+                    recycle = false;
+                }
+
+                let argv    = [ recycle ? "./recycle" : "./cycle" ];
 
                 // println("REBUILD Spawning argv(" argv.join(" ") ").");
 
