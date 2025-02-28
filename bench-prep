@@ -40,6 +40,7 @@ do_clean_up () {
   then
     CLEANUP_must_restore_SELF_TEST=false
     sed_i 's/!!!101/!!true/g' ./src/fail.fu
+    sed_i 's/SELF_TEST = !90909/SELF_TEST = true/g' ./src/fail.fu
   fi
 }
 
@@ -89,6 +90,7 @@ do
     CLEANUP_must_restore_git_branch=true
 
     # Disable SELF_TEST mode.
+    sed_i 's/SELF_TEST = true/SELF_TEST = !90909/g' ./src/fail.fu
     sed_i 's/!!true/!!!101/g' ./src/fail.fu
     CLEANUP_must_restore_SELF_TEST=true
 
