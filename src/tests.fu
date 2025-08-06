@@ -14522,6 +14522,11 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_definit(currently: "BUG not assignable to host arg expects a mutref, got always-false nocopy 3:21+6", `
+        fn Starts(ref arr: <T>[..], with: T) arr && arr[0] == with;
+        fn main()[].Starts(with: []) ? 0 : 1;
+    `);
+
     TODO_definit(currently: "BUG and/or type !<- item[0]: expects [], got [][..] 3:42+2", `
         struct Flow { rg_invalidates: [] }
         fn IfFirst(ref arr: <T>[..]) arr && arr[0];
