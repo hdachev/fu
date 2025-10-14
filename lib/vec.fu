@@ -1,0 +1,167 @@
+
+struct vec2 { x: f32; y: f32 };
+struct vec3 { x: f32; y: f32; z: f32 };
+struct vec4 { x: f32; y: f32; z: f32; w: f32 };
+
+struct ivec2 { x: i32; y: i32 };
+struct ivec3 { x: i32; y: i32; z: i32 };
+struct ivec4 { x: i32; y: i32; z: i32; w: i32 };
+
+
+//
+
+inline fn xy(v: vec3 or vec4) vec2(v.x, v.y);
+inline fn xyz(v: vec4) vec3(v.x, v.y, v.z);
+
+
+//
+
+inline fn vec2(fill!: f32) vec2(fill, fill);
+inline fn vec3(fill!: f32) vec3(fill, fill, fill);
+inline fn vec4(fill!: f32) vec4(fill, fill, fill, fill);
+
+inline fn ivec2(fill!: i32) ivec2(fill, fill);
+inline fn ivec3(fill!: i32) ivec3(fill, fill, fill);
+inline fn ivec4(fill!: i32) ivec4(fill, fill, fill, fill);
+
+
+//
+
+inline fn vec3(x!: f32, y!: f32) vec3(:x, :y, z: 0);
+inline fn vec3(x!: f32, z!?: f32) vec3(:x, y: 0, :z);
+inline fn vec3(y!: f32, z!?: f32) vec3(x: 0, :y, :z);
+inline fn vec3(z!: f32) vec3(x: 0, y: 0, :z);
+
+inline fn vec4(xyz: vec3, w: f32) vec4(xyz.x, xyz.y, xyz.z, w);
+inline fn vec4(x: f32, yzw: vec3) vec4(x, yzw.x, yzw.y, yzw.z);
+
+
+//
+
+fn +(a: vec2 or vec3 or vec4) a;
+
+fn -(mut a: vec2 or vec3 or vec4) {
+    for (fieldname i: typeof(a)) a.i = -a.i;
+    return a;
+}
+
+
+//
+
+fn +(mut a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i += typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn -(mut a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i -= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn *(mut a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i *= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn /(mut a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i /= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+
+//
+
+fn +(a: f32, mut b: vec2 or vec3 or vec4) {
+    for (fieldname i: typeof(b)) b.i += a;
+    return b;
+}
+
+fn -(a: f32, mut b: vec2 or vec3 or vec4) {
+    for (fieldname i: typeof(b)) b.i = a - b.i;
+    return b;
+}
+
+fn *(a: f32, mut b: vec2 or vec3 or vec4) {
+    for (fieldname i: typeof(b)) b.i *= a;
+    return b;
+}
+
+fn /(a: f32, mut b: vec2 or vec3 or vec4) {
+    for (fieldname i: typeof(b)) b.i = a / b.i;
+    return b;
+}
+
+
+//
+
+fn +=(ref a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i += typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn -=(ref a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i -= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn *=(ref a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i *= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+fn /=(ref a: vec2 or vec3 or vec4, b: f32 or vec2 or vec3 or vec4) case (typeof(b) -> typeof(a) || typeof(b) -> typeof(a.x)) {
+    for (fieldname i: typeof(a)) a.i /= typeof(b) -> typeof(a.x) ? b : b.i;
+    return a;
+}
+
+
+//
+
+fn abs(mut a: vec2 or vec3 or vec3) {
+    for (fieldname i: typeof(a)) a.i = abs(a.i);
+    return a;
+}
+
+fn exp(mut a: vec2 or vec3 or vec3) {
+    for (fieldname i: typeof(a)) a.i = exp(a.i);
+    return a;
+}
+
+
+//
+
+fn dot(a: vec2 or vec3 or vec4, b: vec2 or vec3 or vec4) case (typeof(b) -> typeof(a)) {
+    mut dot: f32;
+    for (fieldname i: typeof(a)) dot += a.i * b.i;
+    return dot;
+}
+
+inline fn lensq(a: vec2 or vec3 or vec4) dot(a, a);
+inline fn len(a: vec2 or vec3 or vec4) lensq(a).sqrt;
+
+fn norm(a: vec2 or vec3 or vec4) {
+    mut n = 1 / a.len;
+    n = n.finite ? n : 0;
+    return a * n;
+}
+
+fn normalize(ref a: vec2 or vec3 or vec4) {
+    let len = a.len;
+    let n = 1 / len;
+    if (n.finite) a *= n;
+    return len;
+}
+
+
+//
+
+inline fn cross(a: vec3, b: vec3)
+    vec3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x);
+
+inline fn perp(v: vec3)
+    abs(v.x) > abs(v.y)
+        ? vec3(-v.z, 0, v.x)
+        : vec3(0, v.z, -v.y);

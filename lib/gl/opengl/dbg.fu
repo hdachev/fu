@@ -1,0 +1,17 @@
+
+//*
+let ENABLED = true;
+
+fn ln(parts.print[]: string[..]): void = __native("<fu/print.h>", "fu::println", "|Fx_NotDeadCode");
+
+fn warn(message: string) = ln("   \e[0;33mWARN\e[0m ", message);
+fn err(message: string) = ln("  \e[0;31mERROR\e[0m ", message);
+
+/*/
+let ENABLED = false;
+
+lax fn ln(lax parts.print[]: string[..]) {};
+
+lax fn warn(lax message: string) {};
+lax fn err(lax error: string) {};
+//*/

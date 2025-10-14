@@ -1,0 +1,89 @@
+
+
+// TODO FIX - compensating for lack of fixed-length arrays
+
+// TODO FIX - cleaning these up might be a good start for
+//              actual work on fixed length arrays
+//
+//  Numeric constant types -
+//   - Aiming to remove the need for Array2 and Array4 here:
+//   - reflection: Static for-loop over 0 .. N range to emit members?
+//   - reflection: must also work within struct definitions?
+//
+//  Indexing structs by field index -
+//   - operator? builtin? not sure
+//   - could be implemented in-language with an accelerator pragma
+
+struct Array2(type T) { _0: T; _1: T }
+
+fn [](ref a: Array2(_), mut i: int)
+{
+    assert(i.unsigned < 2);
+    pragma emit(`return (&`a`._0)[`i` & 1]`);
+
+    return i == 0 ? a._0
+                  : a._1;
+}
+
+struct Array4(type T) { _0: T; _1: T; _2: T; _3: T }
+
+fn [](ref a: Array4(_), mut i: int)
+{
+    assert(i.unsigned < 4);
+    pragma emit(`return (&`a`._0)[`i` & 3]`);
+
+    return i == 0 ? a._0
+         : i == 1 ? a._1
+         : i == 2 ? a._2
+                  : a._3;
+}
+
+struct Array8(type T) { _0: T; _1: T; _2: T; _3: T; _4: T; _5: T; _6: T; _7: T }
+
+fn [](ref a: Array8(_), mut i: int)
+{
+    assert(i.unsigned < 8);
+    pragma emit(`return (&`a`._0)[`i` & 7]`);
+
+    return i == 0 ? a._0
+         : i == 1 ? a._1
+         : i == 2 ? a._2
+         : i == 3 ? a._3
+         : i == 4 ? a._4
+         : i == 5 ? a._5
+         : i == 6 ? a._6
+                  : a._7;
+}
+
+struct Array16(type T) { _0: T; _1: T; _2: T; _3: T; _4: T; _5: T; _6: T; _7: T; _8: T; _9: T; _a: T; _b: T; _c: T; _d: T; _e: T; _f: T }
+
+fn [](ref a: Array16(_), mut i: int)
+{
+    assert(i.unsigned < 16);
+    pragma emit(`return (&`a`._0)[`i` & 15]`);
+
+    return i == 0 ? a._0
+         : i == 1 ? a._1
+         : i == 2 ? a._2
+         : i == 3 ? a._3
+         : i == 4 ? a._4
+         : i == 5 ? a._5
+         : i == 6 ? a._6
+         : i == 7 ? a._7
+         : i == 8 ? a._8
+         : i == 9 ? a._9
+         : i == 10 ? a._a
+         : i == 11 ? a._b
+         : i == 12 ? a._c
+         : i == 13 ? a._d
+         : i == 14 ? a._e
+                   : a._f;
+}
+
+
+//
+
+inline fn fixed_len(a: Array2(_)) 2;
+inline fn fixed_len(a: Array4(_)) 4;
+inline fn fixed_len(a: Array8(_)) 8;
+inline fn fixed_len(a: Array16(_)) 16;

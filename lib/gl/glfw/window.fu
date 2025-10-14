@@ -1,0 +1,463 @@
+import gl::glfw::input;
+
+////////////////////////////////
+////////////////////////////////
+////////////////////////////////
+
+pragma include_dirs ("../glad/include");
+pragma sources      ("../glad/src/glad.c");
+pragma link         ("glfw3");
+
+////////////////////////////////
+////////////////////////////////
+////////////////////////////////
+
+pragma emit(`
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <cstdio>
+#include <cassert>
+
+#include <dl/hotswap.hpp>
+
+namespace
+{
+    GLFWwindow* WINDOW                      = nullptr;
+    decltype(`InputSnapshot`) SNAPSHOT      = {};
+    decltype(`InputDelta`) DELTA            = {};
+    unsigned long long FRAME_INDEX          = 0;
+}
+
+`);
+
+////////////////////////////////
+////////////////////////////////
+////////////////////////////////
+
+struct WindowOptions
+{
+    title?:         string;
+
+    width?:         i32;
+    height?:        i32;
+    maximized?:     bool;
+    fullscreen?:    bool;
+};
+
+fn tryCreateWindow(opt: WindowOptions, glMajor: i32, glMinor: i32)
+{
+    mut ok = false;
+
+    let title = opt.title ~ '\0';
+
+    pragma output(`
+
+    glfwWindowHint(GLFW_MAXIMIZED, `opt.maximized` ? GLFW_TRUE : GLFW_FALSE);
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, `glMajor`);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, `glMinor`);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // The only OpenGL 3.x and 4.x contexts
+    //  currently supported by macOS
+    //   are forward-compatible, core profile contexts.
+    //
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
+    #ifndef NDEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    #endif
+
+    //
+    `ok` =
+        !!(WINDOW = glfwCreateWindow(
+            `opt.width  || 640`,
+            `opt.height || 480`,
+
+            `title`.data(),
+
+            NULL, NULL));
+
+    `);
+
+    return ok;
+}
+
+////////////////////////////////
+////////////////////////////////
+////////////////////////////////
+
+fn destroyWindow()
+{
+    pragma output(`
+        glfwTerminate();
+    `);
+}
+
+fn createWindow(options: WindowOptions): bool
+{
+    pragma emit_top(
+    `
+        void onHotswap_glfwPostEmptyEvent(void*)
+        {
+            glfwPostEmptyEvent();
+        }
+    `);
+
+    pragma output(
+    `
+        assert(!WINDOW);
+
+        if (!glfwInit())
+            return false;
+
+        // TODO FIX this needs proper bookkeeping
+        fu::hotswap_callback_add(onHotswap_glfwPostEmptyEvent, nullptr);
+
+        // Reset input state.
+        SNAPSHOT    = {};
+        DELTA       = {};
+    `);
+
+    //
+    :TRY_INIT
+    {
+        let glMajor = 4;
+
+        let MIN     = 1;                        // 4.10
+        let BEST    = process::APPLE ? MIN : 6; // 4.60
+
+        for (mut glMinor = BEST + 1; glMinor --> MIN; ) {
+            if (tryCreateWindow(options, :glMajor, :glMinor)) {
+                opengl::dbg::ln("   GLFW Window created @ OpenGL ", glMajor, ".", glMinor);
+                break :TRY_INIT;
+            }
+        }
+
+        opengl::dbg::ln("   GLFW Failed to create window.");
+        return false;
+    }
+
+    pragma output(
+    `
+        assert(WINDOW);
+
+        glfwMakeContextCurrent(WINDOW);
+
+        // Unlock FPS -
+        // glfwSwapInterval(0);
+
+        // glad: load all OpenGL function pointers
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        {
+            puts("   GLAD Failed to initialize.");
+            return false;
+        }
+
+        // Synthesize some events.
+        {
+            int w, h;
+
+            glfwGetWindowSize(WINDOW, &w, &h);          window_size_callback(WINDOW, w, h);
+            glfwGetFramebufferSize(WINDOW, &w, &h);     framebuffer_size_callback(WINDOW, w, h);
+        }
+
+        // Listen to all events.
+        glfwSetWindowSizeCallback(WINDOW, window_size_callback);
+        glfwSetFramebufferSizeCallback(WINDOW, framebuffer_size_callback);
+        glfwSetCursorPosCallback(WINDOW, cursor_position_callback);
+        glfwSetMouseButtonCallback(WINDOW, mouse_button_callback);
+        glfwSetCharCallback(WINDOW, char_callback);
+        glfwSetKeyCallback(WINDOW, key_callback);
+        glfwSetScrollCallback(WINDOW, scroll_callback);
+        // glfwSetCursorEnterCallback(WINDOW, cursor_enter_callback);
+    `);
+
+    // Shim missing functionality whenever possible -
+    //  e.g. glTexStorage2D can be backported and such.
+    opengl::shims::shimMissingFunctionality();
+
+
+    // Debug output.
+
+    pragma emit_top(
+    `                       #ifndef NDEBUG
+        void GLAPIENTRY
+        GL_cb_glDebugMessageCallback(
+            GLenum source,
+            GLenum type,
+            GLuint id,
+            GLenum severity,
+            GLsizei length,
+            const GLchar* message,
+            const void* /*userParam*/)
+        {
+            // TODO FIX not great muting these here but they're too verbose -
+            //  this receives notifications about which buffer goes to what memory, etc.
+            if (severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+                return;
+
+            fprintf(stderr, " GL DBG source(0x%x) type(%s 0x%x) id(0x%x) severity(0x%x) message(%.*s)\\n",
+                    source,
+                   (type == GL_DEBUG_TYPE_ERROR ? "GL_DEBUG_TYPE_ERROR" : "?"),
+                    type, id, severity, length, message);
+        }
+
+        static void GL_init_cb_glDebugMessageCallback()
+        {
+            if (!glDebugMessageCallback)
+                return;
+
+            GLint flags;
+            glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+            if (!(flags & GL_CONTEXT_FLAG_DEBUG_BIT))
+                return;
+
+            puts(" GL DBG Registering debug output callback.");
+
+            glEnable(GL_DEBUG_OUTPUT);
+
+            // Do we ever want this?
+            //  Likely to slow things down.
+            #ifndef NDEBUG
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            #endif
+
+            glDebugMessageCallback(
+                GL_cb_glDebugMessageCallback,
+                nullptr);
+
+            glDebugMessageControl(
+                GL_DEBUG_SOURCE_API,
+                GL_DEBUG_TYPE_ERROR,
+                GL_DEBUG_SEVERITY_HIGH,
+                0, nullptr, GL_TRUE);
+        }
+                            #endif //
+    `);
+
+    pragma emit(
+    `                       #ifndef NDEBUG
+        GL_init_cb_glDebugMessageCallback();
+                            #endif //
+    `);
+
+    //
+    return true;
+}
+
+////////////////////////////////
+////////////////////////////////
+////////////////////////////////
+
+fn swapAndPoll(wait!: bool)
+{
+    pragma output(`
+
+        // Present
+        glfwSwapBuffers(WINDOW);
+
+        // Wait on input
+        if (`wait`)
+            glfwWaitEvents();
+        else
+            glfwPollEvents();
+
+        //
+        fu::hotswap_here();
+    `);
+}
+
+fn collectInput(time_delta!: f64)
+{
+    mut inputFrame: InputFrame;
+
+    pragma output(`
+        `inputFrame`.frame_index    = FRAME_INDEX++;
+        `inputFrame`.snapshot       = SNAPSHOT;
+        `inputFrame`.should_close   = glfwWindowShouldClose(WINDOW);
+
+        `inputFrame`.delta          = static_cast<decltype(`InputDelta`)&&>(DELTA);
+        DELTA                       = {};
+
+        `inputFrame`.time_delta     = `time_delta`;
+    `);
+
+    return inputFrame;
+}
+
+////////////////////////////////
+// INPUT EVENTS ////////////////
+////////////////////////////////
+
+pragma emit(
+`
+    static void window_size_callback(GLFWwindow*, int x, int y)
+    {
+        printf("   GLFW Window resized: %i/%i\\n", x, y);
+
+        SNAPSHOT.size.window.x = x;
+        SNAPSHOT.size.window.y = y;
+    }
+
+    static void framebuffer_size_callback(GLFWwindow*, int x, int y)
+    {
+        printf("   GLFW Framebuffer resized: %i/%i\\n", x, y);
+
+        SNAPSHOT.size.framebuffer.x = x;
+        SNAPSHOT.size.framebuffer.y = y;
+    }
+
+    template <typename V, typename C>
+    static void DELTA_column_set(V& v, C&& c)
+    {
+        auto N = DELTA.events.size();
+        v.grow(N);
+        v.mutref(N - 1) = static_cast<C&&>(c);
+    }
+
+    static void cursor_position_callback(GLFWwindow*, double x, double y)
+    {
+        // printf("   GLFW Mouse position x(%f) y(%f)\\n", x, y );
+
+        DELTA.events.push(
+        {
+            `Action.MouseMove`,
+            SNAPSHOT.keyboard.modifiers,
+            `Token()`,
+        });
+
+        DELTA_column_set(DELTA.x_deltas, float(x - SNAPSHOT.mouse.x));
+        DELTA_column_set(DELTA.y_deltas, float(y - SNAPSHOT.mouse.y));
+
+        SNAPSHOT.mouse.x = x;
+        SNAPSHOT.mouse.y = y;
+    }
+
+    static void scroll_callback(GLFWwindow*, double xoffset, double yoffset)
+    {
+        printf("   GLFW Scroll xoffset(%f) yoffset(%f)\\n", xoffset, yoffset);
+
+        DELTA.events.push(
+        {
+            `Action.Scroll`,
+            SNAPSHOT.keyboard.modifiers,
+            `Token()`,
+        });
+
+        DELTA_column_set(DELTA.x_deltas, float(xoffset));
+        DELTA_column_set(DELTA.y_deltas, float(yoffset));
+
+        DELTA.scroll_x += xoffset;
+        DELTA.scroll_y += yoffset;
+    }
+
+    static void char_callback(GLFWwindow*, unsigned int codepoint)
+    {
+        // printf("   GLFW Character codepoint(%i)\\n", (int) codepoint);
+
+        DELTA.codepoints.push(unsigned(codepoint));
+    }
+
+    static void key_callback(GLFWwindow*, int key, int scancode, int action, int mods)
+    {
+        // printf("   GLFW Keyboard key(%i) scancode(%i) action(%i) mods(%i)\\n", key, scancode, action, mods);
+        assert(action >= 0 && action <= 2);
+
+
+        // Currently active modifiers state -
+        // NOTE MULTIPLE WRITERS: mouse_button_callback also updates these (see below).
+
+        auto modifiers = (unsigned char) mods;
+        SNAPSHOT.keyboard.modifiers = modifiers;
+
+
+        // Currently depressed keys state.
+
+        if (action != `Action.KeyRepeat`)
+        {
+            const auto update = [&](auto& array, auto item)
+            {
+                const auto* data = array.data();
+                for (auto n = array.size(), i = 0*n; i < n; i++)
+                {
+                    if (data[i] == item)
+                    {
+                        if (action == `Action.KeyRelease`)
+                            array.splice(i, 1);
+                        else
+                            assert(false && "Duplicate GLFW_PRESS");
+
+                        return;
+                    }
+                }
+
+                if (action == `Action.KeyPress`)
+                    array.push(static_cast<decltype(item)&&>(item));
+                else
+                    assert(false && "Duplicate GLFW_RELEASE");
+            };
+
+            update(
+                SNAPSHOT.keyboard.scancodes,
+                decltype(`ScanCode`)    (scancode));
+
+            if (key)
+                update(
+                    SNAPSHOT.keyboard.tokens,
+                    decltype(`Token`)   (key));
+        }
+
+
+        // Event.
+
+        DELTA.events.push(
+        {
+            decltype(`Action`)      (action),
+            decltype(`Modifiers`)   (modifiers),
+            decltype(`Token`)       (key),
+        });
+
+        DELTA_column_set(DELTA.scancodes,
+            decltype(`ScanCode`)    (scancode));
+    }
+
+    static void mouse_button_callback(GLFWwindow*, int button, int action, int mods)
+    {
+        // printf("   GLFW Mouse button(%i) action(%i) mods(%i)\\n", button, action, mods);
+        assert(action >= 0 && action <= 1);
+
+
+        // Currently active modifiers state.
+        // NOTE MULTIPLE WRITERS: key_callback also updates these (see above).
+
+        auto modifiers = (unsigned char) mods;
+
+        // Note - we expect key_callback to have already done this.
+        assert(SNAPSHOT.keyboard.modifiers == modifiers);
+
+        SNAPSHOT.keyboard.modifiers = modifiers;
+
+
+        // State.
+
+        (SNAPSHOT.mouse.buttons &= ~(1u << button))
+            |= (action == GLFW_PRESS ? 1u : 0u) << button;
+
+
+        // Event.
+
+        DELTA.events.push(
+        {
+            decltype(`Action`)      (action + 3),
+            decltype(`Modifiers`)   (modifiers),
+            decltype(`Token`)       (button),
+        });
+    }
+
+    // static void cursor_enter_callback(GLFWwindow*, int entered)
+    // {
+    //     printf("cursor_enter_callback entered(%i)\\n", entered);
+    // }
+`);

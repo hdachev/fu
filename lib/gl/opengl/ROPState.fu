@@ -1,0 +1,572 @@
+import gl;
+
+pragma include(
+    "<glad/glad.h>",
+    "<stdio.h>");
+
+
+//
+
+enum CullFace {
+    Unknown = 0
+    Disabled
+    CullCW
+    CullCCW
+}
+
+enum OptBool {
+    Unknown = 0
+    False
+    True
+}
+
+fn set(ref slot: OptBool, v: bool)
+{
+    let check = v ? OptBool.True : OptBool.False;
+    return slot != check && { slot = check; true };
+}
+
+fn set(ref slot: <T>, v: T) case (T -> f32 || T -> vec4)
+{
+    // Floating point slots can use NANs as sentinel values.
+    return slot != v && { slot = v; true };
+}
+
+fn set(ref slot: u64, v: i32 or u32)
+{
+    let check = ~(v.u64);
+    return slot != check && { slot = check; true };
+}
+
+fn set(ref slot: u8, v: DepthTest)
+{
+    assert(!(v.u64 & 0xffff_ffff_ffff_ff80));
+
+    let check = ~(v.u8);
+    return slot != check && { slot = check; true };
+}
+
+
+//
+
+primitive StencilOps:   u32;
+primitive StencilFunc:  u32;
+
+struct StencilState
+{
+    ops:                StencilOps;
+    func:               StencilFunc;
+    mask:               u32;
+}
+
+struct ROPState
+{
+    viewport:           u64;
+    scissor:            u64;
+
+    PO_factor:          f32;
+    PO_units:           f32;
+
+    cull_face:          CullFace;
+
+    depth_test:         OptBool;
+    depth_func:         u8;
+
+    depth_write:        OptBool;
+
+    depth_clear:        f32;
+    stencil_clear:      u64;
+    color_clear:        vec4;
+
+    //
+    stencil_enabled:    OptBool;
+    stencil_front:      StencilState;
+    stencil_back:       StencilState;
+}
+
+pub fn init()
+{
+    mut rs: ROPState;
+
+    //
+    rs.scissor      = 10871013;
+    rs.updateScissor(0);
+
+    rs.PO_factor    = f32.NAN;
+    rs.PO_units     = f32.NAN;
+    rs.updatePolygonOffset(factor: 0, units: 0);
+
+    rs.depth_clear  = f32.NAN;
+    rs.color_clear  = vec4(fill: f32.NAN);
+
+    // TODO investigate - doesn't seem to do anything.
+    pragma output(
+    `
+        glFrontFace(GL_CCW);
+    `);
+
+    // Invalid stencil state.
+    rs.stencil_front =
+    rs.stencil_back  = StencilState(u32(-1).StencilOps, u32(-1).StencilFunc, u32(-1));
+
+    //
+    return rs;
+}
+
+fn updateViewport(ref rs: ROPState, viewport: u64)
+{
+    if (rs.viewport != viewport)
+    {
+        rs.viewport = viewport;
+
+        pragma output(
+        `
+            glViewport(
+                GLint  (`rs.viewport >>  0 & 0xffff`),
+                GLint  (`rs.viewport >> 16 & 0xffff`),
+                GLsizei(`rs.viewport >> 32 & 0xffff`),
+                GLsizei(`rs.viewport >> 48 & 0xffff`));
+        `);
+    }
+}
+
+fn updateScissor(ref rs: ROPState, scissor: u64)
+{
+    if (rs.scissor != scissor)
+    {
+        if (!rs.scissor != !scissor) pragma output(
+        `
+            if (`scissor`)
+                glEnable(GL_SCISSOR_TEST);
+            else
+                glDisable(GL_SCISSOR_TEST);
+        `);
+
+        rs.scissor = scissor;
+
+        pragma output(
+        `
+            glScissor(
+                GLint  (`rs.scissor >>  0 & 0xffff`),
+                GLint  (`rs.scissor >> 16 & 0xffff`),
+                GLsizei(`rs.scissor >> 32 & 0xffff`),
+                GLsizei(`rs.scissor >> 48 & 0xffff`));
+        `);
+    }
+}
+
+fn updatePolygonOffset(ref rs: ROPState, factor!: f32, units!: f32)
+{
+    if (rs.PO_factor != factor || rs.PO_units != units)
+    {
+        let enabled0    = !!(rs.PO_factor || rs.PO_units);
+        let enabled1    = !!(      factor ||       units);
+
+        rs.PO_factor    = factor;
+        rs.PO_units     = units;
+
+        if (enabled0 != enabled1) pragma output(
+        `
+            if (`enabled1`)
+                glEnable (GL_POLYGON_OFFSET_FILL);
+            else
+                glDisable(GL_POLYGON_OFFSET_FILL);
+        `);
+
+        if (enabled1) pragma output(
+        `
+            glPolygonOffset(`rs.PO_factor`, `rs.PO_units`);
+        `);
+    }
+}
+
+fn updateCullFace(ref rs: ROPState, cull_face: CullFace)
+{
+    if (rs.cull_face != cull_face)
+    {
+        let enabled0 = rs.cull_face > "Disabled";
+        let enabled1 =    cull_face > "Disabled";
+
+        rs.cull_face = cull_face;
+
+        if (enabled0 != enabled1) pragma output(
+        `
+            if (`enabled1`)
+                glEnable (GL_CULL_FACE);
+            else
+                glDisable(GL_CULL_FACE);
+        `);
+
+        if (enabled1) pragma output(
+        `
+            glCullFace(`, cull_face == "CullCCW", ` ? GL_FRONT : GL_BACK);
+        `);
+    }
+}
+
+
+//
+
+fn dedupe_glDepthMask(ref rs: ROPState, value: bool)
+{
+    // Multiple writers:
+    //  - depth clear (per Pass)
+    //  - depth write (per ROP)
+    //
+    if (rs.depth_write.set(value)) pragma output(
+    `
+        glDepthMask(`value` ? GL_TRUE : GL_FALSE);
+    `);
+}
+
+
+//
+
+fn updateDepthTestAndWrite(ref rs: ROPState, flags: ROPFlags, depth_test!func: DepthTest, has_depth_buffer!: bool)
+{
+    let depth_write = !!(flags & "Depth_write");
+
+    let depth_test  = func != "Always";
+
+    // DEPTH_TEST
+    //  must be enabled for depth writing -
+    //   so we disable when we test = ALWAYS and dont write.
+    //                              ___________
+    mut enabled     = depth_test || depth_write;
+
+    if (!has_depth_buffer)
+    {
+        assert(!enabled && !!"GL: Depth test/write flags without a depth buffer.");
+        enabled = false;
+    }
+
+    if (rs.depth_test.set(enabled)) pragma output(
+    `
+        if (`enabled`)
+            glEnable (GL_DEPTH_TEST);
+        else
+            glDisable(GL_DEPTH_TEST);
+    `);
+
+    // OpenGL reference:
+    //
+    // Even if the depth buffer exists and the depth mask is non-zero,
+    //  the depth buffer is not updated if the depth test is disabled.
+    //   In order to unconditionally write to the depth buffer,
+    //    the depth test should be enabled and set to GL_ALWAYS
+    //
+    if (enabled /* := test != "always" || write */)
+    {
+        if (rs.depth_func.set(func)) pragma output(
+        `
+            glDepthFunc(`func.gl_testfunc`);
+        `);
+
+        rs.dedupe_glDepthMask(depth_write);
+    }
+}
+
+
+//
+
+fn updateStencilTestAndWrite(ref rs: ROPState, stencil_front!F: Stencil, stencil_back!B: Stencil)
+{
+    :STENCIL_OP
+    {
+        fn gl(s: StencilOp)
+        {
+            // #define GL_KEEP 0x1E00
+            // #define GL_REPLACE 0x1E01
+            // #define GL_INCR 0x1E02
+            // #define GL_DECR 0x1E03
+            //
+            // #define GL_ZERO 0
+            // #define GL_INVERT 0x150A
+            //
+            // #define GL_INCR_WRAP 0x8507
+            // #define GL_DECR_WRAP 0x8508
+
+            mut ret: u32 = 0;
+            pragma output(
+            `
+                switch (`s`) {
+                    case `StencilOp.Keep`:      return `ret` = GL_KEEP;
+                    case `StencilOp.Replace`:   return `ret` = GL_REPLACE;
+                    case `StencilOp.Incr`:      return `ret` = GL_INCR;
+                    case `StencilOp.Decr`:      return `ret` = GL_DECR;
+
+                    case `StencilOp.Zero`:      return `ret` = GL_ZERO;
+                    case `StencilOp.Invert`:    return `ret` = GL_INVERT;
+
+                    case `StencilOp.IncrWrap`:  return `ret` = GL_INCR_WRAP;
+                    case `StencilOp.DecrWrap`:  return `ret` = GL_DECR_WRAP;
+                }
+
+                assert(false);
+            `);
+
+            return ret;
+        }
+
+        fn StencilOps(s: Stencil)   = StencilOps(s.write_sfail.u32       )
+                                    | StencilOps(s.write_dpfail.u32 <<  8)
+                                    | StencilOps(s.write_dppass.u32 << 16);
+
+        let front_ops = StencilOps(F);
+        let back_ops  = StencilOps(B);
+
+        //
+        let enabled = front_ops && F.write_mask || !!F.test_func
+                    || back_ops && B.write_mask || !!B.test_func;
+
+        if (rs.stencil_enabled.set(enabled)) pragma output(
+        `
+            if (`enabled`)
+                glEnable (GL_STENCIL_TEST);
+            else
+                glDisable(GL_STENCIL_TEST);
+        `);
+
+        if !(enabled)
+            return;
+
+        //
+        if (rs.stencil_front.ops != front_ops)
+        {
+            let set_both = front_ops == back_ops;
+
+            pragma output(`
+                glStencilOpSeparate(
+                    `set_both` ? GL_FRONT_AND_BACK : GL_FRONT,
+                    `F.write_sfail.gl`, `F.write_dpfail.gl`, `F.write_dppass.gl`);
+            `);
+
+            rs.stencil_front.ops = front_ops;
+            if (set_both) {
+                rs.stencil_back.ops = back_ops;
+                break :STENCIL_OP;
+            }
+        }
+
+        if (rs.stencil_back.ops != back_ops)
+        {
+            pragma output(`
+                glStencilOpSeparate(
+                    GL_BACK,
+                    `B.write_sfail.gl`, `B.write_dpfail.gl`, `B.write_dppass.gl`);
+            `);
+
+            rs.stencil_back.ops = back_ops;
+        }
+    }
+
+    :STENCIL_FUNC
+    {
+        fn StencilFunc(s: Stencil)  = StencilFunc(s.ref.u32            )
+                                    | StencilFunc(s.test_func.u32 <<  8)
+                                    | StencilFunc(s.test_mask.u32 << 16);
+
+        let front_func = StencilFunc(F);
+        let back_func  = StencilFunc(B);
+
+        if (rs.stencil_front.func != front_func)
+        {
+            let set_both = front_func == back_func;
+
+            pragma output(`
+                glStencilFuncSeparate(
+                    `set_both` ? GL_FRONT_AND_BACK : GL_FRONT,
+                    `F.test_func.gl_testfunc`, `F.ref`, `F.test_mask`);
+            `);
+
+            rs.stencil_front.func = front_func;
+            if (set_both) {
+                rs.stencil_back.func = back_func;
+                break :STENCIL_FUNC;
+            }
+        }
+
+        if (rs.stencil_back.func != back_func)
+        {
+            pragma output(`
+                glStencilFuncSeparate(
+                    GL_BACK,
+                    `B.test_func.gl_testfunc`, `B.ref`, `B.test_mask`);
+            `);
+
+            rs.stencil_back.func = back_func;
+        }
+    }
+
+    :STENCIL_MASK
+    {
+        let front_mask = u32(F.write_mask);
+        let back_mask  = u32(B.write_mask);
+
+        if (rs.stencil_front.mask != front_mask)
+        {
+            let set_both = front_mask == back_mask;
+
+            // TODO FIX DUPLICATION - glClear also sets the GL_FRONT write mask!
+            //  A] we either want to move the stencil & color write-masks at the pass level -
+            //  B] or we want to have separate masks for clears and writes, writes at ROP, clears at Pass
+            //  C] OR we want to make clears ROP-level functionality, which is a bit questionable as well
+            //
+            pragma output(`
+                glStencilMaskSeparate(
+                    `set_both` ? GL_FRONT_AND_BACK : GL_FRONT,
+                    `front_mask`);
+            `);
+
+            rs.stencil_front.mask = front_mask;
+            if (set_both) {
+                rs.stencil_back.mask = back_mask;
+                break :STENCIL_MASK;
+            }
+        }
+
+        if (rs.stencil_back.mask != back_mask)
+        {
+            pragma output(`
+                glStencilMaskSeparate(
+                    GL_BACK,
+                    `back_mask`);
+            `);
+
+            rs.stencil_back.mask = back_mask;
+        }
+    }
+}
+
+
+//
+
+pub fn update(ref rs: ROPState, pass: Pass, device_rect: u64)
+{
+    // TODO there's some heavy w/h redundancy here.
+    rs.updateViewport(pass.viewport
+        ? pass.viewport
+        : pass.fbo.outputs
+            ? u64(pass.fbo.outputs[0].w) << 32
+            | u64(pass.fbo.outputs[0].h) << 48
+            : device_rect);
+
+    rs.updateScissor(pass.scissor);
+}
+
+pub fn update(ref rs: ROPState, rop: ROP, has_depth_buffer!: bool)
+{
+    rs.updateDepthTestAndWrite(
+        :rop.flags, :rop.depth_test, :has_depth_buffer);
+
+    rs.updateCullFace(
+        rop.flags & "Cull_disable"      ? "Disabled"
+            : rop.flags & "Cull_ccw"    ? "CullCCW"
+                                        : "CullCW");
+
+    rs.updatePolygonOffset(:rop.offset.factor, :rop.offset.units);
+
+    rs.updateStencilTestAndWrite(
+        :rop.stencil_front, :rop.stencil_back);
+}
+
+
+//
+
+using flags GL_ClearBits: u32
+{
+    GL_DEPTH_BUFFER_BIT     = 0x00000100
+    GL_STENCIL_BUFFER_BIT   = 0x00000400
+    GL_COLOR_BUFFER_BIT     = 0x00004000
+};
+
+pub fn clear(ref rs: ROPState, cmd: Clear)
+{
+    mut bits: GL_ClearBits;
+
+
+    // Clear prep.
+    //  Here assuming that clearing both
+    //   is faster than clearing either.
+
+    if (cmd.mask & CLR_Depth_clear)
+    {
+        bits |= GL_DEPTH_BUFFER_BIT;
+        if (cmd.mask & CLR_Stencil_dontCare)
+            bits |= GL_STENCIL_BUFFER_BIT;
+    }
+
+    if (cmd.mask & CLR_Stencil_clear)
+    {
+        bits |= GL_STENCIL_BUFFER_BIT;
+        if (cmd.mask & CLR_Depth_dontCare)
+            bits |= GL_DEPTH_BUFFER_BIT;
+    }
+
+    if (cmd.mask & CLR_Color_clear)
+        bits |= GL_COLOR_BUFFER_BIT;
+
+
+    // For glClear to do anything,
+    //  the respective write masks must be enabled.
+    //
+    // Color write masks are currently always enabled,
+    //  depth needs toggling, and stencil is currently not implemented.
+
+    if (bits & GL_DEPTH_BUFFER_BIT)
+    {
+        rs.dedupe_glDepthMask(true);
+
+        if (rs.depth_clear.set(cmd.depth)) pragma output(
+        `
+            glClearDepthf(`cmd.depth`);
+        `);
+    }
+
+    if (bits & GL_STENCIL_BUFFER_BIT)
+    {
+        // TODO FIX we want a user configurable mask here -
+        //  something alla stencil_protect, keep_mask, stencil_keep, lock or smth.
+        //
+        // TODO FIX duplication, see comment in updateStencilTestAndWrite
+        //
+        let mask = 0xff;
+        if (rs.stencil_front.mask != mask) pragma output(
+        `
+            glStencilMaskSeparate(GL_FRONT, `rs.stencil_front.mask = mask`);
+        `);
+
+        // TODO stencil write mask, enabled by default, currently never disabled,
+        //  note we can expose two write masks - for front and back facing polygons
+
+        if (rs.stencil_clear.set(cmd.stencil)) pragma output(
+        `
+            glClearStencil(`cmd.stencil`);
+        `);
+    }
+
+    if (bits & GL_COLOR_BUFFER_BIT)
+    {
+        // TODO color write mask
+        //  currently always enabled (enabled by default, never disabled)
+
+        // TODO ideally color write masks should be deduped by target.
+
+        // TODO can/should we extend this to color-per-target?
+        //  can be implemented with a sequence of glColorMaski + gcClearColor + glClear calls,
+        //   although clearly not amazing.
+
+        if (rs.color_clear.set(cmd.color)) pragma output(
+        `
+            glClearColor(`cmd.color.x`, `cmd.color.y`, `cmd.color.z`, `cmd.color.w`);
+        `);
+    }
+
+
+    // Dispatch.
+
+    if (bits) pragma output(
+    `
+        glClear(`bits`);
+    `);
+}

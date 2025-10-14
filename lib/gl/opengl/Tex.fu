@@ -1,0 +1,541 @@
+import gl;
+
+pragma include(
+    "<glad/glad.h>",
+    "<stdio.h>");
+
+pub struct Tex
+{
+    handle:         utils::Handle;
+
+    format:         TextureFormat;
+    flags:          TextureFlags;
+    compare_mode:   DepthTest;
+    level:          TextureLevel;
+    level_count:    TextureLevel;
+    level_allocs:   TextureLevel;
+
+    w:              i16;
+    h:              i16;
+    data:           string;
+}
+
+
+//
+
+enum Mode: u32 {
+    GL_TEXTURE_2D               = 0x0DE1
+    GL_TEXTURE_CUBE_MAP         = 0x8513
+    GL_RENDERBUFFER             = 0x8D41
+}
+
+pub fn mode(flags: TextureFlags): Mode
+{
+    if (flags & T_cubemap)
+        return "GL_TEXTURE_CUBE_MAP";
+
+    if (flags & T_nosample)
+        return "GL_RENDERBUFFER";
+
+    return "GL_TEXTURE_2D";
+}
+
+enum Filter: i32 {
+    GL_NEAREST                  = 0x2600
+    GL_LINEAR                   = 0x2601
+    GL_NEAREST_MIPMAP_NEAREST   = 0x2700
+    GL_LINEAR_MIPMAP_NEAREST    = 0x2701
+    GL_NEAREST_MIPMAP_LINEAR    = 0x2702
+    GL_LINEAR_MIPMAP_LINEAR     = 0x2703
+}
+
+enum Wrap: i32 {
+    GL_CLAMP_TO_EDGE            = 0x812F
+    GL_REPEAT                   = 0x2901
+}
+
+
+//
+
+pub fn free(ref t: Tex)
+{
+    if (t.handle)
+    {
+        if (t.flags.mode == "GL_RENDERBUFFER")
+        {
+            dbg::ln("   FREE renderbuffer(" t.handle ")");
+
+            pragma output(
+            `
+                glDeleteRenderbuffers(1, &`t.handle`);
+            `);
+        }
+        else
+        {
+            dbg::ln("   FREE texture(" t.handle ")");
+
+            pragma output(
+            `
+                glDeleteTextures(1, &`t.handle`);
+            `);
+        }
+    }
+
+    t = [];
+}
+
+
+//
+
+fn initOpenGLDefaultsForDedupeWith(lax new_flags: TextureFlags)
+{
+    // The initial value of GL_TEXTURE_MAG_FILTER is GL_LINEAR.
+    return T_linear_mag
+
+    // The initial value of GL_TEXTURE_MIN_FILTER is GL_NEAREST_MIPMAP_LINEAR.
+         | /* NEAREST */T_mipmap_linear;
+}
+
+
+//
+
+struct Internal_and_DataBuffer_formats
+{
+    // The on-chip data format.
+    true internal_format:   u32;
+
+    // Expected .data buffer format.
+    data_format:            u32;
+    data_type:              u32;
+    texel_bytes:            int;
+}
+
+pub fn updateAndBind(
+    ref t:          Tex,
+    spec:           Texture,
+
+    for_sampling!:  bool)
+{
+    return t.updateAndBind(
+        :spec.format, :spec.flags, :spec.compare_mode, :spec.w, :spec.h, spec.data,
+        :spec.level, :spec.level_count,
+        :for_sampling);
+}
+
+fn updateAndBind(
+    ref t:          Tex,
+
+    format:         TextureFormat,
+    flags:          TextureFlags,
+    compare_mode:   DepthTest,
+    level:          TextureLevel,
+    level_count:    TextureLevel,
+
+    w:              i16,
+    h:              i16,
+    data:           string,
+
+    // TODO FIX - these should ideally be different calls,
+    //  but currently this is the most compact option I have here
+    for_sampling!:  bool)
+{
+    // No clean switch between renderbuffer & texture.
+    let old_mode = t.flags.mode;
+    let new_mode =   flags.mode;
+
+    if (t.handle && old_mode != new_mode)
+    {
+        dbg::warn("REALLOC texture(" ~ t.handle ~ ") because mode change: " ~ old_mode ~ " -> " ~ new_mode);
+
+        free(t);
+    }
+
+    // Renderbuffer reset.
+    if (new_mode == "GL_RENDERBUFFER")
+    {
+        // T_nosample === renderbuffer don't support
+        //  sampler parameters (e.g. filtering, etc),
+        //   since you can't sample renderbuffers.
+        //
+        assert(flags == T_nosample && !compare_mode);
+
+        if (!t.handle)
+        {
+            pragma output(
+            `
+                glGenRenderbuffers(1, &`t.handle`);
+            `);
+
+            dbg::ln("  ALLOC renderbuffer(" t.handle ") format(" format ")");
+        }
+
+        pragma output(
+        `
+            glBindRenderbuffer(GL_RENDERBUFFER, `t.handle`);
+        `);
+
+        assert(!data);
+        if (format != t.format || w != t.w || h != t.h)
+        {
+            update_Renderbuffer(:format, :w, :h);
+
+            t.w             = w;
+            t.h             = h;
+            t.format        = format;
+
+            t.flags         = T_nosample;
+            t.compare_mode  = [];
+            t.data          = [];
+        }
+
+        ////////////////////////////////////////////////////////////////
+        // Renderbuffer doesn't need the sampling stuff below.
+        assert(!for_sampling);
+        return t;
+        ////////////////////////////////////////////////////////////////
+    }
+
+    //
+    if (!t.handle)
+    {
+        pragma output(
+        `
+            glGenTextures(1, &`t.handle`);
+        `);
+
+        t.flags         = initOpenGLDefaultsForDedupeWith(new_flags: flags);
+
+        dbg::ln("  ALLOC texture(" t.handle ") mode(" new_mode ") format(" format ") w(" w ") h(" h ")");
+    }
+
+    if (new_mode == "GL_TEXTURE_CUBE_MAP")
+    {
+        // Cubemap reset.
+        pragma output(
+        `
+            glBindTexture(GL_TEXTURE_CUBE_MAP, `t.handle`);
+        `);
+
+        assert(!data);
+        if (format != t.format || w != t.w || h != t.h)
+        {
+            update_Cubemap(:format, :w, :h);
+
+            t.w             = w;
+            t.h             = h;
+            t.format        = format;
+            t.data          = [];
+            t.level_allocs  = 0;
+        }
+    }
+    else
+    {
+        // Texture update.
+        pragma output(
+        `
+            glBindTexture(GL_TEXTURE_2D, `t.handle`);
+        `);
+
+        if (!utils::shallow_eq(t.data, data)
+                || format != t.format || w != t.w || h != t.h)
+        {
+            if (t.format && (t.format != format || t.w != w || t.h != h))
+                dbg::warn("  BREAK texture(" ~ t.handle ~ ")" ~
+                    (t.format != format && " format(" ~ t.format ~ " -> " ~ format ~ ")") ~
+                    (t.w != w && " w(" ~ t.w ~ " -> " ~ w ~ ")") ~
+                    (t.h != h && " h(" ~ t.h ~ " -> " ~ h ~ ")"));
+
+            update_Texture2D(:format, :w, :h, :data);
+
+            t.w             = w;
+            t.h             = h;
+            t.format        = format;
+            t.data          = data;
+            t.level_allocs  = 0;
+        }
+    }
+
+    if (for_sampling)
+    {
+        if (flags != t.flags || compare_mode != t.compare_mode)
+        {
+            updateSampling(new_mode, t.flags, :flags, t.compare_mode, :compare_mode);
+
+            t.flags         = flags;
+            t.compare_mode  = compare_mode;
+        }
+
+        if (level != t.level || level_count != t.level_count)
+        {
+            updateSamplingLevel(new_mode, t.level, :level, t.level_count, :level_count);
+
+            t.level         = level;
+            t.level_count   = level_count;
+        }
+    }
+    else
+    {
+        // TODO FIX this is not ideal, we ended up with two paths for these things again
+        if (t.level_allocs < level)
+        {
+            do {
+                shadow let level = ++t.level_allocs;
+
+                mut wl = w >> level.i16;
+                mut hl = h >> level.i16;
+                assert((wl > 0 || hl > 0) && wl <= w && hl <= h);
+                wl = max(1, wl);
+                hl = max(1, hl);
+
+                if (new_mode == "GL_TEXTURE_CUBE_MAP")
+                    update_Cubemap(:format, wl, hl, :level);
+                else
+                    update_Texture2D(:format, wl, hl, :level);
+            }
+            while (t.level_allocs < level && (w > 1 || h > 1));
+        }
+    }
+
+    return t;
+}
+
+
+//
+
+fn getFormats(format: TextureFormat): Internal_and_DataBuffer_formats
+{
+    mut f: Internal_and_DataBuffer_formats;
+
+    pragma emit(
+    `
+        switch (`format`)
+        {
+            case `TextureFormat.r8un`: return `f` = {
+                GL_R8, GL_RED, GL_UNSIGNED_BYTE, 1*1 };
+
+            case `TextureFormat.rg8un`: return `f` = {
+                GL_RG8, GL_RG, GL_UNSIGNED_BYTE, 2*1 };
+
+            case `TextureFormat.rgba8un`: return `f` = {
+                GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, 4*1 };
+
+            //
+            case `TextureFormat.r16un`: return `f` = {
+                GL_R16, GL_RED, GL_UNSIGNED_SHORT, 1*2 };
+
+            case `TextureFormat.rg16un`: return `f` = {
+                GL_RG16, GL_RG, GL_UNSIGNED_SHORT, 2*2 };
+
+            case `TextureFormat.rgba16un`: return `f` = {
+                GL_RGBA16, GL_RGBA, GL_UNSIGNED_SHORT, 4*2 };
+
+            //
+            case `TextureFormat.r32ui`: return `f` = {
+                GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, 1*4 };
+
+            //
+            case `TextureFormat.r16f`: return `f` = {
+                GL_R16F, GL_RED, GL_HALF_FLOAT, 1*2 };
+
+            case `TextureFormat.rg16f`: return `f` = {
+                GL_RG16F, GL_RG, GL_HALF_FLOAT, 2*2 };
+
+            case `TextureFormat.rgba16f`: return `f` = {
+                GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, 4*2 };
+
+            //
+            case `TextureFormat.r32f`: return `f` = {
+                GL_R32F, GL_RED, GL_FLOAT, 1*4 };
+
+            case `TextureFormat.rg32f`: return `f` = {
+                GL_RG32F, GL_RG, GL_FLOAT, 2*4 };
+
+            case `TextureFormat.rgba32f`: return `f` = {
+                GL_RGBA32F, GL_RGBA, GL_FLOAT, 4*4 };
+
+            //
+            case `TextureFormat.rgb10a2un`: return `f` = {
+                GL_RGB10_A2,
+                GL_RGBA, GL_UNSIGNED_INT_2_10_10_10_REV, 4 };
+
+            case `TextureFormat.rg11b10f`: return `f` = {
+                GL_R11F_G11F_B10F,
+                GL_RGB, GL_HALF_FLOAT, 3*2 }; // TODO FIX very questionable
+
+            // Format & type as per the last table on
+            //  https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml
+            case `TextureFormat.d24_s8`: return `f` = {
+                GL_DEPTH24_STENCIL8,
+                GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 4 };
+
+            // Format & type as per the last table on
+            //  https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml
+            case `TextureFormat.d16`: return `f` = {
+                GL_DEPTH_COMPONENT16,
+                GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, 2 };
+
+            // Format & type as per the last table on
+            //  https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml
+            case `TextureFormat.d32f`: return `f` = {
+                GL_DEPTH_COMPONENT32F,
+                GL_DEPTH_COMPONENT, GL_FLOAT, 4 };
+        }
+    `);
+
+    if (!f)
+        dbg::ln("     GL_ERROR   Unknown Texture.type.");
+
+    return f;
+}
+
+fn update_Texture2D(format: TextureFormat, w: i16, h: i16, data: string)
+{
+    using getFormats(format);
+
+    assert(!data || data.len == texel_bytes * w.int * h.int);
+
+    pragma output(
+    `
+        glTexImage2D(GL_TEXTURE_2D,
+            /*level*/0, GLint(`internal_format`),
+            `w`, `h`, /*border*/0,
+
+            // Upload.
+            `data_format`,
+            `data_type`,
+            `data` ? `data`.data() : nullptr);
+    `);
+}
+
+fn update_Texture2D(format: TextureFormat, w: i16, h: i16, level: TextureLevel)
+{
+    using getFormats(format);
+
+    dbg::ln("  ALLOC GL_TEXTURE_2D level(" level ") format(" format ") w(" w ") h(" h ")");
+
+    pragma output(
+    `
+        glTexImage2D(GL_TEXTURE_2D,
+            `level`, GLint(`internal_format`),
+            `w`, `h`, /*border*/0,
+
+            // Upload.
+            `data_format`,
+            `data_type`,
+            /*data*/nullptr);
+    `);
+}
+
+fn update_Renderbuffer(format: TextureFormat, w: i16, h: i16)
+{
+    using getFormats(format);
+
+    pragma output(
+    `
+        glRenderbufferStorage(GL_RENDERBUFFER,
+            `internal_format`, `w`, `h`);
+    `);
+}
+
+fn update_Cubemap(format: TextureFormat, w: i16, h: i16, level: TextureLevel = 0)
+{
+    using getFormats(format);
+
+    dbg::ln("  ALLOC GL_TEXTURE_CUBE_MAP level(" level ") format(" format ") w(" w ") h(" h ")");
+
+    /////////////////////////////////
+    //                             //
+    // TODO glTexStorage2D instead //
+    //                             //
+    /////////////////////////////////
+
+    pragma output(
+    `
+        for (unsigned int i = 0; i < 6; ++i)
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                `level`, GLint(`internal_format`),
+                `w`, `h`, /*border*/0,
+                `data_format`, `data_type`, nullptr);
+    `);
+}
+
+
+// Updating stuff.
+
+fn min_filter(flags: TextureFlags): Filter {
+    return flags & T_linear_min
+
+         ? flags & T_mipmap_linear  ? "GL_LINEAR_MIPMAP_LINEAR"
+         : flags & T_mipmap_nearest ? "GL_LINEAR_MIPMAP_NEAREST"
+                                    : "GL_LINEAR"
+
+         : flags & T_mipmap_linear  ? "GL_NEAREST_MIPMAP_LINEAR"
+         : flags & T_mipmap_nearest ? "GL_NEAREST_MIPMAP_NEAREST"
+                                    : "GL_NEAREST";
+}
+
+fn mag_filter(flags: TextureFlags): Filter {
+    return flags & T_linear_mag ? "GL_LINEAR" : "GL_NEAREST";
+}
+
+fn wrap_s(flags: TextureFlags): Wrap = flags & T_clamp_u ? "GL_CLAMP_TO_EDGE" : "GL_REPEAT";
+fn wrap_t(flags: TextureFlags): Wrap = flags & T_clamp_v ? "GL_CLAMP_TO_EDGE" : "GL_REPEAT";
+
+fn updateSampling(t: Mode,
+    prev: TextureFlags, flags!next: TextureFlags,
+    prev_cmp: DepthTest, compare_mode!next_cmp: DepthTest)
+{
+    dbg::ln(" UPDATE " t " sampling(" prev " -> " next ")",
+        prev_cmp != next_cmp && " compare(" ~ prev_cmp ~ " -> " ~ next_cmp ~ ")");
+
+    // Nearest, linear, trilinear.
+    if ((v := next.min_filter) != prev.min_filter) pragma output(`
+        glTexParameteri(`t`, GL_TEXTURE_MIN_FILTER, `v`);
+    `);
+
+    if ((v := next.mag_filter) != prev.mag_filter) pragma output(`
+        glTexParameteri(`t`, GL_TEXTURE_MAG_FILTER, `v`);
+    `);
+
+    // Repeat vs clamp.
+    if ((v := next.wrap_s) != prev.wrap_s) pragma output(`
+        glTexParameteri(`t`, GL_TEXTURE_WRAP_S, `v`);
+    `);
+
+    if ((v := next.wrap_t) != prev.wrap_t) pragma output(`
+        glTexParameteri(`t`, GL_TEXTURE_WRAP_T, `v`);
+    `);
+
+    // Shadow sampler mode.
+    {
+        if (prev_cmp != next_cmp)
+        {
+            if (!prev_cmp != !next_cmp) pragma output(`
+                glTexParameteri(`t`, GL_TEXTURE_COMPARE_MODE,
+                                     `next_cmp` ? GL_COMPARE_REF_TO_TEXTURE
+                                                : GL_NONE);
+            `);
+
+            if (next_cmp) pragma output(`
+                glTexParameteri(`t`, GL_TEXTURE_COMPARE_FUNC,
+                                     GLint(`next_cmp.gl_testfunc`));
+            `);
+        }
+    }
+}
+
+fn updateSamplingLevel(t: Mode,
+    prev_level:       TextureLevel, level:       TextureLevel,
+    prev_level_count: TextureLevel, level_count: TextureLevel)
+{
+    // Muting this, too spammy when rendering mipmap chains.
+    if (1 > 2)
+        dbg::ln(" UPDATE " t " level(" prev_level " -> " level ")",
+            prev_level_count != level_count && " level_count(" ~ prev_level_count ~ " -> " ~ level_count ~ ")");
+
+    // Mipmap levels.
+    pragma output(`
+        glTexParameteri(`t`, GL_TEXTURE_BASE_LEVEL, `level`);
+        glTexParameteri(`t`, GL_TEXTURE_MAX_LEVEL, `level_count ? level.int + level_count.int - 1 : 1000/*the default*/`);
+    `);
+}

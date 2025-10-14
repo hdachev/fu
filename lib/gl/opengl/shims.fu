@@ -1,0 +1,40 @@
+
+pragma include(
+    "<glad/glad.h>",
+    "<stdio.h>",
+    "<assert.h>");
+
+pragma emit_top(
+`
+    static void glTexStorage2D_410_shim(
+        GLenum target,
+        GLsizei levels,
+        GLenum internalformat,
+        GLsizei w,
+        GLsizei h)
+    {
+        assert(w > 0 && h > 0 && levels > 0);
+
+        // TODO handle cubemaps, see pseudocode here -
+        //  https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexStorage2D.xhtml
+        //
+        for (GLsizei i = 0; i < levels; i++)
+        {
+            glTexImage2D(target, i, GLint(internalformat), w, h, 0, /*format*/0, /*type*/0, nullptr);
+
+            w = w / 2; w = w > 0 ? w : 1;
+            h = h / 2; h = h > 0 ? h : 1;
+
+            assert(w > 1 || h > 1 || i == levels - 1);
+        }
+    }
+`);
+
+fn shimMissingFunctionality()
+{
+    pragma output(
+    `
+        if (glTexStorage2D == nullptr)
+            glTexStorage2D = glTexStorage2D_410_shim;
+    `);
+}

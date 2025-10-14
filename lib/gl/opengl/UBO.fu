@@ -1,0 +1,29 @@
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+struct BindingPoint
+{
+    index:              u32;
+    currently_bound?:   utils::Handle;
+}
+
+fn updateAndBind(
+    ref bp:             BindingPoint,
+    ref ubo:            ::Buffer,
+        data:           string)
+{
+    ubo.update("GL_UNIFORM_BUFFER", data);
+
+    if (bp.currently_bound != ubo.handle)
+    {
+        bp.currently_bound = ubo.handle;
+
+        pragma output(
+        `
+            glBindBufferBase(GL_UNIFORM_BUFFER,
+                `bp.index`, `ubo.handle`);
+        `);
+    }
+}

@@ -1,0 +1,231 @@
+import gl;
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+struct Output
+{
+    tex_handle:     utils::Handle;
+    format:         TextureFormat;
+    flags:          TextureFlags;
+    layer:          TextureLayer;
+    level:          TextureLevel;
+}
+
+struct Outputs
+{
+    count:          int;
+    arr:            Array::Array16(Output);
+}
+
+fn Outputs(mut count: int, get_output!)
+{
+    mut result: Outputs;
+
+    // List outputs for dedupe.
+    assert(count.unsigned <= 16);
+    count   = count.unsigned < 16
+            ? count          : 16;
+
+    result.count = count;
+    for (mut i = 0; i < count; i++)
+        result.arr[i] = get_output(i);
+
+    //
+    return result;
+}
+
+fn has_depth_buffer(using _: Outputs)
+{
+    for (mut i = 0; i < count; i++)
+        if (arr[i].format.has_depth)
+            return true;
+
+    return false;
+}
+
+
+//
+
+enum Diff {
+    None
+    LayersAndLevelsOnly
+    CountFormatsOrFlags
+}
+
+fn diff(a: Outputs, b: Outputs): Diff
+{
+    if (a.count != b.count)
+        return "CountFormatsOrFlags";
+
+    mut diff: Diff;
+    for (mut i = 0; i < a.count; i++)
+    {
+        shadow let a = a.arr[i];
+        shadow let b = b.arr[i];
+
+        for (fieldname i: Output)
+        {
+            if (a.i != b.i)
+            {
+                if (typeof(a.i) -> TextureLayer || typeof(a.i) -> TextureLevel)
+                    diff = "LayersAndLevelsOnly";
+                else
+                    return "CountFormatsOrFlags";
+            }
+        }
+    }
+
+    return diff;
+}
+
+
+//
+
+struct FBO
+{
+    handle:         utils::Handle;
+    outputs:        Outputs;
+}
+
+fn free(ref fbo: FBO)
+{
+    if (fbo.handle)
+    {
+        dbg::ln("   FREE framebuffer(" fbo.handle ")");
+
+        pragma output(`
+            glDeleteFramebuffers(1, &`fbo.handle`);
+        `);
+    }
+
+    fbo = [];
+}
+
+fn updateAndBindOutputs(ref fbo: FBO, outputs: Outputs)
+{
+    let diff = fbo.outputs.diff(outputs);
+
+    if (diff)
+    {
+        // Rebuild from scratch.
+        if (diff > "LayersAndLevelsOnly")
+        {
+            fbo.free();
+
+            if (outputs.count > 0)
+            {
+                pragma output(
+                `
+                    glGenFramebuffers(1, &`fbo.handle`);
+                `);
+
+                dbg::ln(" CREATE fbo(" fbo.handle ") outputs.count(" outputs.count ")");
+            }
+        }
+    }
+
+    // Bind and setup.
+    pragma output(
+    `
+        glBindFramebuffer(
+            GL_FRAMEBUFFER, `fbo.handle`);
+    `);
+
+    if (diff && outputs.count > 0)
+    {
+        // We won't log here unless we're updating more than one output -
+        //  switching a single attachment should be about as fast as switching FBOs.
+        //
+        // Common sentiment online is that changing attachments should be slower.
+        //  The only perf data I found suggested the opposite.
+        //
+        // Benchmarking here is trivial - just use different FBO ids
+        //  and you'll be switching FBOs instead.
+        //
+        if (outputs.count > 1)
+            if (diff == "LayersAndLevelsOnly")
+                dbg::ln(" UPDATE fbo(" fbo.handle ") outputs.count(" outputs.count ")");
+
+        // Attach outputs.
+        mut num_colors: int;
+        for (mut i = 0; i < outputs.count; i++)
+        {
+            ref out         = outputs.arr[i];
+
+            let mode        = out.flags.Tex::mode;
+            let has_depth   = out.format.has_depth;
+            let has_stencil = out.format.has_stencil;
+
+            pragma output(
+            `
+                GLenum index    = `!has_depth`  ? GL_COLOR_ATTACHMENT0 + GLenum(`num_colors`++)
+                                : `has_stencil` ? GL_DEPTH_STENCIL_ATTACHMENT
+                                                : GL_DEPTH_ATTACHMENT
+                                                ;
+
+                if (`mode == "GL_RENDERBUFFER", `)
+                    glFramebufferRenderbuffer(
+                        GL_FRAMEBUFFER, index,
+                        GL_RENDERBUFFER, `out`.tex_handle);
+
+                else if (`mode == "GL_TEXTURE_CUBE_MAP", `)
+                    glFramebufferTexture2D(
+                        GL_FRAMEBUFFER, index,
+                        GL_TEXTURE_CUBE_MAP_POSITIVE_X + GLenum(`out`.layer), `out`.tex_handle,
+                        `out`.level);
+
+                else
+                    glFramebufferTexture2D(
+                        GL_FRAMEBUFFER, index,
+                        GL_TEXTURE_2D, `out`.tex_handle,
+                        `out`.level);
+            `);
+        }
+
+        // And there's this gem too.
+        pragma output(
+        `
+            const GLenum COLOR_ATTACHMENTS[16] =
+            {
+                GL_COLOR_ATTACHMENT0,
+                GL_COLOR_ATTACHMENT1,
+                GL_COLOR_ATTACHMENT2,
+                GL_COLOR_ATTACHMENT3,
+
+                GL_COLOR_ATTACHMENT4,
+                GL_COLOR_ATTACHMENT5,
+                GL_COLOR_ATTACHMENT6,
+                GL_COLOR_ATTACHMENT7,
+
+                GL_COLOR_ATTACHMENT8,
+                GL_COLOR_ATTACHMENT9,
+                GL_COLOR_ATTACHMENT10,
+                GL_COLOR_ATTACHMENT11,
+
+                GL_COLOR_ATTACHMENT12,
+                GL_COLOR_ATTACHMENT13,
+                GL_COLOR_ATTACHMENT14,
+                GL_COLOR_ATTACHMENT15,
+            };
+
+            glDrawBuffers(num_colors, COLOR_ATTACHMENTS);
+        `);
+
+        fbo.outputs = outputs;
+    }
+
+    pragma output(
+    `
+        #ifndef NDEBUG
+        if (`fbo.handle`)
+        {
+            // Debug.
+            auto e = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+            if (e != GL_FRAMEBUFFER_COMPLETE)
+                printf("  \e[0;31mERROR\e[0m glCheckFramebufferStatus != GL_FRAMEBUFFER_COMPLETE x(%X)\\n", e);
+        }
+        #endif //
+    `);
+}

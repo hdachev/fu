@@ -1,0 +1,278 @@
+pragma include(
+    "<glad/glad.h>",
+    "<stdio.h>");
+
+let UBO_bps = [
+    "bp_ubo_Frame\0",
+    "bp_ubo_Pass\0",
+    "bp_ubo_ROP\0",
+];
+
+pub struct Shader
+{
+    handle:         utils::Handle;
+
+    // Dedupe.
+    vert:           string;
+    frag:           string;
+
+    // TODO DEBUG ONLY
+    DEBUG_texunit_expect:   i8[];
+}
+
+pub fn free(ref p: Shader)
+{
+    if (p.handle)
+    {
+        dbg::ln("   FREE shader(" p.handle ")");
+
+        pragma output(`
+            glDeleteProgram(`p.handle`);
+        `);
+    }
+
+    p.handle = 0;
+}
+
+pub fn update(ref p: Shader, vert: string, frag: string)
+{
+    if (!utils::shallow_eq(p.vert, vert) ||
+        !utils::shallow_eq(p.frag, frag))
+    {
+        p.free();
+
+        p.vert      = vert;
+        p.frag      = frag;
+        p.handle    = compile_and_link(:vert, :frag);
+        p.init_ubos_and_texunits();
+
+        assert(vert.has("gl_Position")); // no warning will be issued if you never set gl_Position, and vs will happily do nothing
+
+        dbg::ln(" CREATE shader(" p.handle ")");
+    }
+}
+
+pub fn use(p: Shader)
+{
+    if (p.handle)
+    {
+        pragma output(`
+            glUseProgram(`p.handle`);
+        `);
+
+        return true;
+    }
+
+    return false;
+}
+
+
+//
+
+fn compile_and_link(vert: string, frag: string)
+{
+    shadow let vert = "#version 410 core\n" ~ vert ~ '\0';
+    shadow let frag = "#version 410 core\n" ~ frag ~ '\0';
+
+    //
+    mut handle: utils::Handle;
+
+    // TODO glShaderSource allows us to pass in multiple string chunks,
+    //  and to avoid a null terminator by providing explicit lengths,
+    //   which will cut down on one alloc here.
+    //
+    // void glShaderSource(GLuint shader,
+    //                     GLsizei count,
+    //                     const GLchar **string,
+    //                     const GLint *length);
+
+    //
+    pragma output(
+    `
+        //
+        auto VERT = `vert`.data();
+        auto FRAG = `frag`.data();
+
+        //
+        int success;
+        char infoLog[1024];
+
+        //
+        auto s_vert = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(s_vert, 1, &VERT, NULL);
+        glCompileShader(s_vert);
+
+        glGetShaderiv(s_vert, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(s_vert, 1024, NULL, infoLog);
+            printf("ERR Vertex:\\n%s\\n", infoLog);
+        }
+
+        //
+        auto s_frag = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(s_frag, 1, &FRAG, NULL);
+        glCompileShader(s_frag);
+
+        glGetShaderiv(s_frag, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(s_frag, 1024, NULL, infoLog);
+            printf("ERR Fragment:\\n%s\\n", infoLog);
+        }
+
+        //
+        `handle` = glCreateProgram();
+        glAttachShader(`handle`, s_vert);
+        glAttachShader(`handle`, s_frag);
+        glLinkProgram(`handle`);
+
+        glGetProgramiv(`handle`, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(`handle`, 1024, NULL, infoLog);
+            printf("ERR Program:\\n%s\\n", infoLog);
+
+            glDeleteProgram(`handle`);
+            `handle` = 0;
+        }
+
+        //
+        glDeleteShader(s_vert);
+        glDeleteShader(s_frag);
+
+        //
+        if (!success)
+            return {};
+    `);
+
+    return handle;
+}
+
+
+//
+
+fn init_ubos_and_texunits(ref p: Shader)
+{
+    if (!p.handle)
+        return;
+
+    // Init UBOs.
+    for (mut i = 0; i < UBO_bps.len; i++) pragma input(
+    `
+        auto idx = glGetUniformBlockIndex(`p.handle`,
+            `UBO_bps[i]`.data());
+
+        if (idx != GL_INVALID_INDEX)
+            glUniformBlockBinding(`p.handle`,
+                idx, /*point:*/ `i.unsigned`);
+    `);
+
+    // Init texunits.
+    p.use();
+
+    init_texunits(p.handle, p.vert, p.DEBUG_texunit_expect);
+    init_texunits(p.handle, p.frag, p.DEBUG_texunit_expect);
+}
+
+fn init_texunits(h: utils::Handle, src: string, ref DEBUG_texunit_expect: i8[])
+{
+    mut start:          int;
+    mut last_texunit:   int;
+    mut seen_times:     int;
+
+    for (;;)
+    {
+        // Find a /*texunit_XX*/ or //texunit_XX\n prefix.
+        let match = src.find(:start, "texunit_");
+        if (match < 0)
+            break;
+
+        start = match + 8;
+
+        // Must be a /*texunit_ or //texunit_ prefix.
+        if (match < 2 || src[match - 2] != '/' || ((c := src[match - 1]) != '/' && c != '*'))
+            continue;
+
+        // Parse out the texunit digits.
+        mut texunit: int;
+        while (start < src.len)
+        {
+            let c = src[start];
+            if (c < '0' || c > '9')
+                break;
+
+            texunit *= 10;
+            texunit += c.int - '0'.int;
+            start++;
+        }
+
+        // TODO check that it's followed by a trailing closing comment.
+        // ...
+
+        // So you can have a series of texunit_40,
+        //  and have it mean 40, 41, 42, etc,
+        //   which is more grep-testable.
+        if (last_texunit != texunit)
+        {
+            last_texunit    = texunit;
+            seen_times      = 0;
+        }
+
+        texunit += (seen_times++);
+
+        //
+        if (process::DEBUG)
+        {
+            let index   = texunit / 10;
+            let min_len = texunit - index * 10 + 1;
+
+            ref group   = DEBUG_texunit_expect.ensure(exists: index);
+            group       = max(group, min_len.i8);
+        }
+
+        // Find the end of the declaration,
+        //  we're looking for something like
+        //   /*texunit_00*/ uniform sampler2D NAME;
+        //
+        // So we look for the semi and backtrack to first space.
+        //
+        mut space = 0;
+        while (start < src.len)
+        {
+            let c = src[start];
+            if (c == ' ')
+            {
+                space = start + 1;
+            }
+            else if (c == ';')
+            {
+                if (space)
+                {
+                    let samplerName = src[space .. start] ~ '\0';
+
+                    mut loc: i32;
+                    pragma output(`
+                        `loc` = glGetUniformLocation(`h`, `samplerName`.data());
+                    `);
+
+                    if (loc >= 0)
+                    {
+                        pragma output(`
+                            glUniform1i(`loc`, `texunit`);
+                        `);
+
+                        // dbg::ln("     GL bound /*texunit_" texunit "*/ " samplerName " loc(" loc ")");
+                    }
+                    else
+                    {
+                        dbg::ln("     GL shader(" h ") cannot bind(no loc): /*texunit_" texunit "*/ " samplerName);
+                    }
+                }
+
+                break;
+            }
+
+            start++;
+        }
+    }
+}

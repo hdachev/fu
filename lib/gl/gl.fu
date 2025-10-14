@@ -1,0 +1,533 @@
+pub import vec;
+
+
+//
+
+enum DepthTest: u8          // Note - we're ordering them in reverse
+{                           //  wrt what's in OpenGL, DX, Vulkan & co,
+                            //   we want Always/Disabled as the zero-default.
+                            //
+    Always          = 0;    // #define GL_ALWAYS    0x0207
+    Gteq            = 1;    // #define GL_GEQUAL    0x0206
+    Neq             = 2;    // #define GL_NOTEQUAL  0x0205
+    Gt              = 3;    // #define GL_GREATER   0x0204
+    Lteq            = 4;    // #define GL_LEQUAL    0x0203
+    Eq              = 5;    // #define GL_EQUAL     0x0202
+    Lt              = 6;    // #define GL_LESS      0x0201
+    Never           = 7;    // #define GL_NEVER     0x0200
+}
+
+enum TextureFormat: u8      // Note - OpenGL only requires the following:
+{                           //
+                            //  - RGBA, RG, RED,
+                            //      as unorm 8 and 16,
+                            //      float 16 and 32,
+                            //      or 8, 16 and 32 int/uints;
+                            //
+                            //  - a bunch of special formats, including
+                            //      RGB10_A2, RGB10_A2UI, R11F_G11F_B10F.
+
+        // unorm-start ----------------------------------------
+    r8un
+    rg8un
+    rgba8un
+
+    r16un
+    rg16un
+    rgba16un
+
+    //r32un
+    //rg32un
+    //rgba32un
+
+    rgb10a2un
+        // unorm-end ------------------------------------------
+
+        // uint-start -----------------------------------------
+    //r8ui
+    //rg8ui
+    //rgba8ui
+
+    //r16ui
+    //rg16ui
+    //rgba16ui
+
+    r32ui
+    //rg32ui
+    //rgba32ui
+
+    //rgb10a2ui
+        // uint-end -------------------------------------------
+
+                // float-start --------------------------------
+    r16f        //
+    rg16f       //
+    rgba16f     //
+                //
+    r32f        //
+    rg32f       //
+    rgba32f     //
+                //
+    rg11b10f    //
+                // -------------------- // depth-start --------
+    d16         //                      //
+    d32f        //                      //
+                // float-end ---------- // --------------------
+    d24_s8                              //
+                                        // depth-end ----------
+}
+
+fn has_depth(t: TextureFormat)      t >= "d16";
+fn has_stencil(t: TextureFormat)    t >= "d24_s8";
+
+fn is_unorm(t: TextureFormat)       t <= "rgb10a2un";
+fn is_red_only(t: TextureFormat)    t == "r8un" || t == "r16un" ||
+                                    t == "r32ui" ||
+                                    t == "r16f" || t == "r32f";
+
+using flags TextureFlags: u8
+{
+    T_nosample
+    T_cubemap
+    T_mipmap_nearest
+    T_mipmap_linear
+    T_linear_min
+    T_linear_mag
+    T_clamp_u
+    T_clamp_v
+}
+
+let T_linear        = T_linear_min  | T_linear_mag;
+let T_clamp         = T_clamp_u     | T_clamp_v;
+
+primitive TextureLayer: i16;
+primitive TextureLevel: i8;
+
+struct Texture
+{
+    id:             u64;
+
+    format:         TextureFormat;  //8
+    flags?:         TextureFlags;   //8
+    compare_mode?:  DepthTest;      //8
+
+    // TODO FIX - for output, level_count is IGNORED and we output to level.
+    //          - for sampling, min := level and max := level + count - 1.
+    //              NOTE: vulkan uses base and level_count too.
+    //              NOTE: level_count == 0 implicitly means all levels here.
+    //
+    // This still doesn't help with .data below,
+    //  which would benefit from knowing which level to upload to.
+    //
+    level?:         TextureLevel;   //8
+    level_count?:   TextureLevel;   //8
+    // level_capa?: TextureLevel;   //8 // TODO FIX Tex currently grows on-demand
+
+    w:              i16;
+    h:              i16;
+    layer?:         TextureLayer;   //16
+
+    data?:          byte[];
+};
+
+
+// Up to 8 attributes fit in a single u64 format.
+//  We have 8 per-vert and 8 per-instance, so 16 total
+//   which == the guaranteed minimum of 16 attrib lanes.
+
+primitive Attributes: u64;
+
+using enum AttribType {
+    A_i8        = 1
+    A_u8
+    A_i16
+    A_u16
+    A_i32
+    A_u32
+    A_f32
+};
+
+fn is_integral(attr: AttribType) attr < A_f32;
+
+/*  #define GL_BYTE 0x1400
+    #define GL_UNSIGNED_BYTE 0x1401
+    #define GL_SHORT 0x1402
+    #define GL_UNSIGNED_SHORT 0x1403
+    #define GL_INT 0x1404
+    #define GL_UNSIGNED_INT 0x1405
+    #define GL_FLOAT 0x1406     */
+
+inline fn gl_type(type: AttribType): u32
+    = type.u32 + 0x13ff;
+
+inline fn bytes(type: AttribType): i32
+    = type < A_i16  ? 1
+    : type < A_i32  ? 2
+                    : 4;
+
+inline fn Attrib(type: AttribType, count: i32)
+    = (type.u64.Attributes & 0x7)
+    | (count.u64.Attributes << 3);
+
+inline fn stride(attribs: Attributes): i32 = attribs.each([]);
+
+fn each(attribs: Attributes, each, old_attribs!?: Attributes)
+{
+    mut offset: i32;
+
+    for (mut i = 0; i < 8; i++)
+    {
+        let old     = u8(old_attribs >> (i * 8).u64.Attributes);
+        let here    = u8(    attribs >> (i * 8).u64.Attributes);
+
+        let type    = u8(here & 7)  .AttribType;
+        let count   = u8(here >> 3) .i32;
+        let bytes   = type.bytes * count;
+
+        each(?:old, ?:i, ?:offset, ?:type, ?:count, ?:bytes);
+
+        offset += bytes;
+    }
+
+    return offset; // stride
+}
+
+
+//
+
+struct Geometry
+{
+    id:             u64;
+    vert_attribs:   Attributes;
+    vert_bytes:     byte[];
+    index_bytes:    byte[];
+};
+
+struct Instances
+{
+    id:             u64;
+    inst_attribs:   Attributes;
+    inst_data?:     byte[];
+}
+
+struct Draw
+{
+    index_count:    i32;
+    instance_count: i32;
+
+    base_index?:    i32;
+    base_vertex?:   i32;
+    base_instance?: i32;
+};
+
+struct Batch
+{
+    geometry:       Geometry;
+    instances?:     Instances;
+    draws?:         Draw[];
+};
+
+
+//
+
+struct Mesh
+{
+    index_count:    i32;
+    base_index?:    i32;
+    base_vertex?:   i32;
+};
+
+fn Draw(using m: Mesh, instance_count: i32, base_instance?: i32)
+{
+    return Draw(
+        :index_count,
+        :instance_count,
+        :base_index,
+        :base_vertex,
+        :base_instance);
+}
+
+fn Batch(draw: Draw, geometry: Geometry, instances?: Instances)
+{
+    return Batch(
+        :geometry,
+        :instances,
+        draws: [ draw ]);
+}
+
+
+//
+
+struct Shader
+{
+    id:         u64;
+    sources:    string[];
+};
+
+fn Shader(
+    id:         u64,
+    vert:       string,
+    frag:       string)
+{
+    // TODO one string with separator comments
+    return Shader(:id, [ vert, frag ]);
+}
+
+
+// 2 bits for culling,
+//  defaults to enabled, front=CCW, cull=back.
+
+flags ROPFlags: u8
+{
+    Cull_disable
+    Cull_ccw
+    Depth_write
+}
+
+fn gl_testfunc(v: DepthTest)
+{
+    // Note - we've indexed the enum in reverse,
+    //  so that ROP_always == 0, which disables the test by default.
+    //
+    return 0x0207 - v.u32;
+}
+
+
+// Polygon offset.
+
+struct PolygonOffset
+{
+    factor: f32;
+    units:  f32;
+};
+
+
+// Blending equation.
+//  The default of 0 actually means blending disabled,
+//   so there's no support for the 0 + 0 equation.
+
+// Common factors.
+let B_0                     = 0;
+let B_1                     = 1;
+let B_src_rgba              = 2;
+let B_1_sub_src_rgba        = 3;
+let B_dst_rgba              = 4;
+let B_1_sub_dst_rgba        = 5;
+let B_src_a                 = 6;
+let B_1_sub_src_a           = 7;
+let B_dst_a                 = 8;
+let B_1_sub_dst_a           = 9;
+
+// Exotic factors.
+let B_const_rgba            = 10;
+let B_1_sub_const_rgba      = 11;
+let B_const_a               = 12;
+let B_1_sub_const_a         = 13;
+let B_src_a_sat             = 14;
+let B_dual_rgba             = 15;
+let B_1_sub_dual_rgba       = 16;
+let B_dual_a                = 17;
+let B_1_sub_dual_a          = 18;
+
+// Operators.
+let B_add                   = 0;
+let B_src_sub_dst           = 1;
+let B_dst_sub_src           = 2;
+let B_min                   = 3;
+let B_max                   = 4;
+
+// Component offsets.
+let B_Offset_src_rgb        =  0;
+let B_Offset_dst_rgb        =  6;
+let B_Offset_src_a          = 12;
+let B_Offset_dst_a          = 18;
+
+// Operator offsets.
+let B_Offset_op_rgb         = 24;
+let B_Offset_op_a           = 28;
+
+struct Blend
+{
+    equations:  i32[];
+    constants?: vec4;
+};
+
+
+// Common blend modes.
+
+fn blendEq(
+    src_rgb = B_0, dst_rgb = B_0, op_rgb = B_add,
+    src_a   = B_0, dst_a   = B_0, op_a   = B_add): i32
+{
+    return src_rgb << B_Offset_src_rgb
+         | dst_rgb << B_Offset_dst_rgb
+         | op_rgb  << B_Offset_op_rgb
+         | src_a   << B_Offset_src_a
+         | dst_a   << B_Offset_dst_a
+         | op_a    << B_Offset_op_a;
+}
+
+let BlendEq_None = blendEq();
+
+let BlendEq_Add_RGBA = blendEq(
+    src_rgb: B_1, dst_rgb: B_1,
+    src_a:   B_1, dst_a:   B_1);
+
+let BlendEq_Alpha_RGB = blendEq(
+    src_rgb: B_src_a,
+    dst_rgb: B_1_sub_src_a,
+    dst_a:   B_1);
+
+
+// Stenciling, tests & ops.
+//
+// #define GL_KEEP 0x1E00
+// #define GL_REPLACE 0x1E01
+// #define GL_INCR 0x1E02
+// #define GL_DECR 0x1E03
+//
+// #define GL_ZERO 0
+// #define GL_INVERT 0x150A
+//
+// #define GL_INCR_WRAP 0x8507
+// #define GL_DECR_WRAP 0x8508
+
+enum StencilOp: u8
+{
+    Keep            = 0
+    Replace
+    Incr
+    Decr
+
+    Zero
+    Invert
+
+    IncrWrap
+    DecrWrap
+}
+
+struct Stencil
+{
+    // Ref value used for both test and write, see GL_REPLACE
+    ref:            u8;
+
+    test_func?:     DepthTest;
+    test_mask?:     u8;
+
+    write_sfail?:   StencilOp;
+    write_dpfail?:  StencilOp;
+    write_dppass?:  StencilOp;
+    write_mask?:    u8;
+}
+
+
+// ROP = Raster Operations Pipeline.
+
+struct ROP
+{
+    // Depth, culling & such.
+    flags?:         ROPFlags;
+    depth_test?:    DepthTest;
+    offset?:        PolygonOffset;
+
+    stencil_front?: Stencil;
+    stencil_back?:  Stencil;
+
+    // One blend state per color buffer.
+    blend?:         Blend;
+
+    // Yet another chance to group things together.
+    ubo_ROP?:       byte[];
+    texunit_20?:    Texture[];
+
+    // Shader & geometry.
+    shader:         Shader;
+    batch:          Batch;
+};
+
+
+//
+
+enum BlitCommandType
+{
+    GenerateMipmaps
+}
+
+struct BlitCommand
+{
+    type:       BlitCommandType;
+    id:         u64;
+};
+
+
+//
+
+struct Framebuffer
+{
+    id:         u64;
+    outputs:    Texture[];
+};
+
+
+//
+
+let CLR_Depth_clear         = 1 << 0;
+let CLR_Depth_dontCare      = 2 << 0;
+
+let CLR_Stencil_clear       = 1 << 2;
+let CLR_Stencil_dontCare    = 2 << 2;
+
+let CLR_Color_clear         = 1 << 4;
+let CLR_Color_dontCare      = 2 << 4;
+
+struct Clear
+{
+    mask:       i32;
+    depth?:     f32;
+    stencil?:   i32;
+    color?:     vec4;
+};
+
+let Clear_DepthOnly =
+    Clear(
+        mask: CLR_Depth_clear,
+        depth: 1);
+
+let Clear_DepthStencil =
+    Clear(
+        mask: CLR_Depth_clear | CLR_Stencil_clear,
+        depth: 1);
+
+let Clear_DepthStencilColor =
+    Clear(
+        mask: CLR_Depth_clear | CLR_Stencil_clear | CLR_Color_clear,
+        depth: 1);
+
+
+//
+
+struct Pass
+{
+    fbo?:           Framebuffer;
+    clear?:         Clear;
+    rops?:          ROP[];
+
+    ubo_Pass?:      byte[];
+    texunit_10?:    Texture[];
+
+    viewport?:      u64;
+    scissor?:       u64;
+
+    after?:         BlitCommand[];
+};
+
+
+//
+
+extern struct Frame
+{
+    passes?:        Pass[];
+
+    ubo_Frame?:     byte[];
+    texunit_00?:    Texture[];
+};

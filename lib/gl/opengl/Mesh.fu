@@ -1,0 +1,37 @@
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+struct Geometry
+{
+    vao_WO_instancing:  ::VAO;
+    vertices:           ::Buffer;
+    indices:            ::Buffer;
+}
+
+struct Instances
+{
+    vao_w_instancing:   ::VAO;
+    data:               ::Buffer;
+}
+
+inline fn update(
+    ref mesh:       Geometry,
+        vertices!:  string,
+        indices!:   string)
+{
+    assert(!!vertices && !!indices);
+
+    mesh.vertices.update("GL_ARRAY_BUFFER", vertices);
+    mesh.indices.update("GL_ELEMENT_ARRAY_BUFFER", indices);
+}
+
+inline fn update(
+    ref instances:  Instances,
+        data:       string)
+{
+    assert(!!data);
+
+    instances.data.update("GL_ARRAY_BUFFER", data);
+}

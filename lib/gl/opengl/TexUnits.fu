@@ -1,0 +1,58 @@
+import gl;
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+// gl 4.x guarantees 80,
+//  we use one for guarding against rebinds.
+let SENTINEL = 79;
+
+// TODO dedupe
+// uint32_t[MAX] m_handles {};
+
+fn updateAndBind(
+    ref cache:  hash::Map(u64, ::Tex),
+    bindStart:  int, // 0, 10, 20, etc
+    list:       Texture[])
+{
+    let N = list.len;
+    if (N < 1)
+        return;
+
+    assert(bindStart >= 0);
+
+    // No more than 10 at a time,
+    //  this is current contention is each UBO level gets 10 slots.
+    assert(N <= 10);
+
+    mut start   = bindStart;
+    mut end     = bindStart + N;
+
+    // 80 guaranteed by gl4.x,
+    //  we use 79 as our sentinel value.
+    assert(end <= SENTINEL);
+
+    if (start < 0)          start   = 0;
+    if (end > SENTINEL)     end     = SENTINEL;
+
+    // TODO dedupe
+    for (mut i = start; i < end; i++)
+    {
+        pragma output(
+        `
+            glActiveTexture(GL_TEXTURE0 + `i.unsigned`);
+        `);
+
+        let spec = list[i - start];
+
+        cache.ref(spec.id).updateAndBind(spec, for_sampling: true);
+    }
+
+    // Deselect active texture using the last slot,
+    //  to protect the texunit mapping against mutation by the next glBindTexture call.
+    pragma output(
+    `
+        glActiveTexture(GL_TEXTURE0 + SENTINEL);
+    `);
+}

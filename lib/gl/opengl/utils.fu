@@ -1,0 +1,17 @@
+
+primitive Handle: u32;
+
+fn shallow_eq(a: <T>[], b: T[])
+{
+    pragma include("<string.h>");
+
+    mut shallow_eq = false;
+    pragma emit(`
+        `shallow_eq` =
+            `a`.m_trim == `b`.m_trim &&
+                memcmp(&`a`.m_vec->big, &`b`.m_vec->big, sizeof(`a`.m_vec->big))
+                    == 0;
+    `);
+
+    return shallow_eq;
+}

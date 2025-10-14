@@ -1,0 +1,276 @@
+import gl;
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+
+// In-language, ported stuff.
+
+struct Caches
+{
+    hm_framebuffers:    hash::Map(u64, ::FBO);
+    hm_textures:        hash::Map(u64, ::Tex);
+    hm_shaders:         hash::Map(u64, ::Shader);
+
+    hm_geometries:      hash::Map(u64, Mesh::Geometry);
+    hm_instances:       hash::Map(u64, Mesh::Instances);
+
+    ubo_Frame:          ::Buffer;
+    ubo_Pass:           ::Buffer;
+    ubo_ROP:            ::Buffer;
+};
+
+
+//
+
+fn renderFrame(
+    ref caches:         Caches,
+        frame:          Frame,
+        framebuffer:    ivec2)
+{
+    mut bp_ubo_Frame    = UBO::BindingPoint(0);
+    mut bp_ubo_Pass     = UBO::BindingPoint(1);
+    mut bp_ubo_ROP      = UBO::BindingPoint(2);
+
+    mut blend_state     = BlendState::init();
+    mut rop_state       = ROPState::init();
+
+    mut device_rect
+        = u64(framebuffer.x) << 32
+        | u64(framebuffer.y) << 48;
+
+    // uncomment this call to draw in wireframe polygons.
+    pragma output(
+    `
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    `);
+
+    // Per-frame UBOs and texture data.
+    {
+        bp_ubo_Frame.updateAndBind(
+            caches.ubo_Frame,
+            frame.ubo_Frame);
+
+        TexUnits::updateAndBind(
+            caches.hm_textures,
+            0, frame.texunit_00);
+    }
+
+    //
+    for (mut i = 0; i < frame.passes.len; i++)
+    {
+        let pass = frame.passes[i];
+
+        // Per-pass UBOs and texture data.
+        {
+            bp_ubo_Pass.updateAndBind(
+                caches.ubo_Pass,
+                pass.ubo_Pass);
+
+            TexUnits::updateAndBind(
+                caches.hm_textures,
+                10, pass.texunit_10);
+        }
+
+        let outputs = FBO::Outputs(
+            pass.fbo.outputs.len,
+            get_output: |shadow i|
+            {
+                let spec        = pass.fbo.outputs[i];
+                let tex_handle  = caches.hm_textures.ref(spec.id).updateAndBind(spec, for_sampling: false).handle;
+
+                FBO::Output(
+                    :tex_handle,
+                    :spec.format,
+                    :spec.flags,
+                    :spec.layer,
+                    :spec.level)
+            });
+
+        let has_depth_buffer    = outputs.has_depth_buffer();
+        let num_color_buffers   = outputs.count
+            ? outputs.count - (has_depth_buffer ? 1 : 0)
+            : 1;
+
+        caches
+            .hm_framebuffers.ref(pass.fbo.id)
+            .updateAndBindOutputs(outputs);
+
+        // Viewport:
+        rop_state.update(:pass, :device_rect);
+
+        rop_state.clear(pass.clear);
+
+        //
+        for (shadow mut i = 0; i < pass.rops.len; i++)
+        {
+            let rop = pass.rops[i];
+
+            rop_state.update(:rop, :has_depth_buffer);
+
+            // MRT blending, all things separate.
+            blend_state.update(
+                rop.blend.equations,
+                num_color_buffers);
+
+            // Per-ROP UBOs & textures.
+            {
+                bp_ubo_ROP.updateAndBind(
+                    caches.ubo_ROP,
+                    rop.ubo_ROP);
+
+                TexUnits::updateAndBind(
+                    caches.hm_textures,
+                    20, rop.texunit_20);
+            }
+
+            // Switch to shader.
+            {
+                ref shader = caches.hm_shaders.ref(rop.shader.id);
+
+                shader.update(
+                    rop.shader.sources[0],
+                    rop.shader.sources[1]);
+
+                shader.use();
+
+                if (process::DEBUG)
+                {
+                    assert(frame.texunit_00.len >= shader.DEBUG_texunit_expect.if(exists: 0).int);
+                    assert( pass.texunit_10.len >= shader.DEBUG_texunit_expect.if(exists: 1).int);
+                    assert(  rop.texunit_20.len >= shader.DEBUG_texunit_expect.if(exists: 2).int);
+                }
+
+                // Per-shader UBOs & textures.
+                // {
+                //     UBOs.updateLevel(
+                //         GL_UBO::ubo_Shader,
+                //         shader.ubo_Shader, batch.ubo_Shader);
+
+                //     TexUnits::updateAndBind(
+                //         Textures,
+                //         30, batch.texunit_30);
+                // }
+            }
+
+            // NOTE
+            //
+            // There used to be a loop over multiple ROP batches,
+            //  but we've gotten rid of that now,
+            //   one ROP == one batch.
+
+            // Per-material-instance UBOs & textures.
+            // {
+            //     UBOs.updateLevel(
+            //         GL_UBO::ubo_Batch,
+            //         ubo_Batch, material.ubo_Batch);
+            //
+            //     TexUnits::updateAndBind(
+            //         Textures,
+            //         40, material.texunit_40);
+            // }
+
+            // NOTE
+            //
+            // Previously there were multiple meshes per batch,
+            //  but now that too has gone away,
+            //   expectation is we'd be batching multiple models
+            //    within the same geometry if we care for speed,
+            //     otherwise one ROP == one mesh.
+
+            // TODO FIX after most of the hierarchy was flattenened
+            //  we've now ended up with redundant ROP/Batch/geometry IDs,
+            //   and this mesh.id here is the rop.batch.id
+            //    which is otherwise not useful.
+            //
+            let mesh        = rop.batch;
+
+            let INSTANCED   = !!mesh.instances.inst_data.len;
+
+            ref geometry    = caches.hm_geometries.ref(mesh.geometry.id);
+
+            mut noop        = Mesh::Instances;
+            ref instances   = INSTANCED
+                ? caches.hm_instances.ref(mesh.instances.id)
+                : noop;
+
+            ref vao         = INSTANCED
+                ? instances.vao_w_instancing
+                : geometry.vao_WO_instancing;
+
+            // VAO bind first to protect whatever
+            //  VAO was bound up to this point.
+            vao.bind();
+
+            // Geom update after VAO bind,
+            //  we dont want to overwrite someone else's
+            //   GL_ELEMENT_ARRAY_BUFFER.
+            geometry.update(
+                vertices:   mesh.geometry.vert_bytes,
+                indices:    mesh.geometry.index_bytes);
+
+            if (INSTANCED)
+                instances.update(mesh.instances.inst_data);
+
+            assert(mesh.geometry.vert_bytes || !mesh.geometry.vert_attribs);
+            assert(mesh.instances.inst_data || !mesh.instances.inst_attribs);
+
+            // Update & draw.
+            vao.updateAndDraw(
+
+                // Vertex data.
+                :geometry.vertices,
+                :geometry.indices,
+                :mesh.geometry.vert_attribs,
+
+                // Instance data.
+                instances.data,
+                :mesh.instances.inst_attribs,
+
+                // Draw data.
+                mesh.draws);
+        }
+
+        // Mipmaps, blitting & co.
+        if (pass.after)
+        {
+            for (shadow mut i = 0; i < pass.after.len; i++)
+            {
+                let cmd = pass.after[i];
+                if (cmd.type == "GenerateMipmaps")
+                {
+                    let tex = caches.hm_textures.get(cmd.id);
+                    if (tex.handle)
+                    {
+                        pragma output(
+                        `
+                            glBindTexture(GL_TEXTURE_2D, `tex.handle`);
+                            glGenerateMipmap(GL_TEXTURE_2D);
+                        `);
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Loop exit cleanup + error pump.
+
+    pragma output(
+    `
+        glBindVertexArray(0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+        #ifndef NDEBUG
+        {
+            GLenum error;
+            while ((error = glGetError()))
+                printf("  \e[0;31mERROR\e[0m glGetError != 0: x(%X)\\n", error);
+        }
+        #endif //
+    `);
+}

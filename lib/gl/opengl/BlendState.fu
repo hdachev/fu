@@ -1,0 +1,191 @@
+import gl;
+
+pragma include(
+    "<glad/glad.h>",
+    "<stdio.h>");
+
+
+// TODO FIX this needless switching.
+
+fn Factor(val: i32)
+{
+    mut f: u32;
+    pragma emit(
+    `
+        switch (`val` & 0x3f) // 6 bits.
+        {
+            // Common factors.
+            case `B_0`:                 return `f` = GL_ZERO;
+            case `B_1`:                 return `f` = GL_ONE;
+            case `B_src_rgba`:          return `f` = GL_SRC_COLOR;
+            case `B_1_sub_src_rgba`:    return `f` = GL_ONE_MINUS_SRC_COLOR;
+            case `B_src_a`:             return `f` = GL_SRC_ALPHA;
+            case `B_1_sub_src_a`:       return `f` = GL_ONE_MINUS_SRC_ALPHA;
+            case `B_dst_rgba`:          return `f` = GL_DST_COLOR;
+            case `B_1_sub_dst_rgba`:    return `f` = GL_ONE_MINUS_DST_COLOR;
+            case `B_dst_a`:             return `f` = GL_DST_ALPHA;
+            case `B_1_sub_dst_a`:       return `f` = GL_ONE_MINUS_DST_ALPHA;
+
+            // Exotic factors.
+            case `B_const_rgba`:        return `f` = GL_CONSTANT_COLOR;
+            case `B_1_sub_const_rgba`:  return `f` = GL_ONE_MINUS_CONSTANT_COLOR;
+            case `B_const_a`:           return `f` = GL_CONSTANT_ALPHA;
+            case `B_1_sub_const_a`:     return `f` = GL_ONE_MINUS_CONSTANT_ALPHA;
+            case `B_src_a_sat`:         return `f` = GL_SRC_ALPHA_SATURATE;
+            case `B_dual_rgba`:         return `f` = GL_SRC1_COLOR;
+            case `B_1_sub_dual_rgba`:   return `f` = GL_ONE_MINUS_SRC1_COLOR;
+            case `B_dual_a`:            return `f` = GL_SRC1_ALPHA;
+            case `B_1_sub_dual_a`:      return `f` = GL_ONE_MINUS_SRC1_ALPHA;
+        }
+
+        assert(false && "GL: Blend: Bad factor.");
+        `f` = GL_ZERO;
+    `);
+
+    return f;
+}
+
+fn Mode(val: i32)
+{
+    mut m: u32;
+    pragma emit(
+    `
+        switch (`val` & 0xf) // 4 bits.
+        {
+            case `B_add`:               return `m` = GL_FUNC_ADD;
+            case `B_src_sub_dst`:       return `m` = GL_FUNC_SUBTRACT;
+            case `B_dst_sub_src`:       return `m` = GL_FUNC_REVERSE_SUBTRACT;
+            case `B_min`:               return `m` = GL_MIN;
+            case `B_max`:               return `m` = GL_MAX;
+        }
+
+        assert(false && "GL: Blend: Bad op.");
+        `m` = GL_FUNC_ADD;
+    `);
+
+    return m;
+}
+
+struct Equation
+{
+    src_rgb:    u32;
+    dst_rgb:    u32;
+    src_a:      u32;
+    dst_a:      u32;
+    op_rgb:     u32;
+    op_a:       u32;
+}
+
+fn Equation(eq: i32)
+{
+    return Equation(
+        src_rgb:    Factor(eq >> B_Offset_src_rgb),
+        dst_rgb:    Factor(eq >> B_Offset_dst_rgb),
+        src_a:      Factor(eq >> B_Offset_src_a),
+        dst_a:      Factor(eq >> B_Offset_dst_a),
+        op_rgb:     Mode  (eq >> B_Offset_op_rgb),
+        op_a:       Mode  (eq >> B_Offset_op_a));
+}
+
+
+//
+
+struct Target
+{
+    state:      i32;
+}
+
+fn update(ref t: Target, index: u32, state: i32)
+{
+    let old = t.state;
+    t.state = state;
+
+    if (state == old)
+        return;
+
+    if (!state)
+    {
+        pragma output(
+        `
+            glDisablei(GL_BLEND, `index`);
+        `);
+
+        return;
+    }
+
+    if (!old)
+    {
+        pragma output(
+        `
+            glEnablei(GL_BLEND, `index`);
+        `);
+    }
+
+    // Func & equations.
+    let old_eq = Equation(old);
+    let new_eq = Equation(state);
+
+    if (!old || old_eq.src_rgb != new_eq.src_rgb
+             || old_eq.dst_rgb != new_eq.dst_rgb
+             || old_eq.src_a   != new_eq.src_a
+             || old_eq.dst_a   != new_eq.dst_a)
+    {
+        pragma output(
+        `
+            glBlendFuncSeparatei(
+                `index`,
+                `new_eq.src_rgb`,
+                `new_eq.dst_rgb`,
+                `new_eq.src_a`,
+                `new_eq.dst_a`);
+        `);
+    }
+
+    if (!old || old_eq.op_rgb != new_eq.op_rgb
+             || old_eq.op_a   != new_eq.op_a)
+    {
+        pragma output(
+        `
+            glBlendEquationSeparatei(
+                `index`,
+                `new_eq.op_rgb`,
+                `new_eq.op_a`);
+        `);
+    }
+}
+
+
+//
+
+struct BlendState
+{
+    targets:    Array::Array16(Target);
+}
+
+pub fn init()
+{
+    // Reset once per frame.
+    pragma output(
+    `
+        glDisable(GL_BLEND);
+    `);
+
+    return BlendState();
+}
+
+pub fn update(ref bs: BlendState, equations: i32[], fbo_numTargets: int)
+{
+    assert(fbo_numTargets.unsigned <= bs.targets.fixed_len.unsigned);
+
+    if (equations && equations.len < fbo_numTargets)
+        dbg::ln("BlendState.update equations.len(" equations.len ") fbo_numTargets(" fbo_numTargets ")");
+
+    for (mut i = 0; i < fbo_numTargets; i++)
+    {
+        let eq = i < equations.len
+            ? equations[i]
+            : /*disable*/ 0;
+
+        bs.targets[i].update(i.u32, eq);
+    }
+}

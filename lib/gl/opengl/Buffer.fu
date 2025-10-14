@@ -1,0 +1,88 @@
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+using enum BufferType: i32
+{
+    GL_UNIFORM_BUFFER       = 0x8A11 // TODO __native enum values
+    GL_ARRAY_BUFFER         = 0x8892
+    GL_ELEMENT_ARRAY_BUFFER = 0x8893
+}
+
+using enum BufferStream: i32
+{
+    GL_STATIC_DRAW          = 0x88E4 // init once use mutliple times
+    GL_STREAM_DRAW          = 0x88E0 // replace buffer on every frame
+    GL_DYNAMIC_DRAW         = 0x88E8 // unclear
+}
+
+primitive UBORole: int;
+
+struct Buffer
+{
+    handle:     utils::Handle;
+    type:       BufferType;
+
+    // Dedupe.
+    data:       string;
+}
+
+fn free(ref b: Buffer)
+{
+    if (b.handle)
+    {
+        dbg::ln("   FREE buffer(" b.handle ") type(" b.type ")");
+
+        pragma output(
+        `
+            glDeleteBuffers(1, &`b.handle`);
+        `);
+    }
+
+    b = [];
+}
+
+fn update(
+    ref b: Buffer,
+    type: BufferType, data: string,
+
+    // Not sure about the default.
+    stream: BufferStream = "GL_DYNAMIC_DRAW")
+{
+    assert(!b.type || b.type == type);
+
+    if (data && !utils::shallow_eq(b.data, data))
+    {
+        b.data = stream != GL_STREAM_DRAW && data;
+
+        if (!b.handle)
+        {
+            pragma output(
+            `
+                glGenBuffers(1, &`b.handle`);
+            `);
+
+            dbg::ln("    NEW buffer(" b.handle ") type(" type ") stream(" stream ") bytes(" data.len ")");
+        }
+        else
+        {
+            if (stream == GL_STATIC_DRAW)
+                dbg::ln(" UPDATE buffer(" b.handle ") type(" type ") stream(" stream ") bytes(" data.len ")")
+        }
+
+        pragma output(
+        `
+            auto t = GLenum(`type`);
+            auto s = GLenum(`stream`);
+
+            assert(`b.handle`
+                && (t == GL_ELEMENT_ARRAY_BUFFER || t == GL_ARRAY_BUFFER || t == GL_UNIFORM_BUFFER)
+                && (s == GL_STATIC_DRAW || s == GL_DYNAMIC_DRAW));
+
+            // TODO use glNamedBufferData instead?
+            glBindBuffer(t, `b.handle`);
+            glBufferData(t, `data.len`, `data`.data(), s);
+        `);
+    }
+}

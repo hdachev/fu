@@ -1,0 +1,394 @@
+import gl;
+
+pragma include(
+    "<stdio.h>",
+    "<glad/glad.h>");
+
+
+//
+
+struct BoundBufferRange
+{
+    attribs:            Attributes;
+    buffer_handle:      utils::Handle;
+    stride:             i32;
+}
+
+pub struct VAO
+{
+    handle:             utils::Handle;
+
+    old_indices:        utils::Handle;
+    old_vertices:       BoundBufferRange;
+    old_instances:      BoundBufferRange;
+}
+
+pub fn free(ref vao: VAO)
+{
+    if (vao.handle)
+    {
+        dbg::ln("   FREE vao(" vao.handle ")");
+
+        pragma output(`
+            glDeleteVertexArrays(1, &`vao.handle`);
+        `);
+    }
+
+    vao = [];
+}
+
+
+//
+
+enum Loc0
+{
+    PerVertexLoc0       = 0 // We use 0-7 for per-vertex attributes,
+    PerInstanceLoc0     = 8 // and 8-15 for per-instance attributes.
+}
+
+fn updateCurrentlyBoundArrayBufferFormat(
+    stride:         i32,
+    base_offset:    i32,
+    old_attribs:    Attributes,
+    attribs:        Attributes,
+    loc0:           Loc0)
+{
+    attribs.each(:old_attribs):
+        |i, old, type: AttribType, count: i32, offset|
+    {
+        let loc = loc0.u32 + i.u32;
+
+        if (count)
+        {
+            let gl_type = type.gl_type;
+
+            if (type.is_integral)
+            {
+                pragma output(
+                `
+                    glVertexAttribIPointer(
+                        `loc`, `count`,
+                        /*type*/ `gl_type`,
+                        `stride`, (void*)size_t(`base_offset` + `offset`));
+                `);
+            }
+            else
+            {
+                pragma output(
+                `
+                    glVertexAttribPointer(
+                        `loc`, `count`,
+                        /*type*/ `gl_type`,
+                        /*norm*/ GL_FALSE,
+                        `stride`, (void*)size_t(`base_offset` + `offset`));
+                `);
+            }
+
+            if (!old)
+            {
+                pragma output(
+                `
+                    glEnableVertexAttribArray(`loc`);
+                `);
+
+                if (loc0 != "PerVertexLoc0")
+                {
+                    // TODO FIX not very elegant doing this here,
+                    //  but we gotta tell GL somewhere that these are per-instance,
+                    //   shame we can't do it globally.
+                    //
+                    // No need to disable this / do this for per-vertex attributes
+                    //  because the default is 0 (per vert) and there is no back-and-forth:
+                    //   loc 0-7 are always per vertex, and 8-15 are always per instance.
+                    //
+                    pragma output(
+                    `
+                        glVertexAttribDivisor(`loc`, 1);
+                    `);
+                }
+            }
+        }
+        else if (old)
+        {
+            pragma output(
+            `
+                glDisableVertexAttribArray(`loc`);
+            `);
+        }
+    }
+}
+
+fn update(ref old: BoundBufferRange, using range: BoundBufferRange, loc0: Loc0)
+{
+    if (old != range)
+    {
+        pragma output(
+        `
+            glBindBuffer(GL_ARRAY_BUFFER, `buffer_handle`);
+        `);
+
+        dbg::ln(" UPDATE loc0(" loc0 ") old.attribs(" old.attribs ") attribs(" attribs ")");
+
+        updateCurrentlyBoundArrayBufferFormat(
+            :stride, base_offset: 0,
+            :attribs, old_attribs: old.attribs,
+            :loc0);
+
+        old = range;
+    }
+}
+
+
+// Standalone bind -
+//
+// Used to bind() before flushing verts and index buffers,
+//  which would require binding them, which would stomp over
+//   any other currently bound VAO's index buffer.
+
+pub fn bind(ref vao: VAO)
+{
+    if (!vao.handle)
+    {
+        pragma output(
+        `
+            glGenVertexArrays(1, &`vao.handle`);
+        `);
+
+        dbg::ln(" CREATE vao(" vao.handle ")");
+    }
+
+    pragma output(
+    `
+        glBindVertexArray(`vao.handle`);
+    `);
+}
+
+
+//
+
+fn update(ref vao: VAO, indices!: utils::Handle)
+{
+    // Update the instance buffer.
+    if (vao.old_indices != indices)
+    {
+        pragma output(
+        `
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, `indices`);
+        `);
+
+        vao.old_indices = indices;
+    }
+    else
+    {
+        // This happened - it's fairly easy to bind an index buffer
+        //  and forget that you're stomping over a currently bound VAO,
+        //   esp since we don't want to unbind stuff defensively all the time.
+        //
+        // I think we currently do defensive unbinding for texture units,
+        //  TBD if we can't help it there too.
+        //
+        pragma input(
+        `
+                                            #ifndef NDEBUG
+            GLint data;
+            glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &data);
+            assert(GLuint(data) == `indices`);
+                                            #endif //
+        `);
+    }
+}
+
+
+// OSX (GL410) doesn't have
+//  glDrawElementsInstancedBaseVertexBaseInstance (GL420),
+//   so we need to shim it as cheaply as we possible.
+
+struct GL410_BaseInstance
+{
+    stride:         i32;
+    base_instance:  i32;
+};
+
+inline fn cleanup(
+    ref state:      GL410_BaseInstance,
+    vao:            VAO)
+{
+    state.shim(:vao, base_instance: 0);
+}
+
+fn shim(
+    ref state:      GL410_BaseInstance,
+    vao:            VAO,
+    base_instance!: i32)
+{
+    // Assumption is we always leave the VAO @ 0 after use,
+    //  so we don't need to do anything for the first draw.
+    //
+    if (base_instance == state.base_instance)
+        return;
+
+    if (!state.base_instance)
+    {
+        // This also means we only need to bind the buffer
+        //  if transitioning from 0 to non-zero -
+        //
+        // Initially we're at zero,
+        //  if first draw is 0 we don't need to do anything,
+        //   and for the second draw we'd have done nothing, etc.
+        //
+        pragma output(
+        `
+            glBindBuffer(GL_ARRAY_BUFFER, `vao.old_instances.buffer_handle`);
+        `);
+    }
+
+    ////////////////////////////////////
+    state.base_instance = base_instance;
+    ////////////////////////////////////
+
+    let stride = vao.old_instances.stride;
+
+    updateCurrentlyBoundArrayBufferFormat(
+                                    :stride,
+        base_offset: base_instance * stride,
+
+        // Non-transition -
+        old_attribs: vao.old_instances.attribs,
+            attribs: vao.old_instances.attribs,
+
+        loc0: "PerInstanceLoc0");
+}
+
+
+// The plan here -
+//  if gl is 4.3, then glMultiDrawElementsIndirect
+//  if gl is 4.2, then glDrawElementsInstancedBaseVertexBaseInstance
+//  if gl is 4.1, then glDrawElementsInstancedBaseVertex
+
+pub fn updateAndDraw(
+    ref vao:            VAO,
+
+    indices.handle:     utils::Handle,
+    vertices.handle:    utils::Handle,
+    vert_attribs:       Attributes,
+
+    instances.handle:   utils::Handle,
+    inst_attribs:       Attributes,
+
+    draws:              Draw[])
+{
+    vao.update(:indices);
+
+    vao.old_vertices.update("PerVertexLoc0",
+        range: BoundBufferRange(
+            attribs:        vert_attribs,
+            stride:         vert_attribs.stride,
+            buffer_handle:  vertices));
+
+    vao.old_instances.update("PerInstanceLoc0",
+        range: BoundBufferRange(
+            attribs:        inst_attribs,
+            stride:         inst_attribs.stride,
+            buffer_handle:  instances));
+
+    pragma emit(
+    `
+        const int INDEX_sizeof  = 2;
+        const GLenum INDEX_type = GL_UNSIGNED_SHORT;
+    `);
+
+
+    // -------------------------------
+    // GL 430 (Compatibility Profile):
+    //
+    // if (glMultiDrawElementsIndirect)
+    // {
+    //     static_assert(
+    //         sizeof(*draws.data()) == 20,
+    //         "glMultiDrawElementsIndirect requires commands in tightly packed structs of 5 uints.");
+    //
+    //     glMultiDrawElementsIndirect(
+    //         GL_TRIANGLES,
+    //         INDEX_type,
+    //         draws.data(),
+    //         draws.size(),
+    //         0);
+    //
+    //     return;
+    // }
+
+    // -------
+    // GL 420:
+
+    mut is_GL420 = false;
+    pragma emit(
+        is_GL420` = !!glDrawElementsInstancedBaseVertexBaseInstance;`
+    );
+
+    if (is_GL420)
+    {
+        for (mut i = 0; i < draws.len; i++)
+        {
+            let draw = draws[i];
+
+            pragma output(
+            `
+                glDrawElementsInstancedBaseVertexBaseInstance(
+                    GL_TRIANGLES,
+                    `draw`.index_count,
+                    INDEX_type,
+                    (void*)size_t(`draw`.base_index * INDEX_sizeof),
+                    `draw.instance_count`,
+                    `draw.base_vertex`,
+                    `draw.base_instance.unsigned`);
+            `);
+        }
+
+        return;
+    }
+
+    // -------
+    // GL 410:
+
+    {
+        pragma emit(`
+                                                            #ifndef NDEBUG
+            int DEBUG_num_instances = 0;
+                                                            #endif //
+        `);
+
+        mut GL410: GL410_BaseInstance;
+
+        for (mut i = 0; i < draws.len; i++)
+        {
+            let draw = draws[i];
+
+            GL410.shim(:vao, :draw.base_instance);
+
+            pragma output(
+            `
+                glDrawElementsInstancedBaseVertex(
+                    GL_TRIANGLES,
+                    `draw`.index_count,
+                    INDEX_type,
+                    (void*)size_t(`draw`.base_index * INDEX_sizeof),
+                    `draw`.instance_count,
+                    `draw`.base_vertex);
+            `);
+
+            // Not sure what the point is - why are we enforcing this?
+            pragma emit(`
+                                                                #ifndef NDEBUG
+                assert(`draw`.instance_count > 0
+                    && `draw`.base_instance == DEBUG_num_instances);
+
+                DEBUG_num_instances += `draw`.instance_count;
+                                                                #endif //
+            `);
+        }
+
+        GL410.cleanup(:vao);
+
+        return;
+    }
+}
