@@ -795,12 +795,10 @@ case (T -> _[..]) {
     mut cmp = a.len <> b.len;
 
     mut quick: bool;
-    pragma emit(quick " = a.m_data == b.m_data || cmp");
-    if (quick)
-        return cmp;
-
-    for (mut i = 0; i < a.len && !cmp; i++)
-        cmp = a[i] <> b[i];
+    pragma emit(quick " = a.m_data == b.m_data");
+    if !(quick)
+        for (mut i = 0; i < a.len && !cmp; i++)
+            cmp = a[i] <> b[i];
 
     return cmp;
 }
