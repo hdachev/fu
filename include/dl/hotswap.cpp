@@ -343,7 +343,7 @@ namespace
                 // if (LOAD_ON_BOOT)
                 //     try_reload(l);
 
-                h.libs.push(l);
+                h.libs.push(static_cast<Loader&&>(l));
             };
 
             const char* env = getenv("FU_HOTSWAP_LIB");
@@ -407,7 +407,7 @@ namespace
         //             try_reload(item, lib);
 
         // List.
-        h.items.push(item);
+        h.items.push(static_cast<Item&&>(item));
     }
 
     return ret;
