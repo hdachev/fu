@@ -88,14 +88,47 @@ fn tryCreateWindow(opt: WindowOptions, glMajor: i32, glMinor: i32)
 ////////////////////////////////
 ////////////////////////////////
 
-fn destroyWindow()
+primitive Window: u64;
+
+fn loop(options: WindowOptions, update): bool
+{
+    let window = create(options);
+    if (!window)
+        return false;
+
+    defer window.destroy();
+
+    //
+    mut time_wake: typeof(now::hr);
+    for (;;) {
+        let now = now::hr();
+        if (!time_wake || time_wake > now)
+            time_wake   = now;
+
+        let time_delta  = now - time_wake;
+        time_wake       = now;
+
+        let input = window.poll(:time_delta);
+        if (input.should_close)
+            break;
+
+        let cannot_wait: bool = update(input);
+        window.swap(wait: !cannot_wait);
+    }
+
+    return true;
+}
+
+fn destroy(window: Window)
 {
     pragma output(`
+        assert((void*)`window` == WINDOW); (void)`window`;
+
         glfwTerminate();
     `);
 }
 
-fn createWindow(options: WindowOptions): bool
+fn create(options: WindowOptions): Window
 {
     pragma emit_top(
     `
@@ -136,13 +169,15 @@ fn createWindow(options: WindowOptions): bool
         }
 
         opengl::dbg::ln("   GLFW Failed to create window.");
-        return false;
+        return [];
     }
 
+    mut window: Window;
     pragma output(
     `
         assert(WINDOW);
 
+        `window` = decltype(`Window`)(WINDOW);
         glfwMakeContextCurrent(WINDOW);
 
         // Unlock FPS -
@@ -244,16 +279,17 @@ fn createWindow(options: WindowOptions): bool
     `);
 
     //
-    return true;
+    return window;
 }
 
 ////////////////////////////////
 ////////////////////////////////
 ////////////////////////////////
 
-fn swapAndPoll(wait!: bool)
+fn swap(window: Window, wait!: bool)
 {
     pragma output(`
+        assert((void*)`window` == WINDOW); (void)`window`;
 
         // Present
         glfwSwapBuffers(WINDOW);
@@ -269,11 +305,13 @@ fn swapAndPoll(wait!: bool)
     `);
 }
 
-fn collectInput(time_delta!: f64)
+fn poll(window: Window, time_delta!: f64)
 {
     mut inputFrame: InputFrame;
 
     pragma output(`
+        assert((void*)`window` == WINDOW); (void)`window`;
+
         `inputFrame`.frame_index    = FRAME_INDEX++;
         `inputFrame`.snapshot       = SNAPSHOT;
         `inputFrame`.should_close   = glfwWindowShouldClose(WINDOW);
