@@ -172,7 +172,7 @@ struct Event
 struct InputDelta
 {
     events:         Event[];
-    codepoints:     utf8::Codepoint[];
+    codepoints:     unicode::Codepoint[];
 
     scancodes:      ScanCode[];
     x_deltas:       f32[];

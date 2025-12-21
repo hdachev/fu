@@ -1,51 +1,49 @@
 
-primitive Codepoint: u32;
-
-fn Codepoint(b: byte) b.u32.Codepoint;
+type Codepoint = u32;
 
 
 // Bytes for unicode point.
 
-fn bytes(unicode: Codepoint)
+fn utf8(codepoint: Codepoint)
 {
-    if (unicode <= 0x7f)
+    if (codepoint <= 0x7f)
         return [
-            byte(unicode),
+            byte(codepoint),
         ];
 
-    if (unicode <= 0x07ff)
+    if (codepoint <= 0x07ff)
         return [
-            byte(((unicode >> 6) & 0x1f) | 0xc0),
-            byte(((unicode >> 0) & 0x3f) | 0x80),
+            byte(((codepoint >> 6) & 0x1f) | 0xc0),
+            byte(((codepoint >> 0) & 0x3f) | 0x80),
         ];
 
-    if (unicode <= 0xffff)
+    if (codepoint <= 0xffff)
         return [
-            byte(((unicode >> 12) & 0x0f) | 0xe0),
-            byte(((unicode >>  6) & 0x3f) | 0x80),
-            byte(((unicode >>  0) & 0x3f) | 0x80),
+            byte(((codepoint >> 12) & 0x0f) | 0xe0),
+            byte(((codepoint >>  6) & 0x3f) | 0x80),
+            byte(((codepoint >>  0) & 0x3f) | 0x80),
         ];
 
-    if (unicode <= 0x10ffff)
+    if (codepoint <= 0x10ffff)
         return [
-            byte(((unicode >> 18) & 0x07) | 0xf0),
-            byte(((unicode >> 12) & 0x3f) | 0x80),
-            byte(((unicode >>  6) & 0x3f) | 0x80),
-            byte(((unicode >>  0) & 0x3f) | 0x80),
+            byte(((codepoint >> 18) & 0x07) | 0xf0),
+            byte(((codepoint >> 12) & 0x3f) | 0x80),
+            byte(((codepoint >>  6) & 0x3f) | 0x80),
+            byte(((codepoint >>  0) & 0x3f) | 0x80),
         ];
 
     return [];
 }
 
-fn codepoints(text: byte[..], each, error)
+fn codepoints(utf8: byte[..], each, error?)
 {
-    for (mut i = 0; i < text.len; i++)
+    for (mut i = 0; i < utf8.len; i++)
     {
         let lax i0 = i;
 
         :BREAK_ON_ERROR
         {
-            mut c = text[i].u32;
+            mut c = utf8[i].u32;
             if (c >= 128)
             {
                 mut bytes = 0;
@@ -61,7 +59,7 @@ fn codepoints(text: byte[..], each, error)
 
                 //
                 let i1 = i + bytes;
-                if (text.len < i1)
+                if (utf8.len < i1)
                     break :BREAK_ON_ERROR;
 
                 c <<= (bytes + 1).u32; // The +1 is the disambig zero.
@@ -70,7 +68,7 @@ fn codepoints(text: byte[..], each, error)
                 //
                 while (++i < i1)
                 {
-                    mut b = text[i].u32;
+                    mut b = utf8[i].u32;
                     if (b & 0x192 != 128) // Must start with 0b10.
                     {
                         // Step back on byte,
@@ -99,8 +97,3 @@ fn codepoints(text: byte[..], each, error)
         error(i?: i0);
     }
 }
-
-fn codepoints(text: byte[..], each)
-    text.codepoints(
-        each:   fn each,
-        error:  || {});
