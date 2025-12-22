@@ -157,7 +157,7 @@ fn update(ref t: Target, index: u32, state: i32)
 
 //
 
-struct BlendState
+pub struct BlendState
 {
     targets:    Array::Array16(Target);
 }

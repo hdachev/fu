@@ -59,7 +59,7 @@ struct StencilState
     mask:               u32;
 }
 
-struct ROPState
+pub struct ROPState
 {
     viewport:           u64;
     scissor:            u64;

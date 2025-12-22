@@ -394,6 +394,9 @@ fn update_Texture2D(format: TextureFormat, w: i16, h: i16, data: string)
 
     assert(!data || data.len == texel_bytes * w.int * h.int);
 
+    if (data)
+        dbg::ln(" STREAM GL_TEXTURE_2D bytes(" data.len ") format(" format ") w(" w ") h(" h ")");
+
     pragma output(
     `
         glTexImage2D(GL_TEXTURE_2D,

@@ -16,6 +16,9 @@ struct Output
 struct Outputs
 {
     count:          int;
+    has_depth_buffer:   bool;
+    num_color_buffers:  i16;
+
     arr:            Array::Array16(Output);
 }
 
@@ -29,20 +32,24 @@ fn Outputs(mut count: int, get_output!)
             ? count          : 16;
 
     result.count = count;
-    for (mut i = 0; i < count; i++)
-        result.arr[i] = get_output(i);
+    for (mut i = 0; i < count; i++) {
+        ref output = result.arr[i] = get_output(i);
+
+        if (output.format.has_depth) {
+            assert(!result.has_depth_buffer);
+            result.has_depth_buffer = true;
+        }
+        else {
+            result.num_color_buffers++;
+        }
+    }
+
+    // Default framebuffer.
+    if (!result.count)
+        result.num_color_buffers = 1;
 
     //
     return result;
-}
-
-fn has_depth_buffer(using _: Outputs)
-{
-    for (mut i = 0; i < count; i++)
-        if (arr[i].format.has_depth)
-            return true;
-
-    return false;
 }
 
 

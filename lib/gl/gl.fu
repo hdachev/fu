@@ -261,16 +261,14 @@ fn Batch(draw: Draw, geometry: Geometry, instances?: Instances)
 struct Shader
 {
     id:         u64;
-    sources:    string[];
+    vert:       string;
+    frag:       string;
 };
 
-fn Shader(
-    id:         u64,
-    vert:       string,
-    frag:       string)
-{
-    // TODO one string with separator comments
-    return Shader(:id, [ vert, frag ]);
+fn replace(s: Shader, id!: u64, all!, with!) {
+    return Shader(:id,
+        vert: s.vert.replace(:all, :with),
+        frag: s.frag.replace(:all, :with));
 }
 
 
@@ -510,15 +508,12 @@ struct Pass
 {
     fbo?:           Framebuffer;
     clear?:         Clear;
-    rops?:          ROP[];
 
     ubo_Pass?:      byte[];
     texunit_10?:    Texture[];
 
     viewport?:      u64;
     scissor?:       u64;
-
-    after?:         BlitCommand[];
 };
 
 
@@ -526,8 +521,6 @@ struct Pass
 
 extern struct Frame
 {
-    passes?:        Pass[];
-
     ubo_Frame?:     byte[];
     texunit_00?:    Texture[];
 };
