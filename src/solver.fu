@@ -362,7 +362,6 @@ pub fn solve(
 
         //
         TODO_FIX_bckCantDealWithNestedDefers?: i32;
-        TODO_FIX_unique?:   i32;
     };
 
     mut _current_fn:        CurrentFn;
@@ -580,6 +579,7 @@ pub fn solve(
 
         TODO_FIX_convert_args:  SolvedNode[];
         TODO_FIX_inline_safety: i32;
+        TODO_FIX_unique:        u32;
 
         //
         _typeParams:        TypeParams;
@@ -8914,6 +8914,23 @@ pub fn solve(
                                                     : BUG("Enum auto-incrementer: unknown prim size: " ~ size_str);
 
                 mut last: intlit::Intlit;
+
+                // unique enum SKETCH //////////////////////////////////////////
+                let isUniqueEnum = node.asserts & A_TODO_FIX_unique;
+                if (isUniqueEnum) {
+                    mut tea = tea::TEA;
+                    tea.hash(module.modid.u32);
+                    tea.hash(shortModuleName);
+                    tea.hash(TODO_FIX_unique++);
+
+                    unsigned || fail("unique".qBAD ~ " enums only support unsigned base primitives, got: " ~ basePrim);
+                    ref v = last.absval = tea.u64;
+                    if (size < 64) v = (v & 0xffffffff) ^ (v >> 32);
+                    if (size < 32) v = (v & 0xffff) ^ (v >> 16);
+                    if (size < 16) v = (v & 0xff) ^ (v >> 8);
+                }
+                // unique enum SKETCH //////////////////////////////////////////
+
                 for (mut i = 0; i < s.items.len; i++)
                 {
                     ref item_o  = s.items[i].target.GET_mut;

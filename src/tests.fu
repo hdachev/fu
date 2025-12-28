@@ -22791,6 +22791,19 @@ pub extern fn runTests()
         fn main() woot.i32;
     `);
 
+    ZERO(`
+        unique enum Enum1: u32 { A; B };
+        unique enum Enum2: u32 { A; B };
+
+        fn main() {
+            let a = Enum1.A.i64;
+            let b = Enum1.B.i64;
+            let c = Enum2.A.i64;
+            let d = Enum2.B.i64;
+            return b - a == 1 && d - c == 1 && abs(c - a) > 1000 ? 0 : 1;
+        }
+    `);
+
     // /Enums
 
 
