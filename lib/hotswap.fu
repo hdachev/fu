@@ -8,3 +8,17 @@ fn here(): void
         fu::hotswap_here();
     `);
 }
+
+fn enabled(): bool
+{
+    mut ret = false;
+
+    pragma emit(
+    `
+        #ifdef fu_HOTSWAP
+        `ret` = true;
+        #endif //
+    `);
+
+    return ret;
+}

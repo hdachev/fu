@@ -14,9 +14,10 @@ struct DataEntry(type Key, type Value) {
 }
 
 
-// Brace for some really stupid shit
-
-let DefaultHasher_seed = rand::next_u64()
+// TODO FIX hotswap workaround
+// ensure everyone sees the same non-zero seed instead
+//                       //////////////////
+let DefaultHasher_seed = !hotswap::enabled && rand::next_u64()
 
 pub struct DefaultHasher {}
 
