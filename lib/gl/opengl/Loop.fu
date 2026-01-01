@@ -41,6 +41,9 @@ struct FrameState {
 fn Frame_begin(ref caches: Loop,
     frame: Frame, framebuffer: ivec2)
 {
+    // TODO FIX hotswap workaround
+    glfw::window::gladLoadIfNeeded();
+
     // uncomment this call to draw in wireframe polygons.
     pragma output(
     `

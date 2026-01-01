@@ -128,6 +128,24 @@ fn destroy(window: Window)
     `);
 }
 
+fn gladLoadIfNeeded()   // TODO FIX hotswap workaround
+{                       //  we now get a new glad every time we hotswap
+    mut res = false;    //   Ideally we'd only have one glad in the executable
+    pragma output(
+    `
+        // glad: load all OpenGL function pointers
+        if (glTexImage2D || gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            `res` = true;
+            assert(!!glTexImage2D);
+        }
+        else {
+            puts("   GLAD Failed to initialize.");
+        }
+    `);
+
+    return res;
+}
+
 fn create(options: WindowOptions): Window
 {
     pragma emit_top(
@@ -179,16 +197,14 @@ fn create(options: WindowOptions): Window
 
         `window` = decltype(`Window`)(WINDOW);
         glfwMakeContextCurrent(WINDOW);
+    `);
 
+    gladLoadIfNeeded(); // Context must be current.
+
+    pragma output(
+    `
         // Unlock FPS -
         // glfwSwapInterval(0);
-
-        // glad: load all OpenGL function pointers
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        {
-            puts("   GLAD Failed to initialize.");
-            return false;
-        }
 
         // Synthesize some events.
         {

@@ -8919,7 +8919,6 @@ pub fn solve(
                 let isUniqueEnum = node.asserts & A_TODO_FIX_unique;
                 if (isUniqueEnum) {
                     mut tea = tea::TEA;
-                    tea.hash(module.modid.u32);
                     tea.hash(shortModuleName);
                     tea.hash(TODO_FIX_unique++);
 
