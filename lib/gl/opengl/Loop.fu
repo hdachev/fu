@@ -143,6 +143,62 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
 
 //
 
+fn ROP_begin(ref caches: Loop, using ref _: FrameState,
+    outputs: FBO::Outputs,
+    frame: Frame, pass: Pass,
+    rop: ROP)
+{
+    rop_state.update(:rop, :outputs.has_depth_buffer);
+
+    // MRT blending, all things separate.
+    blend_state.update(
+        rop.blend.equations,
+        outputs.num_color_buffers.int);
+
+    // Per-ROP UBOs & textures.
+    {
+        bp_ubo_ROP.updateAndBind(
+            caches.ubo_ROP,
+            rop.ubo_ROP);
+
+        TexUnits::updateAndBind(
+            caches.hm_textures,
+            20, rop.texunit_20);
+    }
+
+    // Switch to shader.
+    {
+        ref shader = caches.hm_shaders.ref(rop.shader.id);
+
+        shader.update(
+            rop.shader.vert,
+            rop.shader.frag);
+
+        shader.use();
+
+        if (process::DEBUG)
+        {
+            assert(frame.texunit_00.len >= shader.DEBUG_texunit_expect.if(exists: 0).int);
+            assert( pass.texunit_10.len >= shader.DEBUG_texunit_expect.if(exists: 1).int);
+            assert(  rop.texunit_20.len >= shader.DEBUG_texunit_expect.if(exists: 2).int);
+        }
+
+        // Per-shader UBOs & textures.
+        // {
+        //     UBOs.updateLevel(
+        //         GL_UBO::ubo_Shader,
+        //         shader.ubo_Shader, batch.ubo_Shader);
+
+        //     TexUnits::updateAndBind(
+        //         Textures,
+        //         30, batch.texunit_30);
+        // }
+    }
+}
+
+
+//
+
 pub fn renderFrame(
     ref loop:       Loop,
     frame:          Frame,
@@ -200,6 +256,7 @@ pub fn renderBlit(
 
 pub fn renderROP(
     rop: ROP,
+    mesh: Batch,
 
     implicit ref caches: Loop,
     implicit frame: Frame,
@@ -208,52 +265,13 @@ pub fn renderROP(
     using implicit ref frame_state: FrameState,
     implicit outputs: FBO::Outputs)
 {
-    rop_state.update(:rop, :outputs.has_depth_buffer);
+    shadow implicit ref rop = rop;
 
-    // MRT blending, all things separate.
-    blend_state.update(
-        rop.blend.equations,
-        outputs.num_color_buffers.int);
-
-    // Per-ROP UBOs & textures.
-    {
-        bp_ubo_ROP.updateAndBind(
-            caches.ubo_ROP,
-            rop.ubo_ROP);
-
-        TexUnits::updateAndBind(
-            caches.hm_textures,
-            20, rop.texunit_20);
-    }
-
-    // Switch to shader.
-    {
-        ref shader = caches.hm_shaders.ref(rop.shader.id);
-
-        shader.update(
-            rop.shader.vert,
-            rop.shader.frag);
-
-        shader.use();
-
-        if (process::DEBUG)
-        {
-            assert(frame.texunit_00.len >= shader.DEBUG_texunit_expect.if(exists: 0).int);
-            assert( pass.texunit_10.len >= shader.DEBUG_texunit_expect.if(exists: 1).int);
-            assert(  rop.texunit_20.len >= shader.DEBUG_texunit_expect.if(exists: 2).int);
-        }
-
-        // Per-shader UBOs & textures.
-        // {
-        //     UBOs.updateLevel(
-        //         GL_UBO::ubo_Shader,
-        //         shader.ubo_Shader, batch.ubo_Shader);
-
-        //     TexUnits::updateAndBind(
-        //         Textures,
-        //         30, batch.texunit_30);
-        // }
-    }
+    ROP_begin(
+        caches, frame_state,
+        outputs,
+        frame, pass,
+        rop);
 
     // NOTE
     //
@@ -285,8 +303,6 @@ pub fn renderROP(
     //   and this mesh.id here is the rop.batch.id
     //    which is otherwise not useful.
     //
-    let mesh        = rop.batch;
-
     let INSTANCED   = !!mesh.instances.inst_data.len;
 
     ref geometry    = caches.hm_geometries.ref(mesh.geometry.id);

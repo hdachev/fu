@@ -440,7 +440,6 @@ struct ROP
 
     // Shader & geometry.
     shader:         Shader;
-    batch:          Batch;
 };
 
 
