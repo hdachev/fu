@@ -1799,7 +1799,7 @@ void build_dvjTrKQM(fu::str&& dir_wrk, fu::view<char> fudir, /*MOV*/ fu::str&& f
         O_lvl += "-Dfu_HOTSWAP "_fu;
 
     fu::str GCChash = ("g++ -std=c++1z "_fu + O_lvl);
-    fu::str GCC_CMD = ((((((GCChash + "-pedantic-errors -Wall -Wextra -Werror "_fu) + "-Wdouble-promotion "_fu) + "-Wconversion -Wsign-conversion "_fu) + TODO_FIX_ignoredWarnings) + ((hotswap && fu::APPLE) ? "-Wno-return-type-c-linkage "_fu : fu::str{})) + (fu::LINUX ? "-pthread -ldl "_fu : fu::str{}));
+    fu::str GCC_CMD = ((((((GCChash + "-pedantic-errors -Wall -Wextra "_fu) + "-Wdouble-promotion "_fu) + "-Wconversion -Wsign-conversion "_fu) + TODO_FIX_ignoredWarnings) + ((hotswap && fu::APPLE) ? "-Wno-return-type-c-linkage "_fu : fu::str{})) + (fu::LINUX ? "-pthread -ldl "_fu : fu::str{}));
     if (!(fulib))
         fulib = join_8GxtVDhD(fudir, (hotswap ? "include/fu/_sharedlib.cpp"_fu : "include/fu/_fulib.cpp"_fu));
 

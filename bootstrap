@@ -10,5 +10,10 @@ if [ ! -f "$UNITY_CPP" ]; then
 	exit 1
 fi
 
-mkdir -p bin
-g++ --std=c++17 -Og -o bin/fu "$UNITY_CPP" -ldl -pthread -I include -g -Dfu_UNITY_FULIB
+if [ ! "$1" == "--use-cached" ] || [ ! -f "bin/fu.bootstrap" ]; then
+	mkdir -p bin
+	g++ --std=c++17 -Og -o bin/fu.bootstrap "$UNITY_CPP" -ldl -pthread -I include -g -Dfu_UNITY_FULIB
+fi
+
+cd bin
+ln -f fu.bootstrap fu
