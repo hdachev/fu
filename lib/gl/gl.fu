@@ -218,42 +218,26 @@ struct Draw
     base_index?:    i32;
     base_vertex?:   i32;
     base_instance?: i32;
-};
+}
 
-struct Batch
-{
-    geometry:       Geometry;
-    instances?:     Instances;
-    draws?:         Draw[];
-};
-
-
-//
+inline fn total_index_count(g: Geometry)
+    g.index_bytes.len >> 1; // TODO 32bit indices! Also // TODO primitives btw
 
 struct Mesh
 {
     index_count:    i32;
     base_index?:    i32;
     base_vertex?:   i32;
-};
-
-fn Draw(using m: Mesh, instance_count: i32, base_instance?: i32)
-{
-    return Draw(
-        :index_count,
-        :instance_count,
-        :base_index,
-        :base_vertex,
-        :base_instance);
 }
 
-fn Batch(draw: Draw, geometry: Geometry, instances?: Instances)
-{
-    return Batch(
-        :geometry,
-        :instances,
-        draws: [ draw ]);
-}
+inline fn Draw(mesh: Mesh, instance_count: i32, base_instance?: i32)
+    Draw(
+        :mesh.index_count,
+             :instance_count,
+
+        :mesh.base_index,
+        :mesh.base_vertex,
+             :base_instance);
 
 
 //
@@ -419,29 +403,17 @@ struct Stencil
 }
 
 
-// ROP = Raster Operations Pipeline.
+//
 
 struct ROP
 {
-    // Depth, culling & such.
-    flags?:         ROPFlags;
-    depth_test?:    DepthTest;
-    offset?:        PolygonOffset;
-
-    stencil_front?: Stencil;
-    stencil_back?:  Stencil;
-
     // One blend state per color buffer.
     blend?:         Blend;
 
-    // Yet another chance to group things together.
     ubo_ROP?:       byte[];
     texunit_20?:    Texture[];
-
-    // Shader & geometry.
     shader:         Shader;
-    batch:          Batch;
-};
+}
 
 
 //
@@ -504,17 +476,29 @@ let Clear_DepthStencilColor =
 
 //
 
+struct Rasterizer
+{
+    // Previously under ROP: depth, culling & such.
+    flags?:         ROPFlags;
+    depth_test?:    DepthTest;
+    offset?:        PolygonOffset;
+
+    stencil_front?: Stencil;
+    stencil_back?:  Stencil;
+}
+
 struct Pass
 {
     fbo?:           Framebuffer;
     clear?:         Clear;
+    rasterizer?:    Rasterizer;
 
     ubo_Pass?:      byte[];
     texunit_10?:    Texture[];
 
     viewport?:      u64;
     scissor?:       u64;
-};
+}
 
 
 //
@@ -523,4 +507,4 @@ extern struct Frame
 {
     ubo_Frame?:     byte[];
     texunit_00?:    Texture[];
-};
+}

@@ -134,7 +134,7 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
         .updateAndBindOutputs(outputs);
 
     // Viewport:
-    rop_state.update(:pass, :device_rect);
+    rop_state.update(:pass, :device_rect, :outputs.has_depth_buffer);
     rop_state.clear(pass.clear);
 
     return outputs;
@@ -198,7 +198,7 @@ pub fn renderBlit(
     }
 }
 
-pub fn renderROP(
+pub fn render(
     rop: ROP,
 
     implicit ref caches: Loop,
@@ -206,9 +206,13 @@ pub fn renderROP(
     implicit pass: Pass,
 
     using implicit ref frame_state: FrameState,
-    implicit outputs: FBO::Outputs)
+    implicit outputs: FBO::Outputs,
+
+    geometry: Geometry,
+    draws: Draw[..],
+    instances?: Instances)
 {
-    rop_state.update(:rop, :outputs.has_depth_buffer);
+    shadow implicit ref rop = rop;
 
     // MRT blending, all things separate.
     blend_state.update(
@@ -285,20 +289,18 @@ pub fn renderROP(
     //   and this mesh.id here is the rop.batch.id
     //    which is otherwise not useful.
     //
-    let mesh        = rop.batch;
+    let INSTANCED   = !!instances.inst_data.len;
 
-    let INSTANCED   = !!mesh.instances.inst_data.len;
+    ref m_geom      = caches.hm_geometries.ref(geometry.id);
 
-    ref geometry    = caches.hm_geometries.ref(mesh.geometry.id);
-
-    mut noop        = Mesh::Instances;
-    ref instances   = INSTANCED
-        ? caches.hm_instances.ref(mesh.instances.id)
-        : noop;
+    mut m_NOOP      = Mesh::Instances;
+    ref m_inst      = INSTANCED
+        ? caches.hm_instances.ref(instances.id)
+        : m_NOOP;
 
     ref vao         = INSTANCED
-        ? instances.vao_w_instancing
-        : geometry.vao_WO_instancing;
+        ? m_inst.vao_w_instancing
+        : m_geom.vao_WO_instancing;
 
     // VAO bind first to protect whatever
     //  VAO was bound up to this point.
@@ -307,28 +309,44 @@ pub fn renderROP(
     // Geom update after VAO bind,
     //  we dont want to overwrite someone else's
     //   GL_ELEMENT_ARRAY_BUFFER.
-    geometry.update(
-        vertices:   mesh.geometry.vert_bytes,
-        indices:    mesh.geometry.index_bytes);
+    m_geom.update(
+        vertices:   geometry.vert_bytes,
+        indices:    geometry.index_bytes);
 
     if (INSTANCED)
-        instances.update(mesh.instances.inst_data);
+        m_inst.update(instances.inst_data);
 
-    assert(mesh.geometry.vert_bytes || !mesh.geometry.vert_attribs);
-    assert(mesh.instances.inst_data || !mesh.instances.inst_attribs);
+    assert(geometry.vert_bytes || !geometry.vert_attribs);
+    assert(instances.inst_data || !instances.inst_attribs);
 
     // Update & draw.
     vao.updateAndDraw(
 
         // Vertex data.
-        :geometry.vertices,
-        :geometry.indices,
-        :mesh.geometry.vert_attribs,
+        :m_geom.vertices,
+        :m_geom.indices,
+        :geometry.vert_attribs,
 
         // Instance data.
-        instances.data,
-        :mesh.instances.inst_attribs,
+        m_inst.data,
+        :instances.inst_attribs,
 
         // Draw data.
-        mesh.draws);
+        draws);
 }
+
+pub inline fn render(rop: ROP, geometry: Geometry)
+    render(:rop, :geometry,
+        draws: [
+            Draw(
+                index_count: geometry.total_index_count,
+                instance_count: 1),
+        ]);
+
+pub inline fn render(rop: ROP, geometry: Geometry, mesh: Mesh)
+    render(:rop, :geometry,
+        draws: [
+            Draw(
+                :mesh,
+                instance_count: 1),
+        ]);

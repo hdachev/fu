@@ -275,7 +275,7 @@ pub fn updateAndDraw(
     instances.handle:   utils::Handle,
     inst_attribs:       Attributes,
 
-    draws:              Draw[])
+    draws:              Draw[..])
 {
     vao.update(:indices);
 

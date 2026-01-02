@@ -441,7 +441,7 @@ fn updateStencilTestAndWrite(ref rs: ROPState, stencil_front!F: Stencil, stencil
 
 //
 
-pub fn update(ref rs: ROPState, pass: Pass, device_rect: u64)
+pub fn update(ref rs: ROPState, pass: Pass, device_rect: u64, has_depth_buffer!: bool)
 {
     // TODO there's some heavy w/h redundancy here.
     rs.updateViewport(pass.viewport
@@ -452,10 +452,10 @@ pub fn update(ref rs: ROPState, pass: Pass, device_rect: u64)
             : device_rect);
 
     rs.updateScissor(pass.scissor);
-}
 
-pub fn update(ref rs: ROPState, rop: ROP, has_depth_buffer!: bool)
-{
+    // Previously under ROP -
+    ref rop = pass.rasterizer;
+
     rs.updateDepthTestAndWrite(
         :rop.flags, :rop.depth_test, :has_depth_buffer);
 

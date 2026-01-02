@@ -488,8 +488,10 @@ pragma emit(
 
         auto modifiers = (unsigned char) mods;
 
-        // Note - we expect key_callback to have already done this.
+        // Mac: key_callback has already fired and set the modifiers.
+        #ifndef __linux__
         assert(SNAPSHOT.keyboard.modifiers == modifiers);
+        #endif
 
         SNAPSHOT.keyboard.modifiers = modifiers;
 
