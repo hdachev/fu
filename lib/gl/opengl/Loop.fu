@@ -200,6 +200,7 @@ pub fn renderBlit(
 
 pub fn renderROP(
     rop: ROP,
+    batch!mesh: Batch,
 
     implicit ref caches: Loop,
     implicit frame: Frame,
@@ -208,6 +209,8 @@ pub fn renderROP(
     using implicit ref frame_state: FrameState,
     implicit outputs: FBO::Outputs)
 {
+    shadow implicit ref rop = rop;
+
     rop_state.update(:rop, :outputs.has_depth_buffer);
 
     // MRT blending, all things separate.
@@ -285,8 +288,6 @@ pub fn renderROP(
     //   and this mesh.id here is the rop.batch.id
     //    which is otherwise not useful.
     //
-    let mesh        = rop.batch;
-
     let INSTANCED   = !!mesh.instances.inst_data.len;
 
     ref geometry    = caches.hm_geometries.ref(mesh.geometry.id);
