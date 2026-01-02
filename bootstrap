@@ -1,4 +1,14 @@
 #!/bin/bash
 set -e
 
-g++ --std=c++17 -Og -o bin/fu src/cli.fu.unity.cpp -ldl -pthread -I include -g -Dfu_UNITY_FULIB
+UNITY_CPP="src/cli.fu.unity.cpp"
+
+if [ ! -f "$UNITY_CPP" ]; then
+	echo ""
+	echo "  ERROR $UNITY_CPP not found."
+	echo "        Maybe you're not calling this from the root of the repo?"
+	exit 1
+fi
+
+mkdir -p bin
+g++ --std=c++17 -Og -o bin/fu "$UNITY_CPP" -ldl -pthread -I include -g -Dfu_UNITY_FULIB
