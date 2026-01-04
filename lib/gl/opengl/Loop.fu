@@ -134,7 +134,7 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
         .updateAndBindOutputs(outputs);
 
     // Viewport:
-    rop_state.update(:pass, :device_rect);
+    rop_state.update(:pass, :device_rect, :outputs.has_depth_buffer);
     rop_state.clear(pass.clear);
 
     return outputs;
@@ -210,8 +210,6 @@ pub fn renderROP(
     implicit outputs: FBO::Outputs)
 {
     shadow implicit ref rop = rop;
-
-    rop_state.update(:rop, :outputs.has_depth_buffer);
 
     // MRT blending, all things separate.
     blend_state.update(

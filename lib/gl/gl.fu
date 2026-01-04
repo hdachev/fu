@@ -423,14 +423,6 @@ struct Stencil
 
 struct ROP
 {
-    // Depth, culling & such.
-    flags?:         ROPFlags;
-    depth_test?:    DepthTest;
-    offset?:        PolygonOffset;
-
-    stencil_front?: Stencil;
-    stencil_back?:  Stencil;
-
     // One blend state per color buffer.
     blend?:         Blend;
 
@@ -440,7 +432,7 @@ struct ROP
 
     // Shader & geometry.
     shader:         Shader;
-};
+}
 
 
 //
@@ -503,17 +495,29 @@ let Clear_DepthStencilColor =
 
 //
 
+struct Rasterizer
+{
+    // Previously under ROP: depth, culling & such.
+    flags?:         ROPFlags;
+    depth_test?:    DepthTest;
+    offset?:        PolygonOffset;
+
+    stencil_front?: Stencil;
+    stencil_back?:  Stencil;
+}
+
 struct Pass
 {
     fbo?:           Framebuffer;
     clear?:         Clear;
+    rasterizer?:    Rasterizer;
 
     ubo_Pass?:      byte[];
     texunit_10?:    Texture[];
 
     viewport?:      u64;
     scissor?:       u64;
-};
+}
 
 
 //
@@ -522,4 +526,4 @@ extern struct Frame
 {
     ubo_Frame?:     byte[];
     texunit_00?:    Texture[];
-};
+}
