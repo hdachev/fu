@@ -1033,6 +1033,26 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_confusing(currently: "Incompatible types: expects i32, got @140", `
+        fn apply_implicit_arg(myfn, implicit ref implicit_arg: int)
+            myfn(implicit_arg);
+
+        fn apply_implicit_arg_indirect(myfn)
+            apply_implicit_arg(:fn myfn);
+
+        fn main() {
+            implicit mut implicit_arg = 1;
+        <alt>
+            apply_implicit_arg_indirect(    <fail wrong number of arguments 10:13+27>
+                                         [] <pass/></fail>): |ref x| { x++ };
+        <alt/>
+            apply_implicit_arg(    <fail SHOULD AT LEAST HIGHLIGHT THE LAMBDA or provide better snippet>
+                                [] <pass/></fail>): |ref x| { x++ };
+        </alt>
+            return implicit_arg - 2;
+        }
+    `);
+
     // /Template args
 
 
