@@ -2557,7 +2557,10 @@ pub fn solve(
                         if (host_arg.flags & F_MUSTNAME)
                         {
                             if (names.len <= callsiteIndex || !names[callsiteIndex])
-                                matchFail(host_arg ~ " must be :named explicitly.");
+                                matchFail(host_arg ~ " must be :named explicitly."
+                                    ~ (host_arg.flags & F_IMPLICIT &&
+                                        "\n\n\t\tCallee argument is " ~ "implicit".qBAD ~ ": perhaps you are passing too many arguments? "
+                                            ~ addr_and_snippet(args[callsiteIndex].token)));
                         }
 
                         // Autocall.

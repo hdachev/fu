@@ -1033,7 +1033,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_confusing(currently: "Incompatible types: expects i32, got @140", `
+    ZERO(`
         fn apply_implicit_arg(myfn, implicit ref implicit_arg: int)
             myfn(implicit_arg);
 
@@ -1046,7 +1046,7 @@ pub extern fn runTests()
             apply_implicit_arg_indirect(    <fail wrong number of arguments 10:13+27>
                                          [] <pass/></fail>): |ref x| { x++ };
         <alt/>
-            apply_implicit_arg(    <fail SHOULD AT LEAST HIGHLIGHT THE LAMBDA or provide better snippet>
+            apply_implicit_arg(    <fail too many arguments 2:12+18>
                                 [] <pass/></fail>): |ref x| { x++ };
         </alt>
             return implicit_arg - 2;
@@ -2049,7 +2049,7 @@ pub extern fn runTests()
         fn main() Node(items: [ Node(), Node() ]).count - 3;
     `);
 
-    TODO_args(currently: "non-opt without a bang! cannot follow optional 5:78+1", `
+    ZERO(`
         struct Geom { a: int };
         struct Instances { b: int };
         struct Caches { c: int };

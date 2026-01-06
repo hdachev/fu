@@ -1627,7 +1627,7 @@ pub fn parse(
                         && (token.value == "." || token.value == "<");
 
             if (tryConsume("id", "using"    , :fn peek)) flags |= F_USING;
-            if (tryConsume("id", "implicit" , :fn peek)) flags |= F_IMPLICIT;
+            if (tryConsume("id", "implicit" , :fn peek)) flags |= F_IMPLICIT | F_MUSTNAME;
             if (tryConsume("id", "lax"      , :fn peek)) flags |= F_LAX;
             if (tryConsume("id", "shadow"   , :fn peek)) flags.set_SHADOW();
 
