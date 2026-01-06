@@ -2049,6 +2049,21 @@ pub extern fn runTests()
         fn main() Node(items: [ Node(), Node() ]).count - 3;
     `);
 
+    TODO_args(currently: "non-opt without a bang! cannot follow optional 5:78+1", `
+        struct Geom { a: int };
+        struct Instances { b: int };
+        struct Caches { c: int };
+        fn implicit_after_optional(a: Geom, b?: Instances, implicit c: Caches)
+            c += a.a + b.b * 7;
+
+        fn main() {
+            implicit mut c: Caches;
+            let a = implicit_after_optional(Geom(1));
+            let b = implicit_after_optional(Geom(2), Instances(11));
+            return c - 80;
+        }
+    `);
+
     // /Recursion /Closures /Implicit args
 
 
