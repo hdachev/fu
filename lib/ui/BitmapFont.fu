@@ -1,0 +1,92 @@
+pub import Font;
+
+struct BitmapFont {
+    true texels:        byte[];
+
+    // Monospace fonts don't need a glyphs array.
+    mono_bounds:        aabb16;
+    glyphs:             BitmapGlyph[];
+}
+
+struct BitmapGlyph {
+    using bounds:       aabb16;
+    top_left_texel:     int;
+}
+
+fn count(bf: BitmapFont) {
+    bf.each: |count| return count;
+    return 0;
+}
+
+fn each(bf: BitmapFont, fn) {
+    let mono_stride = bf.mono_bounds.stride;
+
+    let count = mono_stride
+        ? bf.texels.len / mono_stride
+        : bf.glyphs.len;
+
+    mut mono_glyph = BitmapGlyph(
+        bounds: bf.mono_bounds,
+        top_left_texel: 0);
+
+    for (mut i = 0; i < count; i++) {
+        mono_glyph.top_left_texel = i * mono_stride;
+        let glyph = mono_stride ? mono_glyph : bf.glyphs[i];
+        fn(?:i, ?:count, ?:glyph, ?:glyph.bounds, ?:glyph.top_left_texel,
+            texels?: bf.texels[
+                glyph.top_left_texel ..
+                glyph.top_left_texel + glyph.bounds.stride]);
+    }
+}
+
+fn make_mono_bounds(ref bf: BitmapFont) {
+    if (bf.mono_bounds)
+        return;
+
+    bf.glyphs.each: |glyph| {
+        if ((bf.mono_bounds = glyph.bounds))
+            break;
+    }
+
+    bf.glyphs.each: |glyph| {
+        bf.mono_bounds.x_min = min(bf.mono_bounds.x_min, glyph.bounds.x_min);
+        bf.mono_bounds.y_min = min(bf.mono_bounds.y_min, glyph.bounds.y_min);
+        bf.mono_bounds.x_max = max(bf.mono_bounds.x_max, glyph.bounds.x_max);
+        bf.mono_bounds.y_max = max(bf.mono_bounds.y_max, glyph.bounds.y_max);
+    }
+
+    ref dest_texels = bf.texels;
+    mut src_texels: byte[];
+    swap(src_texels, dest_texels);
+
+    let dest_bounds = bf.mono_bounds;
+    let dest_stride = dest_bounds.stride;
+    dest_texels.resize(bf.glyphs.len * dest_stride);
+
+    let dest_w = dest_bounds.width.max(0).int;
+    let dest_h = dest_bounds.height.max(0).int;
+
+    bf.glyphs.each: |ref glyph, i| {
+        mut src_offset  = glyph.top_left_texel;
+        mut dest_offset = glyph.top_left_texel = i * dest_stride;
+        let src_bounds  = glyph.bounds;
+        glyph.bounds    = dest_bounds;
+
+        let left        = src_bounds.x_min.int - dest_bounds.x_min.int;
+        let top         = dest_bounds.y_max.int - src_bounds.y_max.int; // y axis up, but texels y-down?
+        assert(left >= 0 && top >= 0);
+        dest_offset    += top * dest_w + left;
+
+        let src_w       = src_bounds.width.max(0).int;
+        let src_h       = src_bounds.height.max(0).int;
+        assert(src_w <= dest_w && src_h <= dest_h);
+
+        for (mut y = 0; y < src_h; y++) {
+            for (mut x = 0; x < src_w; x++)
+                dest_texels[dest_offset + x] = src_texels[src_offset + x];
+
+            src_offset  += src_w;
+            dest_offset += dest_w;
+        }
+    };
+}
