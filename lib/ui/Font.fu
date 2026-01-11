@@ -1,0 +1,28 @@
+
+struct aabb16 {
+    x_min: i16; x_max: i16;
+    y_min: i16; y_max: i16;
+}
+
+inline fn width (using _: aabb16) x_max - x_min;
+inline fn height(using _: aabb16) y_max - y_min;
+
+struct Metrics {
+    using bounds:       aabb16;
+
+    lsb:                i16;
+    rsb:                i16;
+    ascender:           i16;
+    descender:          i16;
+    x_height:           i16;
+    cap_height:         i16;
+}
+
+struct Font {
+    using metrics:      Metrics;
+    true codepoints:    u16[];
+
+    // Monospace fonts don't need an advance array.
+    mono_advance:       i16;
+    advance:            i16[];
+}
