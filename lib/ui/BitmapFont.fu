@@ -1,0 +1,42 @@
+pub import Font;
+
+inline fn stride(using _: aabb16) width.int * height.int;
+
+struct BitmapFont {
+    true texels:        byte[];
+
+    // Monospace fonts don't need a glyphs array.
+    mono_bounds:        aabb16;
+    glyphs:             BitmapGlyph[];
+}
+
+struct BitmapGlyph {
+    using bounds:       aabb16;
+    top_left_texel:     int;
+}
+
+fn count(bf: BitmapFont) {
+    bf.each: |count| return count;
+    return 0;
+}
+
+fn each(bf: BitmapFont, fn) {
+    let mono_stride = bf.mono_bounds.stride;
+
+    let count = mono_stride
+        ? bf.texels.len / mono_stride
+        : bf.glyphs.len;
+
+    mut mono_glyph = BitmapGlyph(
+        bounds: bf.mono_bounds,
+        top_left_texel: 0);
+
+    for (mut i = 0; i < count; i++) {
+        mono_glyph.top_left_texel = i * mono_stride;
+        let glyph = mono_stride ? mono_glyph : bf.glyphs[i];
+        fn(?:i, ?:count, ?:glyph, ?:glyph.bounds, ?:glyph.top_left_texel,
+            texels?: bf.texels[
+                glyph.top_left_texel ..
+                glyph.top_left_texel + glyph.bounds.stride]);
+    }
+}

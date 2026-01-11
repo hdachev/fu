@@ -1,0 +1,286 @@
+pub import BitmapFont;
+
+pub fn parse(
+    src: byte[..],
+    ref font: Font,
+    ref bitmap: BitmapFont): string
+{
+    struct CharState {
+        codepoint:      i32;
+        using glyph:    BitmapGlyph;
+
+        row:            i16;
+        advance:        i16;
+        bitmapMode:     bool;
+    };
+
+    //
+    mut current         = CharState();
+    mut mono_advance    = i16();
+    mut mono_bounds     = aabb16();
+
+    //
+    mut idx         = 0;
+    mut end         = src.len;
+    mut line_no     = 1;
+
+    mut idx0        = 0;
+    mut space       = 0;
+    mut args0       = 0;
+
+    mut chars_mode  = 0;
+
+    //
+    mut errors = "";
+
+    fn error(reason: string) {
+        errors ~= "Line "
+        errors ~= line_no;
+        errors ~= ": ";
+        errors ~= reason;
+        errors ~= '\n';
+    }
+
+    //
+    while (idx < end)
+    {
+        {
+            let c = src[idx++];
+            if (c != '\n') {
+                if (c == ' ') {
+                    if (!space)
+                        space = idx - 1;
+                }
+
+                continue;
+            }
+        }
+
+        //
+        let line    = src[idx0 .. idx - 1];
+        let cmd     = line[.. space > idx0 ? space - idx0 : line.len];
+        args0       = space > idx0 ? space - idx0 + 1 : line.len;
+
+        //
+        idx0        = idx;
+        space       = 0;
+
+        fn next_i32() {
+            mut first   = true;
+            mut neg     = false;
+
+            mut res: i32;
+            while (args0 < line.len) {
+                let c = line[args0++];
+                if (c < '0' || c > '9') {
+                    if (first && c == '-') {
+                        neg = true;
+                        continue;
+                    }
+
+                    break;
+                }
+
+                res *= 10;
+                res += c.i32 - '0'.i32;
+                first = false;
+            }
+
+            return res * (neg ? -1 : +1);
+        }
+
+        fn next_i16() next_i32().i16;
+
+        if (!chars_mode)
+        {
+            if (cmd == "FONT_ASCENT") {
+                font.ascender = next_i16();
+            }
+            else if (cmd == "FONT_DESCENT") {
+                font.descender = -next_i16();
+            }
+            else if (cmd == "X_HEIGHT") {
+                font.x_height = next_i16();
+            }
+            else if (cmd == "CAP_HEIGHT") {
+                font.cap_height = next_i16();
+            }
+            else if (cmd == "SIZE") {
+                // TODO
+            }
+            else if (cmd == "CHARS") {
+                chars_mode = next_i32() || 1;
+            }
+            else if (cmd == "FONTBOUNDINGBOX") {
+                let w           = next_i16();
+                let h           = next_i16();
+                let x           = next_i16();
+                let y           = next_i16();
+
+                font.y_max      = (h + y);
+                font.y_min      =      y ;
+                font.x_max      = (w + x);
+                font.x_min      =      x ;
+            }
+        }
+        else if (cmd == "ENDCHAR")
+        {
+            if (!current.codepoint) {
+                error("No codepoint, missing ENCODING.");
+            }
+            else if (current.row != current.height) {
+                error("Incomplete bitmap data.");
+            }
+            else if (!current.advance) {
+                error("Character advance not set, missing DWIDTH.");
+            }
+            else if (current.codepoint < 0 || current.codepoint > 0xffff.i32) {
+                error("Codepoint is out of range.");
+            }
+            else {
+                if (font.codepoints.len <= current.codepoint)
+                    font.codepoints.grow(current.codepoint + 1);
+
+                font.codepoints[current.codepoint] =
+                    font.advance.len.u16;
+
+                font.advance    ~= current.advance;
+                bitmap.glyphs   ~= current.glyph;
+            }
+
+            current = CharState();
+        }
+        else if (current.bitmapMode)
+        {
+            mut expect = current.width.i32;
+
+            mut i0 = current.top_left_texel
+                   + current.width.i32 * current.row.i32;
+
+            mut y = current.row++;
+            if (y < current.height)
+            {
+                for (mut i = 0; i < line.len; i++) {
+                    let c = line[i];
+
+                    mut hex = c >= '0' && c <= '9' ? c.i32 - '0'.i32
+                            : c >= 'A' && c <= 'F' ? c.i32 - 'A'.i32 + 10
+                            : { continue; }
+
+                    let N   = expect < 4 ? expect : 4;
+                    let i1  = i0 + N;
+                    expect -= N;
+
+                    for (shadow mut i = i0; i < i1; i++) {
+                        bitmap.texels[i] = hex & 8 ? 255.byte : 0.byte;
+                        hex <<= 1;
+                    }
+
+                    i0 = i1;
+                }
+            }
+        }
+        else if (cmd == "BBX")
+        {
+            if (current.bounds) {
+                error("Character bounds already set.");
+            }
+            else {
+                let w           = next_i32().i16;
+                let h           = next_i32().i16;
+
+                current.x_min   = next_i32().i16;
+                current.y_min   = next_i32().i16;
+
+                current.x_max   = current.x_min + w;
+                current.y_max   = current.y_min + h;
+
+                if (current.width <= 0 || current.height <= 0) {
+                    error("Empty character.");
+                    current.bounds  = [];
+                }
+
+                let INVALID = aabb16(1, 1, 1, 1);
+                if (!mono_bounds)
+                    mono_bounds = current.bounds || INVALID;
+                else if (current.bounds != mono_bounds)
+                    mono_bounds = INVALID;
+            }
+        }
+        else if (cmd == "BITMAP")
+        {
+            if (!current.bounds) {
+                error("Character bounds not set, missing BBX.");
+            }
+            else {
+                current.bitmapMode = true;
+
+                let num_texels =
+                    current.width .i32 *
+                    current.height.i32;
+
+                bitmap.texels.grow(
+                    (current.top_left_texel = bitmap.texels.len)
+                        + num_texels);
+            }
+        }
+        else if (cmd == "STARTCHAR")
+        {
+            if (current) {
+                error("Incomplete previous character.");
+                current = CharState();
+            }
+        }
+        else if (cmd == "ENCODING")
+        {
+            if (!chars_mode)
+                error("No character started, missing STARTCHAR.");
+            else if (current.codepoint)
+                error("Codepoint already set.");
+            else
+                current.codepoint = next_i32();
+        }
+        else if (cmd == "DWIDTH")
+        {
+            if (current.advance) {
+                error("Advance already set.");
+            }
+            else {
+                current.advance = next_i16();
+
+                if (!mono_advance)
+                    mono_advance = current.advance || (-1).i16;
+                else if (mono_advance != current.advance)
+                    mono_advance = -1;
+            }
+        }
+
+        line_no++;
+    }
+
+    //
+    if (!src)
+        error("Empty file, nothing to load.");
+    else if (line_no < 2)
+        error("Doesn't look like a BDF file, no newlines.");
+    else if (!font.codepoints)
+        error("Doesn't look like a BDF file, no character data.");
+    else if (font.advance.len < chars_mode)
+        error("CHARS announced more characters than were actually present.");
+    else if (font.advance.len > chars_mode)
+        error("CHARS announced fewer characters than were actually present.");
+
+    //
+    if (mono_advance > 0) {
+        font.mono_advance = mono_advance;
+        font.advance.clear();
+    }
+
+    if (bitmap.texels.len == mono_bounds.stride * bitmap.glyphs.len) {
+        bitmap.mono_bounds = mono_bounds;
+        bitmap.glyphs.clear();
+    }
+
+    //
+    return errors;
+}

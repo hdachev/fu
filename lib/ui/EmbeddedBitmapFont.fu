@@ -1,0 +1,99 @@
+pub import BitmapFont;
+
+struct EmbeddedBitmapFont {
+    using font: Font;
+    using bitmap: BitmapFont;
+};
+
+fn EmbeddedBitmapFont(metrics: Font::Metrics, codepoints: u16[], bitfield: u64[])
+{
+    let bounds  = metrics.bounds;
+    mut bitmap  = BitmapFont(mono_bounds: bounds, texels: [], glyphs: []);
+    mut font    = Font(:metrics, codepoints: [], advance: [], mono_advance: bounds.width);
+
+    bitmap.texels = bitfield.bits_to_bytes;
+
+    assert(codepoints.first == 0);
+    font.codepoints.grow(codepoints.last.int + 1);
+    for (mut i = codepoints.len; i --> 0; )
+        font.codepoints[codepoints[i].int] = i.u16;
+
+    assert(bitmap.texels.len == (codepoints.len * bounds.stride + 63) / 64);
+    return EmbeddedBitmapFont(:font, :bitmap);
+}
+
+fn bytes_to_bits(bytes: byte[]) {
+    mut ret: u64[];
+    mut buffer: u64;
+    mut bit = 0;
+    for (mut i = 0; i < bytes.len; i++) {
+        buffer |= (bytes[i] && 1.u64) << bit.u64;
+
+        if (++bit == 64) {
+            ret ~= buffer;
+            buffer = 0;
+            bit = 0;
+        }
+    }
+
+    if (bit) ret ~= buffer;
+    return ret;
+}
+
+fn bits_to_bytes(bitfield: u64[]) {
+    mut bytes: byte[];
+    bytes.grow(bitfield.len * 64);
+    for (mut i = 0; i < bytes.len; i++) {
+        let index = i >> 6;
+        let bit = (i & 63).u64;
+        if (bitfield[index] & (1 << bit))
+            bytes[i] = 255.byte;
+    }
+
+    return bytes;
+}
+
+fn EmbeddedBitmapFont(w: i16, h: i16, codepoints: u16[], bitfield: u64[])
+{
+    fn measure(c: byte) {
+        let index = codepoints.find(c.u16);
+        let stride = w.int * h.int;
+
+        mut bounds = aabb16(x_min: w, y_min: h, 0, 0);
+        mut offset = index * stride;
+        for (mut y = h; y --> 0; ) {
+            for (mut x = 0 * w; x < w; x++) {
+                let i = offset++;
+                if (bitfield[i >> 6] & (1 << (i & 63).u64)) {
+                    bounds.x_min = min(bounds.x_min, x);
+                    bounds.x_max = max(bounds.x_max, x);
+                    bounds.y_min = min(bounds.y_min, y);
+                    bounds.y_max = max(bounds.y_max, y);
+                }
+            }
+        }
+        bounds.x_max++;
+        bounds.y_max++;
+
+        assert(offset == (index+1) * stride);
+        return bounds;
+    }
+
+    let lowercase_x = measure('x');
+    let lowercase_p = measure('p');
+    let lowercase_b = measure('b');
+    let uppercase_H = measure('H');
+
+    let baseline    = min(lowercase_x.y_min, uppercase_H.y_min);
+    let descender   = min(0, lowercase_p.y_min - baseline);
+    let x_height    = max(0, lowercase_x.y_max - baseline);
+    let cap_height  = max(x_height,   uppercase_H.y_max - baseline);
+    let ascender    = max(cap_height, lowercase_b.y_max - baseline);
+    let lsb         =     min(uppercase_H.x_min, lowercase_x.x_min);
+    let rsb         = w - max(uppercase_H.x_max, lowercase_x.x_max);
+
+    let bounds      = aabb16(x_min: 0, x_max: w, y_min: 0 - baseline, y_max: h - baseline);
+    let metrics     = Metrics(:x_height, :cap_height, :ascender, :descender, :lsb, :rsb, :bounds);
+
+    return EmbeddedBitmapFont(:metrics, :codepoints, :bitfield);
+}
