@@ -112,7 +112,11 @@ fn loop(options: WindowOptions, update): bool
         if (input.should_close)
             break;
 
-        let cannot_wait: bool = update(input);
+        let update_result = update(input);
+        let cannot_wait = typeof(update_result) -> void
+            ? input.active
+            : update_result == true;
+
         window.swap(wait: !cannot_wait);
     }
 

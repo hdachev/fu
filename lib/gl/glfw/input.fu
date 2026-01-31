@@ -96,7 +96,7 @@ enum Token: u16
     KEY_F22             = 311
     KEY_F23             = 312
     KEY_F24             = 313
-    KEY_F25             = 314   // fkey_index below
+    KEY_F25             = 314   // fkey_number below
 
     KEY_KP_0            = 320
     KEY_KP_1            = 321
@@ -126,7 +126,7 @@ enum Token: u16
     KEY_MENU            = 348
 }
 
-fn fkey_index(v: Token): int =
+fn fkey_number(v: Token): int =
     v >= "KEY_F1" && v <= "KEY_F25"
                   && (v.int - Token.KEY_F1.int + 1);
 
@@ -226,4 +226,9 @@ struct InputFrame
     should_close:   bool;
     frame_index:    u64;
     time_delta:     f64;
+}
+
+fn active(input: InputFrame)
+{
+    return !!(input.keyboard.scancodes || input.mouse.buttons);
 }

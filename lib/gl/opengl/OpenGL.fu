@@ -5,9 +5,9 @@ pragma include(
     "<glad/glad.h>");
 
 
-// In-language, ported stuff.
+//
 
-pub struct Loop
+pub struct OpenGL
 {
     hm_framebuffers:    hash::Map(u64, ::FBO);
     hm_textures:        hash::Map(u64, ::Tex);
@@ -38,7 +38,7 @@ struct FrameState {
 
 //
 
-fn Frame_begin(ref caches: Loop,
+fn Frame_begin(ref backend: OpenGL,
     frame: Frame, framebuffer: ivec2)
 {
     // TODO FIX hotswap workaround
@@ -65,11 +65,11 @@ fn Frame_begin(ref caches: Loop,
     // Per-frame UBOs and texture data.
     {
         bp_ubo_Frame.updateAndBind(
-            caches.ubo_Frame,
+            backend.ubo_Frame,
             frame.ubo_Frame);
 
         TexUnits::updateAndBind(
-            caches.hm_textures,
+            backend.hm_textures,
             0, frame.texunit_00);
     }
 
@@ -100,17 +100,17 @@ fn Frame_end()
 
 //
 
-fn Pass_begin(ref caches: Loop, using ref _: FrameState,
+fn Pass_begin(ref backend: OpenGL, using ref _: FrameState,
     pass: Pass)
 {
     // Per-pass UBOs and texture data.
     {
         bp_ubo_Pass.updateAndBind(
-            caches.ubo_Pass,
+            backend.ubo_Pass,
             pass.ubo_Pass);
 
         TexUnits::updateAndBind(
-            caches.hm_textures,
+            backend.hm_textures,
             10, pass.texunit_10);
     }
 
@@ -119,7 +119,7 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
         get_output: |shadow i|
         {
             let spec        = pass.fbo.outputs[i];
-            let tex_handle  = caches.hm_textures.ref(spec.id).updateAndBind(spec, for_sampling: false).handle;
+            let tex_handle  = backend.hm_textures.ref(spec.id).updateAndBind(spec, for_sampling: false).handle;
 
             FBO::Output(
                 :tex_handle,
@@ -129,7 +129,7 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
                 :spec.level)
         });
 
-    caches
+    backend
         .hm_framebuffers.ref(pass.fbo.id)
         .updateAndBindOutputs(outputs);
 
@@ -144,15 +144,15 @@ fn Pass_begin(ref caches: Loop, using ref _: FrameState,
 //
 
 pub fn renderFrame(
-    ref loop:       Loop,
     frame:          Frame,
     framebuffer:    ivec2,
 
-    draw)
+    draw,
+
+    implicit ref backend: OpenGL)
 {
-    implicit ref caches = loop;
     shadow implicit ref frame = frame;
-    implicit mut frame_state = Frame_begin(caches, frame, framebuffer);
+    implicit mut frame_state = Frame_begin(backend, frame, framebuffer);
 
     ///////
     draw();
@@ -166,13 +166,13 @@ pub fn renderPass(
 
     draw,
 
-    implicit ref caches: Loop,
+    implicit ref backend: OpenGL,
     implicit frame: Frame,
     implicit ref frame_state: FrameState)
 {
     shadow implicit ref pass = pass;
 
-    implicit outputs = Pass_begin(caches, frame_state, pass);
+    implicit outputs = Pass_begin(backend, frame_state, pass);
 
     ///////
     draw();
@@ -182,11 +182,11 @@ pub fn renderPass(
 pub fn renderBlit(
     cmd: BlitCommand,
 
-    implicit ref caches: Loop)
+    implicit ref backend: OpenGL)
 {
     if (cmd.type == "GenerateMipmaps")
     {
-        let tex = caches.hm_textures.get(cmd.id);
+        let tex = backend.hm_textures.get(cmd.id);
         if (tex.handle)
         {
             pragma output(
@@ -201,7 +201,7 @@ pub fn renderBlit(
 pub fn render(
     rop: ROP,
 
-    implicit ref caches: Loop,
+    implicit ref backend: OpenGL,
     implicit frame: Frame,
     implicit pass: Pass,
 
@@ -222,17 +222,17 @@ pub fn render(
     // Per-ROP UBOs & textures.
     {
         bp_ubo_ROP.updateAndBind(
-            caches.ubo_ROP,
+            backend.ubo_ROP,
             rop.ubo_ROP);
 
         TexUnits::updateAndBind(
-            caches.hm_textures,
+            backend.hm_textures,
             20, rop.texunit_20);
     }
 
     // Switch to shader.
     {
-        ref shader = caches.hm_shaders.ref(rop.shader.id);
+        ref shader = backend.hm_shaders.ref(rop.shader.id);
 
         shader.update(
             rop.shader.vert,
@@ -291,11 +291,11 @@ pub fn render(
     //
     let INSTANCED   = !!instances.inst_data.len;
 
-    ref m_geom      = caches.hm_geometries.ref(geometry.id);
+    ref m_geom      = backend.hm_geometries.ref(geometry.id);
 
     mut m_NOOP      = Mesh::Instances;
     ref m_inst      = INSTANCED
-        ? caches.hm_instances.ref(instances.id)
+        ? backend.hm_instances.ref(instances.id)
         : m_NOOP;
 
     ref vao         = INSTANCED
