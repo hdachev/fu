@@ -227,3 +227,8 @@ struct InputFrame
     frame_index:    u64;
     time_delta:     f64;
 }
+
+fn active(input: InputFrame)
+{
+    return !!(input.keyboard.scancodes || input.mouse.buttons);
+}

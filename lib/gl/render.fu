@@ -1,4 +1,6 @@
 pub import gl;
 
 // TODO FIX currently only opengl, meant to somehow switch backends
-pub import opengl::Loop;
+pub import gl::opengl::OpenGL;
+
+pub type Backend = OpenGL;
