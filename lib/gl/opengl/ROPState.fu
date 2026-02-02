@@ -184,12 +184,11 @@ fn updateCullFace(ref rs: ROPState, cull_face: CullFace)
 {
     if (rs.cull_face != cull_face)
     {
-        let enabled0 = rs.cull_face > "Disabled";
-        let enabled1 =    cull_face > "Disabled";
+        let enabled1 =     cull_face > "Disabled";
+        let toggle   = (rs.cull_face > "Disabled") != enabled1 || !rs.cull_face;
+        rs.cull_face =     cull_face;
 
-        rs.cull_face = cull_face;
-
-        if (enabled0 != enabled1) pragma output(
+        if (toggle) pragma output(
         `
             if (`enabled1`)
                 glEnable (GL_CULL_FACE);
