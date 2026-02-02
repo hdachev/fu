@@ -44,7 +44,7 @@ enum TextureFormat: u8      // Note - OpenGL only requires the following:
         // unorm-end ------------------------------------------
 
         // uint-start -----------------------------------------
-    //r8ui
+    r8ui
     //rg8ui
     //rgba8ui
 
@@ -99,6 +99,8 @@ using flags TextureFlags: u8
 
 let T_linear        = T_linear_min  | T_linear_mag;
 let T_clamp         = T_clamp_u     | T_clamp_v;
+
+let T_stream_data   = T_nosample;   // TODO FIX bit reuse
 
 primitive TextureLayer: i16;
 primitive TextureLevel: i8;
