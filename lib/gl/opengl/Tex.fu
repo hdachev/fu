@@ -126,7 +126,7 @@ fn updateAndBind(
     ref t:          Tex,
 
     format:         TextureFormat,
-    flags:          TextureFlags,
+    mut flags:      TextureFlags,
     compare_mode:   DepthTest,
     level:          TextureLevel,
     level_count:    TextureLevel,
@@ -139,6 +139,18 @@ fn updateAndBind(
     //  but currently this is the most compact option I have here
     for_sampling!:  bool)
 {
+    mut STREAM = false;
+    if (flags & T_stream_data) {
+        assert(!!data == for_sampling);
+        if (for_sampling) {
+            // TODO FIX T_stream_data reuses the T_nosample bit.
+            assert(!!(flags & T_nosample));
+            STREAM = true;
+            flags &= ~T_stream_data;
+            assert(!(flags & T_nosample));
+        }
+    }
+
     // No clean switch between renderbuffer & texture.
     let old_mode = t.flags.mode;
     let new_mode =   flags.mode;
@@ -236,7 +248,8 @@ fn updateAndBind(
             glBindTexture(GL_TEXTURE_2D, `t.handle`);
         `);
 
-        if (!utils::shallow_eq(t.data, data)
+        if (STREAM
+                || !utils::shallow_eq(t.data, data)
                 || format != t.format || w != t.w || h != t.h)
         {
             if (t.format && (t.format != format || t.w != w || t.h != h))
@@ -245,12 +258,12 @@ fn updateAndBind(
                     (t.w != w && " w(" ~ t.w ~ " -> " ~ w ~ ")") ~
                     (t.h != h && " h(" ~ t.h ~ " -> " ~ h ~ ")"));
 
-            update_Texture2D(:format, :w, :h, :data);
+            update_Texture2D(:format, :w, :h, :data, :STREAM);
 
             t.w             = w;
             t.h             = h;
             t.format        = format;
-            t.data          = data;
+            t.data          = !STREAM && data;
             t.level_allocs  = 0;
         }
     }
@@ -330,6 +343,10 @@ fn getFormats(format: TextureFormat): Internal_and_DataBuffer_formats
                 GL_RGBA16, GL_RGBA, GL_UNSIGNED_SHORT, 4*2 };
 
             //
+            case `TextureFormat.r8ui`: return `f` = {
+                GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 1*1 };
+
+            //
             case `TextureFormat.r32ui`: return `f` = {
                 GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, 1*4 };
 
@@ -388,13 +405,24 @@ fn getFormats(format: TextureFormat): Internal_and_DataBuffer_formats
     return f;
 }
 
-fn update_Texture2D(format: TextureFormat, w: i16, h: i16, data: string)
+fn update_Texture2D(format: TextureFormat, w: i16, h: i16, data: string, STREAM!?: bool)
 {
     using getFormats(format);
 
+    // TODO FIX set this once
+    mut alignment = (h > 1 && w.int * texel_bytes) & 3;
+    if (alignment)
+    {
+        alignment = alignment & 1 || alignment;
+        dbg::ln(" STREAM GL_UNPACK_ALIGNMENT alignment(" alignment "), make sure texel rows 4-byte aligned to avoid call to glPixelStorei");
+        pragma output(`
+            glPixelStorei(GL_UNPACK_ALIGNMENT, `alignment`);
+        `);
+    }
+
     assert(!data || data.len == texel_bytes * w.int * h.int);
 
-    if (data)
+    if (data && !STREAM)
         dbg::ln(" STREAM GL_TEXTURE_2D bytes(" data.len ") format(" format ") w(" w ") h(" h ")");
 
     pragma output(
