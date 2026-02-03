@@ -19347,6 +19347,17 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_args(currently: "BUG injectForeignLocal off-module target arg b 3:19+6", [`
+        <alt>
+        inline</alt>
+        fn render(a<alt>: int</alt>,
+            b!<alt><alt/>: int</alt> = 13,
+            c!<alt>: int</alt> = b * 2) a + b + c;
+    `,`
+        import _0;
+        fn main() render(1) - 40;
+    `]);
+
     // /Inliner.
 
 
