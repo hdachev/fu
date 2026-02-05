@@ -161,11 +161,11 @@ fn abs(v: <T>)
     case (T.is::arithmetic && !T.is::unsigned) v < 0 ? -v : v;
 
 fn max(a: <T>, b: T)
-    case (T.is::floating_point): T __native("<cmath>", "std::fmin");
+    case (T.is::floating_point): T __native("<cmath>", "std::fmax");
     case (T.is::primitive) a >= b ? a : b;
 
 fn min(a: <T>, b: T)
-    case (T.is::floating_point): T __native("<cmath>", "std::fmax");
+    case (T.is::floating_point): T __native("<cmath>", "std::fmin");
     case (T.is::primitive) a <= b ? a : b;
 
 fn clamp(v: <T>, gteq: T, lteq: T)

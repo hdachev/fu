@@ -14485,6 +14485,10 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() 1.0.max(2) == 2 && min(1, 2.0) == 1 && 3.clamp(1.0, 2) == 2.0 && 1.0.clamp(2, 3.0) == 2 ? 0 : 1;
+    `);
+
     // /Usability of numeric literals.
 
 
