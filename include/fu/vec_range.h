@@ -58,6 +58,14 @@ struct vec_range_mut
         return m_vec->size() - (Left() + Right());
     }
 
+    fu_INL size_t bytesize() const noexcept {
+        return size_t(size()) * sizeof(T);
+    }
+
+    fu_INL explicit operator bool() const noexcept {
+        return !!size();
+    }
+
 
     // Maintain copy/paste from fu::vec
 
@@ -99,14 +107,6 @@ struct vec_range_mut
              : *((T*)1);
 
         #endif
-    }
-
-
-    //
-
-    fu_INL explicit operator bool() const noexcept
-    {
-        return !!size();
     }
 
 
