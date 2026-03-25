@@ -145,7 +145,7 @@ fn norm(a: vec2 or vec3 or vec4) {
     return a * n;
 }
 
-fn normalize(ref a: vec2 or vec3 or vec4) {
+fn normalize(mut ref a: vec2 or vec3 or vec4) {
     let len = a.len;
     let n = 1 / len;
     if (n.finite) a *= n;

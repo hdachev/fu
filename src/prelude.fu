@@ -283,6 +283,12 @@ fn   grow(mut ref a: <T>[], len: int): void __native(".grow");
 fn resize_junk(mut ref a: <T>[], len: int): void __native(".resize<false>");
 fn   grow_junk(mut ref a: <T>[], len: int): void __native(".grow<false>");
 
+fn resize(mut ref a: <T>[], len: int, v: T) {
+    let len0 = a.len;
+    a.resize_junk(len);
+    for (mut i = len0; i < len; i++) a[i] = v;
+}
+
 
 // Sorts, via std::sort - fnptrs.
 
