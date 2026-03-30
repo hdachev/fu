@@ -2144,7 +2144,23 @@ pub fn cpp_codegen(
             else if (c == '\\') esc ~= "\\\\";
 
             // Misc sub-whitespace.
-            else if (c.i8 < 32) esc ~= "\\" ~ c.u32.xHH;
+            else if (c.i8 < 32)
+            {
+                esc ~= "\\" ~ c.u32.xHH;
+
+                // If a valid hex digit follows a hex escape in a string literal,
+                //  it would fail to compile as an invalid escape sequence.
+                if (i < str.len - 1 && quot == '"') {
+                    let next = str[i + 1];
+                    if (next >= 'a' && next <= 'f' ||
+                        next >= 'A' && next <= 'F' ||
+                        next >= '0' && next <= 'F')
+                    {
+                        // String concatenation can be used as a workaround.
+                        esc ~= "\"\""; // Otherwise "error: hex escape sequence out of range"
+                    }
+                }
+            }
 
             // Rest & quot.
             else

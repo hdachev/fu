@@ -3882,6 +3882,10 @@ pub extern fn runTests()
         }
     `);
 
+    ZERO(`
+        fn main() "Über".len - 5; // c/c++ error: hex escape sequence out of range
+    `);
+
     // /Strings.
 
 

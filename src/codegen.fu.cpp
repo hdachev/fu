@@ -4364,7 +4364,12 @@ static fu::str escapeStringLiteral_AOu9VlPa(fu::view<char> str, const char quot)
         else if (c == '\\')
             esc += "\\\\"_fu;
         else if (fu::i8(fu::u8(c)) < fu::i8(32))
+        {
             esc += ("\\"_fu + xHH_ADWRJzhb(unsigned(fu::u8(c))));
+            if (i + 1 < str.size() && quot == '"') {
+                esc += "\"\""_fu;
+            }
+        }
         else
         {
             if (c == quot)
