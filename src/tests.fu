@@ -122,6 +122,7 @@ pub extern fn runTests()
     let TODO_lint       = fn TODO;
 
     let TODO_templ_vis  = fn TODO; // autoshadow needs to go + how do we make nested fns visible?
+    let TODO_tests      = fn TODO;
 
     let LEGACY_Map      = fn TODO;
 
@@ -23618,6 +23619,20 @@ pub extern fn runTests()
     `
         fn main() _0::identity(0);
     `]);
+
+    TODO_tests(currently: "Ambiguous call to roundtrip 3:17+9 2:14+9", `
+        test roundtrip() { // should not take the name
+            mut roundtrip = 1;
+            roundtrip--;
+            assert(!roundtrip);
+        }
+
+        fn main() {
+            mut roundtrip = 1;
+            roundtrip--;
+            return roundtrip;
+        }
+    `);
 
     // /Tests
 }

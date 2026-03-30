@@ -44,42 +44,37 @@ fn codepoints(utf8: byte[..], each, error?)
         :BREAK_ON_ERROR
         {
             mut c = utf8[i].u32;
-            if (c >= 128)
+            if (c >= 0x80)
             {
-                mut bytes = 0;
-
-                if      (c & 224 == 192) // Starts with 0b110.
-                    bytes = 2;
-                else if (c & 240 == 224) // Starts with 0b1110.
-                    bytes = 3;
-                else if (c & 248 == 240) // Starts with 0b11110.
-                    bytes = 4;
+                mut extra = 0;
+                if      (c & 0xe0 == 0xc0) // Starts with 0b110.
+                    extra = 1;
+                else if (c & 0xf0 == 0xe0) // Starts with 0b1110.
+                    extra = 2;
+                else if (c & 0xf8 == 0xf0) // Starts with 0b11110.
+                    extra = 3;
                 else
                     break :BREAK_ON_ERROR;
 
+                c &= 0x3f >> extra.u32;
+
                 //
-                let i1 = i + bytes;
-                if (utf8.len < i1)
+                let i1 = i + extra;
+                if (utf8.len < i1) {
                     break :BREAK_ON_ERROR;
-
-                c <<= (bytes + 1).u32; // The +1 is the disambig zero.
-                c  &= 0xff;
-
-                //
-                while (++i < i1)
-                {
-                    mut b = utf8[i].u32;
-                    if (b & 0x192 != 128) // Must start with 0b10.
-                    {
-                        // Step back on byte,
-                        //  so this next thing will parse anew.
-                        i--;
-                        break :BREAK_ON_ERROR;
-                    }
-
-                    c <<= 6;
-                    c  |= b & ~0x192;
                 }
+
+                do {
+                    i++;
+                    mut b = utf8[i].u32;
+                    if (b & 0xc0 != 0x80) // Must start with 0b10.
+                        break :BREAK_ON_ERROR;
+
+                    b &= ~0xc0;
+                    c <<= 6;
+                    c |= b;
+                }
+                while (i < i1);
             }
 
             // Only called once,
@@ -96,4 +91,53 @@ fn codepoints(utf8: byte[..], each, error?)
         //
         error(i?: i0);
     }
+}
+
+test utf8_roundtrip() {
+    fn ok(TEST: string) {
+        mut roundtrip = "";
+
+        TEST.codepoints(
+            each: |codepoint| roundtrip ~= utf8(:codepoint),
+            error: || assert(false));
+
+        return TEST == roundtrip;
+    }
+
+    assert(ok("H"));
+    assert(ok("Â"));
+    assert(ok("中"));
+    assert(ok("🏀"));
+
+    let TEST = `
+        https://www.w3.org/2001/06/utf-8-test/UTF-8-demo.html
+        ∮ E⋅da = Q,  n → ∞, ∑ f(i) = ∏ g(i), ∀x∈ℝ: ⌈x⌉ = −⌊−x⌋, α ∧ ¬β = ¬(¬α ∨ β),
+        ℕ ⊆ ℕ₀ ⊂ ℤ ⊂ ℚ ⊂ ℝ ⊂ ℂ, ⊥ < a ≠ b ≡ c ≤ d ≪ ⊤ ⇒ (A ⇔ B),
+        2H₂ + O₂ ⇌ 2H₂O, R = 4.7 kΩ, ⌀ 200 mm
+        ði ıntəˈnæʃənəl fəˈnɛtık əsoʊsiˈeıʃn
+        Y [ˈʏpsilɔn], Yen [jɛn], Yoga [ˈjoːgɑ]
+        ((V⍳V)=⍳⍴V)/V←,V    ⌷←⍳→⍴∆∇⊃‾⍎⍕⌈
+        εἰς τοῦτο προήκοντα,  ὥσθ᾿ ὅπως μὴ πεισόμεθ᾿ αὐτοὶ
+        σώσομεν. ἐὰν γὰρ τοῦτο βεβαίως ὑπάρξῃ, τότε καὶ περὶ τοῦ
+        ๏ แผ่นดินฮั่นเสื่อมโทรมแสนสังเวช  พระปกเกศกองบู๊กู้ขึ้นใหม่
+        ወዳጅህ ማር ቢሆን ጨርስህ አትላሰው።
+        ᚻᛖ ᚳᚹᚫᚦ ᚦᚫᛏ ᚻᛖ ᛒᚢᛞᛖ ᚩᚾ ᚦᚫᛗ ᛚᚪᚾᛞᛖ ᚾᚩᚱᚦᚹᛖᚪᚱᛞᚢᛗ ᚹᛁᚦ ᚦᚪ ᚹᛖᛥᚫ
+        ⠗⠑⠛⠜⠙ ⠁ ⠊⠕⠋⠋⠔⠤⠝⠁⠊⠇ ⠁⠎ ⠹⠑ ⠙⠑⠁⠙⠑⠌ ⠏⠊⠑⠊⠑ ⠕⠋ ⠊⠗⠕⠝⠍⠕⠝⠛⠻⠹
+        ABCDEFGHIJKLMNOPQRSTUVWXYZ /0123456789
+        abcdefghijklmnopqrstuvwxyz £©µÀÆÖÞßéöÿ
+        –—‘“”„†•…‰™œŠŸž€ ΑΒΓΔΩαβγδω АБВГДабвгд
+        ∀∂∈ℝ∧∪≡∞ ↑↗↨↻⇣ ┐┼╔╘░►☺♀ ﬁ�⑀₂ἠḂӥẄɐː⍎אԱა
+        Hello world, Καλημέρα κόσμε, コンニチハ
+        约翰·W·约翰斯顿是来自美国弗吉尼亚州阿宾登的律师兼政治家，曾担任弗吉尼亚州参议员，弗吉尼亚州在南北战争结束后重新加入联邦，约翰斯顿以民主党人身份当选该州联邦参议员并任职13年。约翰斯顿的参议员生涯经历过多个议题的洗礼。首先是有关阿灵顿宫的辩论。约翰斯顿还公开反对德克萨斯－太平洋法案。他置身供资者和重新调整者的争斗，主张各州应全额偿还内战前欠下的债务。
+        明治から大正初期にかけて八丈小島で行われたバク病の調査研究は、象皮病の臨床診断や原因調査に主眼点を置いており、治療に直結していなかった。リンパ系フィラリア症は命の危険に直接晒されるような病気でなかったことに加え、そもそもフィラリア症に対する有効な予防法や治療法は1950年（昭和25年）ごろまで存在しなかったのである[85]。
+        ╔══╦══╗  ┌──┬──┐  ╭──┬──╮  ╭──┬──╮  ┏━━┳━━┓  ┎┒┏┑   ╷  ╻ ┏┯┓ ┌┰┐    ▊ ╱╲╱╲╳╳╳
+        ║┌─╨─┐║  │╔═╧═╗│  │╒═╪═╕│  │╓─╁─╖│  ┃┌─╂─┐┃  ┗╃╄┙  ╶┼╴╺╋╸┠┼┨ ┝╋┥    ▋ ╲╱╲╱╳╳╳
+        👩🏿‍🚀 is encoded as 👩, 🏿, and 🚀 with a zero width joiner character
+    `;
+
+    mut roundtrip = "";
+    TEST.codepoints: |codepoint|
+        roundtrip ~= utf8(:codepoint);
+
+    assert(TEST == roundtrip)
 }
