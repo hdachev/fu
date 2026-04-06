@@ -16495,6 +16495,24 @@ pub extern fn runTests()
         fn main() _1::Hello.world;
     `]);
 
+    ZERO([`//file a/a.fu
+        fn hello() 7;
+    `,`
+        fn main() {
+            import a;
+            return hello() - 7;
+        }
+    `]);
+
+    TODO_pub(currently: "Could not resolve this import 3:13+6", [`//file aa/a/a.fu
+        fn hello() 7;
+    `,`
+        fn main() {
+            import aa::a;
+            return hello() - 7;
+        }
+    `]);
+
     // /Pubs & imports.
 
 
