@@ -22651,9 +22651,9 @@ pub extern fn runTests()
         fn main() outer(0);
     `);
 
-    TODO_enums(currently: "A is not defined here 2:28+1", `
-        enum Test { A; B = A; C; };
-        fn main() Test.C.i32 - 1;
+    ZERO(`
+        enum Test { A = 2; B = A; C; };
+        fn main() Test.C.i32 - 3;
     `);
 
     ZERO(`

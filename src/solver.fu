@@ -8700,29 +8700,57 @@ pub fn solve(
         let primType = isPrimDecl && (
             instType || BUG("Falsy isPrimDecl.instType"));
 
-        fn solveMember(shadow node: Node)
+        //
+        mut members: SolvedNode[];
+        for (mut i = 0; i < memberNodes.len; i++)
         {
+            shadow let node = memberNodes[i];
             node.kind == "let" || BUG("solveStructMembers_1: " ~ node.kind);
 
+            mut TODO_FIX_HACK_alias = 0;
+
+            let init = node.items[LET_INIT];
             if (!isPrimDecl)
-                node.items[LET_INIT] &&
-                node.items[LET_INIT].kind != "definit" &&
+            {
+                init && init.kind != "definit" &&
                     fail("All structs must be zerofilled by default."
                         ~ " Please remove the initializer of struct member " ~ node.value.qBAD ~ ".");
+            }
+            else if (i > 0 && init.kind == "call" && init.items.len == 0)
+            {
+                // enum { A = 3; B = A; C = A }
+                for (mut j = 0; j < i; j++)
+                    if (memberNodes[j].value == init.value)
+                        TODO_FIX_HACK_alias = j + 1;
+            }
 
             mut ret = solveLetLike_dontTouchScope(
                 node, :primType,
-                asArgument: false);
+                asArgument: false,
+
+                // TODO FIX hack abusing specType here to skip solving the init
+                specType: TODO_FIX_HACK_alias && primType);
+
+            if (TODO_FIX_HACK_alias)
+            {
+                mut replacement = SolvedNode(
+                    kind: "__enum_alias",
+                    items: [],
+                    type: members[TODO_FIX_HACK_alias - 1].type);
+
+                replacement._loop_start = TODO_FIX_HACK_alias;
+                ret.items[LET_INIT] = replacement;
+            }
 
             // TODO FIX VFACTS //
             ret.type.vfacts = [];
             // TODO FIX VFACTS //
 
             // Can't continue/return back/fwd compat.
-            return ret;
+            members ~= ret;
         }
 
-        let members = memberNodes.map(fn solveMember);
+        assert(members.len == memberNodes.len);
 
         // (Re)poplate fields.
         {
@@ -8932,9 +8960,10 @@ pub fn solve(
 
                 for (mut i = 0; i < s.items.len; i++)
                 {
-                    ref item_o  = s.items[i].target.GET_mut;
+                    // TODO FIX these fns instead of refs because of bck control flow drama __enum_alias below
+                    fn item_o   = s.items[i].target.GET_mut;
+                    fn init     = item_o.solved;
 
-                    ref init    = item_o.solved;
                     let member  = members[i];
                     init        = member.items[LET_INIT]; // <-
                     _here       = member.token;           //
@@ -8957,6 +8986,12 @@ pub fn solve(
                             if (last.error)
                                 fail(last.error);
 
+                            continue;
+                        }
+                        else if (init.kind == "__enum_alias")
+                        {
+                            assert(init._loop_start > 0);
+                            init = s.items[init._loop_start - 1].target.solved;
                             continue;
                         }
 
