@@ -9056,6 +9056,33 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_borrowck(currently: "Cannot resolve aliasing by temp copy 11:20+6 render:app 10:39+3 render:rs", `
+        struct GS { campaign_time: f64 };
+        struct RS { buf: byte[]; pal: byte[] };
+        struct App { rs: RS; gs: GS };
+        implicit ref app: App;
+
+        fn render(ref rs: RS, draw) {
+            draw(buf: rs.buf.view(u8), pal: rs.pal.view(u8));
+        }
+        fn update(implicit shadow ref app: App) {
+            app.rs.render(): |ref buf, ref pal| {                               <alt>
+                if (!app.gs.campaign_time) /* fails with if, passes without? */ </alt>
+                {
+                    app.gs.campaign_time = 13;
+                }
+                buf .= pal;                                     ;; PointlessMustSeq
+            }
+        }
+        fn main() {
+            shadow mut app = App();
+            app.rs.buf = "hello";
+            app.rs.pal = "world";
+            app.update();
+            return app.rs.buf == "world" && app.gs.campaign_time == 13 ? 0 : 1;
+        }
+    `);
+
     // /Borrow checker
 
 
