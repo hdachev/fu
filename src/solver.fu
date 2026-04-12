@@ -12189,8 +12189,7 @@ pub fn solve(
                     type: slot || o.type,       // Use slot type if available,
                     becauseOf: target).target;  //  might refer to unused implicit via arg default expr, etc.
 
-            if (from.modid != module.modid)
-                BUG("inlineExpression: about to use injectForeignLocal with an off-module target: " ~ target);
+            target.modid == from.modid || BUG("inlineExpression: this used to BUG if from.modid != module.modid, but this should be ok now since Targets now packs all of modid, globid and locid, back in the day it was either modid+globid or globid+locid.");
 
             // Preceding argument references -
             //  fn myfn(a = 2, b = a * a)

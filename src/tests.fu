@@ -19401,7 +19401,7 @@ pub extern fn runTests()
         }
     `);
 
-    TODO_inline(currently: "BUG inlineExpression injectForeignLocal off-module target arg a 3:19+4", [`
+    ZERO([`
         <alt>
         inline</alt>
         fn woot(a: int, b = a * 2) a + b;
@@ -19420,7 +19420,7 @@ pub extern fn runTests()
         fn main() woot(1) - 5;
     `);
 
-    TODO_inline(currently: "BUG inlineExpression injectForeignLocal off-module target arg a 3:19+4", [`
+    TODO_inline(currently: "BUG matchReplicaOrInjectForeignLocal botching the type of mut arg a 3:19+4", [`
         <alt>
         inline</alt>
         fn woot(mut a: int, b = a * 2) {
@@ -19448,7 +19448,7 @@ pub extern fn runTests()
         fn main() blip(1) - 2;
     `);
 
-    TODO_args(currently: "BUG injectForeignLocal off-module target arg b 3:19+6", [`
+    TODO_args(currently: "b is not defined here 5:18+1", [`
         <alt>
         inline</alt>
         fn render(a<alt>: int</alt>,
