@@ -12205,11 +12205,15 @@ pub fn solve(
                             break;
 
                         ref arg = callsite_args[i];
+
                         let replacement =
                             (arg.kind == "call" && arg.target.kind == "var" || arg.kind == "letdef")
                                 ? arg.target
                                 : (arg = createLet(setScope: false,
-                                    "__def_arg_ref", init: arg, flags: [], asserts: [])).target;
+                                    "__def_arg_ref", init: arg, asserts: [],
+                                        // Previously flags: [], didnt work for (mut a, b = a * 2) - F_REF branch not tested
+                                        flags: target.type.is_mutref ? arg.is_ref ? F_REF : F_MUT : [])
+                                    ).target;
 
                         return replacement;
                     }

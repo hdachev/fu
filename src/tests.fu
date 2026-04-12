@@ -19410,7 +19410,7 @@ pub extern fn runTests()
         fn main() woot(1) - 3;
     `]);
 
-    TODO_inline(currently: "BUG botching the type of mut arg a 7:19+4", `
+    ZERO(`
         <alt>
         inline</alt>
         fn woot(mut a: int, b = a * 2) {
@@ -19420,7 +19420,7 @@ pub extern fn runTests()
         fn main() woot(1) - 5;
     `);
 
-    TODO_inline(currently: "BUG matchReplicaOrInjectForeignLocal botching the type of mut arg a 3:19+4", [`
+    ZERO([`
         <alt>
         inline</alt>
         fn woot(mut a: int, b = a * 2) {
