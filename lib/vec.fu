@@ -139,7 +139,7 @@ fn dot(a: vec2 or vec3 or vec4, b: vec2 or vec3 or vec4) case (typeof(b) -> type
 inline fn lensq(a: vec2 or vec3 or vec4) dot(a, a);
 inline fn len(a: vec2 or vec3 or vec4) lensq(a).sqrt;
 
-fn norm(a: vec2 or vec3 or vec4) {
+fn unit(a: vec2 or vec3 or vec4) {
     mut n = 1 / a.len;
     n = n.finite ? n : 0;
     return a * n;

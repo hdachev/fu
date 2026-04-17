@@ -171,6 +171,8 @@ fn min(a: <T>, b: T)
 fn clamp(v: <T>, gteq: T, lteq: T)
     case (T.is::primitive) v.min(lteq).max(gteq);
 
+fn lerp(a: <T>, b: T, t: f32) a*(1-t) + b*t;
+
 fn exp   (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::exp");
 fn exp2  (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::exp2");
 fn log   (a: <T>) case (T.is::floating_point): T __native("<cmath>", "std::log");
