@@ -531,7 +531,7 @@ fn remove(mut ref a: <T>[], predicate, mut start!keep = 0)
     {
         let size = a.len;
         for (mut i = keep; i < size; i++) {
-            let here = a[i];
+            ref here = a[i];
             if (!predicate(here, ?:i)) {
                 if (i > keep)
                     a[keep] = here;

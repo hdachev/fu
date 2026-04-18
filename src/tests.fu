@@ -23613,6 +23613,14 @@ pub extern fn runTests()
         }
     `);
 
+    TODO_semantics(currently: "BUG F_MUT|F_REF but !arg.type.is_mutref 2:12+14", `
+        fn triggerWakeUps(mut ref v: <T>, woot) woot(v);
+        fn main() {
+            mut x = 0;
+            return triggerWakeUps(x, |v| v);
+        }
+    `);
+
     // /Semantics
 
 
