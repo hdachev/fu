@@ -16,4 +16,4 @@ if [ ! "$1" == "--use-cached" ] || [ ! -f "bin/fu.bootstrap" ]; then
 fi
 
 cd bin
-ln -f fu.bootstrap fu
+ln -f fu.bootstrap fu.works

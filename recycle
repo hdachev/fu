@@ -10,6 +10,5 @@ echo ""
 git reset
 git checkout *.fu.cpp *.fu.unity.cpp
 ./bootstrap --use-cached
-ln -f ./bin/fu ./bin/fu.works
 
 ./cycle
