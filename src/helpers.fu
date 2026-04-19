@@ -87,32 +87,6 @@ case (T -> T) // <- weird, whats this for?
     return res;
 }
 
-fn steal(ref a: <T>[], start!: i32, end!: i32)
-{
-    let size = end - start;
-
-    mut ret: T[];
-    ret.resize(size);
-
-    for (mut i = 0; i < size; i++)
-        swap(ret[i], a[i + start]);
-
-    a.splice(start, count: size);
-    return ret;
-}
-
-fn steal(ref a: <T>[], start!: i32)
-{
-    mut ret: T[];
-    ret.resize(a.len - start);
-
-    for (mut i = 0; i < ret.len; i++)
-        swap(ret[i], a[i + start]);
-
-    a.shrink(start);
-    return ret;
-}
-
 
 //
 
@@ -290,12 +264,6 @@ fn cleanID(id: string)
 
 
 //
-
-fn steal(ref v: <T>) {
-    mut ret: T;
-    swap(v, ret);
-    return ret;
-}
 
 fn exchange(ref a: <T>, mut b: T) {
     swap(a, b);

@@ -262,7 +262,7 @@ fn parsePaths(str: byte[..]): Paths
         },
 
         onPathDone: || {
-            paths ~= helpers::steal(path);
+            paths ~= steal(path);
         },
 
         onDone: || {

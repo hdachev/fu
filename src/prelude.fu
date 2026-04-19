@@ -940,6 +940,39 @@ fn remove(ref a: <T>[..], at!: int, count = 1)
 
 //
 
+fn steal(ref v: <T>) {
+    mut ret: T;
+    swap(v, ret);
+    return ret;
+}
+
+fn steal(ref a: <T>[], start!: int) {
+    mut ret: T[];
+    ret.resize(a.len - start);
+
+    for (mut i = 0; i < ret.len; i++)
+        swap(ret[i], a[i + start]);
+
+    a.shrink(start);
+    return ret;
+}
+
+fn steal(ref a: <T>[], start! = 0, end!: int) {
+    let size = end - start;
+
+    mut ret: T[];
+    ret.resize(size);
+
+    for (mut i = 0; i < size; i++)
+        swap(ret[i], a[i + start]);
+
+    a.splice(start, count: size);
+    return ret;
+}
+
+
+//
+
 fn TODO_REMOVE_bootstrap() false;
 
 `;
