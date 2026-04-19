@@ -9,6 +9,5 @@ echo ""
 
 git reset
 git checkout *.fu.cpp *.fu.unity.cpp
-./bootstrap --use-cached
-
+./bootstrap $1
 ./cycle

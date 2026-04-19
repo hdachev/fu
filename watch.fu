@@ -71,7 +71,7 @@ fn main()
                     recycle = false;
                 }
 
-                let argv    = [ recycle ? "./recycle" : "./cycle" ];
+                let argv    = [ recycle ? "./recycle --use-cached" : "./cycle" ];
 
                 // println("REBUILD Spawning argv(" argv.join(" ") ").");
 
