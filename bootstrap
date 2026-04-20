@@ -1,19 +1,53 @@
 #!/bin/bash
 set -e
 
+echo ""
+echo "        ================================"
+echo ""
+echo "        Starting over ..."
+echo ""
+
 UNITY_CPP="src/cli.fu.unity.cpp"
+BOOTSTRAP="bin/fu.bootstrap"
 
-if [ ! -f "$UNITY_CPP" ]; then
+if [ ! "$1" == "--use-cached" ] || [ ! -f "$BOOTSTRAP" ]; then
+
+	echo "        git reset && git checkout *.cpp ..."
 	echo ""
-	echo "  ERROR $UNITY_CPP not found."
-	echo "        Maybe you're not calling this from the root of the repo?"
-	exit 1
-fi
 
-if [ ! "$1" == "--use-cached" ] || [ ! -f "bin/fu.bootstrap" ]; then
+	git reset
+	git checkout *.fu.cpp *.fu.unity.cpp
+
+	echo ""
+	echo "        Rebuilding $BOOTSTRAP ..."
+	echo ""
+
+	if [ ! -f "$UNITY_CPP" ]; then
+		echo "  ERROR $UNITY_CPP not found."
+		echo "        Maybe you're not calling this from the root of the repo?"
+		exit 1
+	fi
+
 	mkdir -p bin
-	g++ --std=c++17 -Og -o bin/fu.bootstrap "$UNITY_CPP" -ldl -pthread -I include -g -Dfu_UNITY_FULIB
+	g++ --std=c++17 -Og -o "$BOOTSTRAP" "$UNITY_CPP" -ldl -pthread -I include -g -Dfu_UNITY_FULIB
+else
+
+	echo "        --use-cached $BOOTSTRAP ..."
+	echo ""
 fi
 
-cd bin
-ln -f fu.bootstrap fu.works
+echo "        --------------------------------"
+
+"$BOOTSTRAP" self
+
+echo "        --------------------------------"
+
+./bin/fu self
+
+echo "        --------------------------------"
+
+./bin/fu self
+
+echo "        --------------------------------"
+
+./bin/fu self

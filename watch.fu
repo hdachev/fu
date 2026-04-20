@@ -71,15 +71,15 @@ fn main()
                     recycle = false;
                 }
 
-                let argv    = [ recycle ? "./recycle --use-cached" : "./cycle" ];
+                let cmd = "./bootstrap --use-cached";
 
-                // println("REBUILD Spawning argv(" argv.join(" ") ").");
+                println("REBUILD Spawning argv(" cmd ").");
 
-                run_pid     = ev::Loop::spawn(:argv,
+                run_pid = ev::Loop::spawn(argv: cmd.split(" "),
                     stdout: "Parent",
                     stderr: "Parent",
                     else: |err|
-                        println("SPWN ER argv(" argv.join(" ") ") err(" err ")"));
+                        println("SPWN ER argv(" cmd ") err(" err ")"));
             },
 
             watch_event: |lax watch_id|
