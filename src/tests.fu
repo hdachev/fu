@@ -23720,7 +23720,7 @@ pub extern fn runTests()
         fn main() _0::identity(0);
     `]);
 
-    TODO_tests(currently: "Ambiguous call to roundtrip 3:17+9 2:14+9", `
+    ZERO(`
         test roundtrip() { // should not take the name
             mut roundtrip = 1;
             roundtrip--;
