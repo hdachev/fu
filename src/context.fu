@@ -93,7 +93,7 @@ pub fn resolveFile(
                 name.shrink(alt_idx);
             }
 
-            nested = name ~ '/' ~ name ~ ".fu";
+            nested = name ~ '/' ~ name[name.find(last: '/') + 1 ..] ~ ".fu";
             name ~= ".fu";
         }
 

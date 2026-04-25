@@ -16531,11 +16531,20 @@ pub extern fn runTests()
         }
     `]);
 
-    TODO_pub(currently: "Could not resolve this import 3:13+6", [`//file aa/a/a.fu
+    ZERO([`//file aa/a/a.fu
         fn hello() 7;
     `,`
         fn main() {
             import aa::a;
+            return hello() - 7;
+        }
+    `]);
+
+    ZERO([`//file aaa/aa/a/a.fu
+        fn hello() 7;
+    `,`
+        fn main() {
+            import aaa::aa::a;
             return hello() - 7;
         }
     `]);

@@ -301,3 +301,14 @@ inline fn start  (ref arr: <T>[]) arr[.. 0];
 inline fn end    (ref arr: <T>[]) arr[arr.len ..];
 inline fn before (ref arr: <T>[], index: int) arr[i .. i];
 inline fn after  (ref arr: <T>[], index: int) arr.before(i + 1);
+
+
+//
+
+fn find(a: <T>[], last!: T): int {
+    for (mut i = a.len; i --> 0; )
+        if (a[i] == last)
+            return i;
+
+    return -1;
+}
