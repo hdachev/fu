@@ -340,6 +340,9 @@ pub fn solve(
         // So we can pass the F_INLINE flag onto mustBecomeInline
         TODO_FIX_isInline?: bool;
 
+        // Avoids problems with mutrefs to F_MUT args within other arguments default exprs.
+        done_solving_args?: bool;
+
         //
         TODO_FIX_catches?:  i32;
 
@@ -7526,6 +7529,8 @@ pub fn solve(
                 outItems[i]     = arg;
             }
 
+            _current_fn.done_solving_args = true;
+
             /////////////////////////////////////////////////////
             let n_ret   = !isUnspec && inItems[inItems.len + FN_RET_BACK];
             let n_body  = inItems[inItems.len + FN_BODY_BACK];
@@ -10013,7 +10018,7 @@ pub fn solve(
         //  dealt with by the initial template match.
         //
         let n_init  = !specType && node.items[LET_INIT];
-        let init    = n_init && solveNode(n_init, annot);
+        mut init    = n_init && solveNode(n_init, annot);
 
         // Using expression - implies F_REF when possible.
         if (node.syntax & PS_USING_EXPRESSION && !annot && init.is_ref)
@@ -12425,12 +12430,13 @@ pub fn solve(
                     if (SELF_TEST)
                     {
                         let foreign = node.target;
+                        let expect  = node.type; // foreign.type doesnt work with the pre-done_solving_args un-F_MUT-ing
 
-                        isAssignable(host: foreign.type, local.type)
+                        isAssignable(host: expect, local.type)
                             || local.type.is_never && local.isInlineLocal
                             || BUG("matchReplicaOrInjectForeignLocal botching the type of " ~ foreign ~ ":\n"
-                                ~ "\n\t\tExpect: " ~ foreign.type.explainType
-                                ~ "\n\t\tActual: " ~   local.type.explainType);
+                                ~ "\n\t\tExpect: " ~     expect.explainType
+                                ~ "\n\t\tActual: " ~ local.type.explainType);
 
                         TRACE("inlineExpression: CALL.REPLACE " ~ foreign.locid ~ " " ~ foreign ~ " with " ~ local.locid ~ " " ~ local);
                     }
@@ -12764,12 +12770,20 @@ pub fn solve(
             }
 
             //
-            if (target.isLocal &&
-                target.localOf != _current_fn.target.globid)
+            if (target.isLocal)
             {
-                target  = injectForeignLocal(target);
-                type    = GET(target).type || BUG(
-                    "CallerNode: !type on var " ~ target.name);
+                if (target.localOf != _current_fn.target.globid)
+                {
+                    target  = injectForeignLocal(target);
+                    type    = GET(target).type || BUG(
+                        "CallerNode: !type on var " ~ target.name);
+                }
+                else if (target.isArg && !_current_fn.done_solving_args
+                      && target.isMutVal)
+                {
+                    // DEFARGS: Do not provide mutrefs to F_MUT arguments inside other arguments' defaults
+                    type = clear_mutref(type);
+                }
             }
 
             // Discard the callsite if irrelevant,
